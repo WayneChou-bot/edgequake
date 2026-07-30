@@ -1,187 +1,191 @@
-# EdgeQuake AI — Phase 0 可行性原型
+# EdgeQuake
 
-> Historical seismic waveform replayed as a real-time stream — **not** a live
-> earthquake warning service.
+**Real-time seismic phase picking for Taiwan: a streaming replay engine, cross-domain benchmarks, and a CWA-finetuned PhaseNet.**
 
-把歷史地震波形當成即時串流回放，用預訓練 PhaseNet 做滑動視窗滾動推論，
-輸出逐時間點 P/S 機率、觸發 pick（含信心值與偵測延遲）、並量測每次推論的
-wall-clock 延遲。這是規劃書 v2 的 Phase 0：驗證整條「串流 → ring buffer →
-滑窗推論 → 觸發 → 視覺化」管線可行。
+> Historical seismic waveforms replayed as real-time streams — **not** a live
+> earthquake warning service. Taiwan already operates an official EEW system
+> (CWA); this project studies the technology *behind* such systems: how fast
+> and how reliably AI can read raw seismograms, how confidence should be
+> calibrated, and what breaks along the way.
 
-## 首次執行結果（本原型已驗證）
-
-- 測試波形：ObsPy 內建真實地震記錄（BW.RJOB，100 Hz 三分量）＋ 30 秒自身背景噪音暖機
-- P pick：34.51 s，信心 0.264，偵測延遲 0.49 s
-- S pick：35.72 s，信心 0.657，偵測延遲 0.28 s（S−P ≈ 1.2 s，符合極近震）
-- 推論延遲（CPU）：p50 ≈ 9 ms、p95 ≈ 12 ms（首次呼叫含框架暖機 ~400 ms，屬一次性）
-- 60 秒背景噪音中零誤觸發
-
-![demo](outputs/replay_demo.png)
-
-## 安裝與執行
-
-```bash
-pip install -r requirements.txt
-python scripts/demo_replay.py                  # 內建示範事件
-python scripts/demo_replay.py your_event.mseed # 任何三分量 miniSEED
-```
-
-Picker 解析順序：
-
-1. **SeisBench 預訓練 PhaseNet**（正常筆電路徑；首次執行會自動下載權重並快取）
-2. **AI4EPS 官方 TensorFlow checkpoint**（離線備援；權重在 GitHub）：
-
-```bash
-git clone --depth 1 https://github.com/AI4EPS/PhaseNet.git
-pip install tensorflow-cpu tf_keras
-TF_USE_LEGACY_KERAS=1 python scripts/demo_replay.py
-```
-
-## 程式結構
-
-```
-src/edgequake/
-├── pickers/
-│   ├── base.py               # Picker 介面：window -> (N,P,S) 逐點機率
-│   ├── seisbench_picker.py   # SeisBench from_pretrained（預設）
-│   └── tf_phasenet.py        # AI4EPS TF checkpoint（離線備援）
-├── replay/
-│   ├── ring_buffer.py        # 固定容量環形緩衝區（含冷啟動零填充）
-│   └── engine.py             # 回放引擎：hop 推進、滾動推論、觸發、延遲量測
-└── viz.py                    # 三聯圖：波形+picks / P,S 機率時間線 / 推論延遲
-scripts/demo_replay.py        # 端到端 demo
-```
-
-## 原型階段就學到的三件事（面試素材）
-
-1. **冷啟動假警報**：ring buffer 零填充的邊界對模型看起來像一個震相 onset，
-   第一版在 t=0 產生信心 0.875 的假 P。修正：緩衝區未填滿前抑制觸發
-   （真實測站永遠不會在事件上冷啟動，回放系統要模擬這一點）。
-2. **門檻即校準問題**：本事件（模型訓練域外的德國測站）P 峰值 0.264，
-   PhaseNet 預設門檻 0.3 會漏報、0.25 會抓到——「信心值該多少才值得行動」
-   正是 Phase 1 的 calibration / abstention 研究主題，這裡已經有了第一個實例。
-3. **延遲結構**：穩態推論 ~9 ms（CPU）遠小於 500 ms hop，瓶頸不在模型；
-   首次呼叫的框架暖機（~400 ms）在真實系統要在開機時做，不能落在事件中。
-
-## 已知限制（誠實列出）
-
-- 單測站、單事件、域外資料——尚未在台灣資料（CWA Benchmark）上驗證
-- 暖機噪音是拼接合成，僅用於管線驗證
-- 觸發邏輯是最簡單的門檻 + refractory，尚無關聯、去重、多站融合
-- pick 時刻取窗內機率峰值，未做 sub-sample 精化
+[中文版說明在下方](#中文說明) | English first, Chinese below.
 
 ---
 
-# Phase 1 — 資料載入與相位辨識評估（已交付）
+## Highlights
 
-遵循 Münchmeyer et al. 2022「Which picker fits my data?」協定的簡化版：
-每條測試 trace 切一個視窗（標註到時隨機落在視窗中央區，避免模型利用固定位置
-先驗），跑一次 picker 並**快取逐點機率曲線**，之後在快取上掃描門檻——
-模型只推論一次，門檻掃描零成本。
+- **Streaming replay engine**: ring buffer + sliding-window inference over
+  historical waveforms at true real-time pacing; picks with confidence and
+  per-step latency (p50 ≈ 4–9 ms on laptop CPU — far under the 500 ms hop).
+- **Cross-domain benchmark** (protocol after Münchmeyer et al. 2022): the same
+  PhaseNet architecture, two public pretrained weights, three test domains.
+  Off-the-shelf PhaseNet loses **0.24 P-wave F1** when moved from its home
+  region to Taiwan — the quantified case for local fine-tuning.
+- **Taiwan fine-tune** (CWA 2019, 70k traces, Kaggle T4, frozen BatchNorm +
+  amplitude clipping): **P F1 0.660 → 0.702, S F1 0.557 → 0.680**, with the
+  biggest gain exactly where domain shift hurt most (S recall 0.52 → 0.69).
+- **Honest engineering log**: seven real failures (upstream Windows URL bug,
+  BatchNorm-stats poisoning by dead channels, label-channel misalignment, ...)
+  with root causes and fixes — see [Pitfalls](#pitfalls-what-actually-broke).
 
-## 指標
+## Results
 
-P/S 各自的 precision / recall / F1（容忍 ±0.5 s，可調）、殘差 MAE / RMSE / std、
-門檻掃描曲線、PR 曲線，以及**雜訊誤報率（false alarms per hour）**——
-無標註的 trace 自動當作雜訊窗計入誤報統計。
+Phase-picking F1 on time-split test sets, ±0.5 s tolerance, threshold 0.3
+unless noted:
 
-## 使用方式
+| Weights (training domain) | Test domain | P F1 | S F1 | Note |
+|---|---|---|---|---|
+| original (NCEDC, N. California) | NCEDC in-domain (paper) | 0.896 | 0.801 | reference |
+| original | Iquique (Chile) | 0.873 | 0.771 | mild cross-domain drop |
+| original | **CWA (Taiwan)** | **0.660** | **0.557** | large drop; recall 0.59 |
+| stead (STEAD, global) | Iquique (Chile) | 0.390 | 0.281 | severe miscalibration |
+| stead | **CWA (Taiwan)** | **0.228** | **0.220** | best-threshold P only 0.25 |
+| **cwa-ft (this repo)** | **CWA (Taiwan)** | **0.702** | **0.680** @thr 0.5 | +0.04 P / +0.12 S |
+
+Three takeaways: (1) Taiwan's domain gap is far larger than Chile's — mixed
+instrumentation (CWASN short-period/broadband + TSMIP strong-motion) and local
+geology matter; (2) "trained on global data" does not imply cross-domain
+robustness — STEAD weights lose to single-network weights everywhere we
+tested; (3) a fixed confidence threshold is not transferable across weights
+(STEAD's optimal S threshold is 0.80) — calibration must be a first-class
+metric.
+
+## Quick start
 
 ```bash
-# 1) 先用合成資料集驗證管線（本機生成，數秒完成）
+pip install -r requirements.txt
+
+# streaming replay demo (bundled real earthquake)
+python scripts/demo_replay.py
+
+# evaluation pipeline sanity check (synthetic dataset, seconds)
 python scripts/make_synthetic_dataset.py
 python scripts/eval_picking.py --dataset data/synthetic_test --limit 50
 
-# 2) 小型真實資料集煙霧測試（Iquique ~5 GB，首次自動下載）
+# small real-data benchmark (Iquique, ~5 GB download on first use)
 python scripts/eval_picking.py --dataset iquique --limit 500
 
-# 3) CWA 台灣資料——先看下載量再決定！
+# Taiwan (CWA) — size-preview guard prevents accidental 100 GB downloads:
 python scripts/eval_picking.py --preview-cwa _2019 _2020 _2021
-python scripts/eval_picking.py --dataset cwa --chunks _2019 --confirm-download --limit 1000
+python scripts/fetch_cwa_hf.py          # fast Hugging Face route (~27 GB / 3 yrs)
+python scripts/eval_picking.py --dataset cwa --chunks _2020 _2021 --confirm-download --limit 1000
+
+# evaluate the fine-tuned weights
+python scripts/eval_picking.py --dataset cwa --chunks _2020 _2021 --confirm-download \
+    --limit 1000 --state-dict outputs/phasenet_cwa_ft.pt
 ```
 
-## ⚠ CWA 下載防護（重要）
+Fine-tuning runs on Kaggle (free GPU): build the compact training subset
+locally with `scripts/make_cwa_train_subset.py` (~3.5 GB from the cached 2019
+chunk), upload it as a Kaggle Dataset, then run
+`kaggle/edgequake_cwa_finetune.ipynb`.
 
-CWA 全量約 **836 GB**。SeisBench 的 chunk 以年為單位（`_2011`…`_2021`），
-但實際下載的是 **4 年合併的 tar.gz**——指定 `_2019` 也會拉下整包
-merge2019_2021。因此 `load_cwa()` 沒有 `confirm=True` 一律拒絕下載，
-`--preview-cwa` 會先向 Hugging Face 查詢真實檔案大小。
-筆電建議路線：先用 Iquique 驗證流程 → 查大小 → 視情況用外接 SSD 或
-雲端（Kaggle/Colab）跑 CWA。
+## Repository layout
 
-## 合成資料集驗證結果（管線正確性，非模型品質）
+```
+src/edgequake/
+├── pickers/        # Picker interface; SeisBench PhaseNet (+ finetuned ckpt), TF fallback
+├── replay/         # ring buffer + replay engine (streaming inference, latency, triggers)
+├── eval/           # benchmark protocol: residuals, PR/threshold sweeps, false alarms
+└── data/           # dataset loaders with download guards (CWA/CEED size preview)
+scripts/            # demo, evaluation CLI, dataset builders, CWA fetch/fix utilities
+kaggle/             # fine-tuning notebook (BN-freeze + amplitude-clip recipe)
+outputs/            # evaluation figures/JSON + finetuned weights (1.1 MB)
+docs/               # research notes and project plan
+```
 
-40 個注入事件全數命中（P/S F1 = 1.0）、10 個純噪音窗零誤報。
-P 殘差集中在 +0.19 s 且 std 僅 0.027 s——這是**系統性偏移**：合成資料的
-「名目真值」來自 Phase 0 的 hop 解析度 picks，本身就有偏差；模型高度一致的
-offset 反而證明了殘差統計管線在正確運作（真實資料集的人工標註不會有此現象）。
+## Pitfalls (what actually broke)
 
-## Phase 1 核心結果：跨域 domain-shift 對照表（2026-07-29 實測）
-
-同一個 PhaseNet 架構、兩組公開預訓練權重、三個測試域（各 500–1000 個測試窗，
-容忍 ±0.5 s，時間切分測試集）：
-
-| 權重（訓練域） | 測試域 | P F1 @0.3 | S F1 @0.3 | 最佳門檻 F1 (P/S) | P 殘差 std |
-|---|---|---|---|---|---|
-| original（NCEDC 北加州）| NCEDC 同域（論文值）| 0.896 | 0.801 | — | 0.052 s |
-| original | Iquique（智利）| 0.873 | 0.771 | ≈同 0.3 | 0.131 s |
-| original | **CWA（台灣）** | **0.660** | **0.557** | — | 0.170 s |
-| stead（STEAD 全球）| Iquique（智利）| 0.390 | 0.281 | 0.45 @0.70 / 0.65 @0.80 | 0.129 s |
-| stead | **CWA（台灣）** | **0.228** | **0.220** | — | 0.171 s |
-| **cwa-ft（本專案，2019 微調）** | **CWA（台灣）** | **0.702** | 0.635 | 0.70 @0.30 / **0.68 @0.50** | 0.172 s |
-
-（CWA 數字為修正 TSMIP 到時縮放 bug 後的版本，2026-07-30 重測。）
-
-### Phase 1b：台灣微調結果（2026-07-30）
-
-用 CWA 2019 年 70,000 條 traces（Kaggle T4，15 epochs，凍結 BatchNorm +
-振幅裁剪 ±30σ）微調 PhaseNet original 權重：
-
-- **P F1 0.660 → 0.702**（precision 0.749 → 0.812）
-- **S F1 0.557 → 0.680**（recall 0.522 → **0.690**，受益最大——S 波形受在地
-  地質影響最深，最需要台灣資料）
-- 殘差分布集中無偏移，時間精度未因微調劣化
-- 誠實註記：距同域訓練天花板（~0.85+）仍有空間；future work：更多 epochs
-  + LR 衰減、部分解凍 BN、加入 2015–2018 年份。訓練用 2019（官方 dev 年），
-  2020–2021 測試集全程未接觸。
-
-**訓練配方的兩個教訓（已寫入 notebook 防呆）**：
-1. 標籤通道順序必須對齊模型（labeller [P,S,N] vs. PhaseNet "NPS"）——錯位
-   訓練會靜默地毀掉模型；已加「訓練前 pretrained loss < 2」sanity assert。
-2. CWA 死通道 trace 經逐窗標準化會產生 10⁹ 級數值，毒壞 BatchNorm running
-   stats（實測 running_var 達 1.4×10¹⁸ → 推論模式輸出與輸入無關的常數，
-   train loss 卻正常）——教訓：**loss 是代理指標，任務級 F1 評估不可省**。
-   修補：微調凍結 BN + 輸入裁剪。
-
-三個發現：
-
-1. **台灣的 domain gap 遠大於智利**：original 權重 P F1 從同域 0.896 →
-   智利 0.873（−0.02）→ 台灣 0.629（−0.27）。台灣測試的 recall 只有 0.56
-   （漏一半的 P），且殘差分布右偏（系統性晚報）——CWA 混合 CWASN 短周期／
-   寬頻與 TSMIP 強震儀（200 Hz 重取樣）、事件規模分布也偏大，儀器與訊號
-   特性都與 NCEDC 不同。**這就是「必須用台灣資料微調」的量化證據。**
-2. **「全球大資料」不等於跨域泛化**：STEAD 權重（百萬級全球資料訓練）在兩個
-   測試域都遠遜於單一區域網訓練的 original 權重，在台灣連最佳門檻都只有
-   P F1 0.25。
-3. **固定門檻慣例不可信**：同樣是「信心 0.3」，original 權重下接近最佳操作點，
-   STEAD 權重下卻對應大量誤報（S 最佳門檻在 0.80）。信心值的語義隨權重而變
-   ——校準（calibration）必須作為第一級評估指標，這是本專案 Trustworthy AI
-   軸線的第一個實證。
-
-### 踩坑記錄（真實工程問題，含解法）
-
-| 問題 | 根因 | 解法（本 repo） |
+| Problem | Root cause | Fix in this repo |
 |---|---|---|
-| SeisBench 資料集下載一律 404（Windows）| 上游用 `os.path.join` 組 URL → 反斜線 | `loader._apply_windows_url_fix()` monkeypatch |
-| CEED/CWA 不會走 Hugging Face 下載 | 上游 `compile_from_source` 預設 False | loader 明確開啟 |
-| CWA 走 SeisBench 庫要抓 43 GB/年（1.3 MB/s）| 庫存的是未壓縮 HDF5 | `scripts/fetch_cwa_hf.py` 強制 HF 壓縮包路線（27 GB／三年）|
-| CWA metadata 使 pandas 崩潰 | `source_origin_time` 少數列缺小數秒 | `scripts/fix_cwa_metadata.py` 一次性正規化 |
-| 本專案評估器自身 bug：TSMIP 200 Hz 的到時樣本未隨重取樣縮放 | metadata 到時以原始取樣率記錄，波形被重取樣到 100 Hz | `eval/picking.py` 依 `trace_sampling_rate_hz` 縮放；修正後台灣 P F1 0.629→0.660 |
-| Kaggle 端下載訓練資料失敗 | 2018 年單檔 88.6 GB 超出 Kaggle 磁碟；長串流無續傳被斷線 | 改為本機產出 3.5 GB 精簡訓練集（`make_cwa_train_subset.py`）上傳 Kaggle Dataset |
+| All SeisBench dataset downloads 404 on Windows | upstream uses `os.path.join` for URLs → backslash | monkeypatch in `data/loader.py` |
+| CWA/CEED never fall back to Hugging Face | upstream `compile_from_source` defaults to False | enabled in loader |
+| CWA via SeisBench repo = 43 GB/yr uncompressed at ~1.3 MB/s | repo stores raw HDF5 | `fetch_cwa_hf.py`: compressed HF route, resumable |
+| pandas crash on CWA metadata | mixed timestamp formats (some rows lack fractional seconds) | `fix_cwa_metadata.py` |
+| Our own eval mislabeled TSMIP windows | arrival samples stored at original 200 Hz, waveforms resampled to 100 Hz | rescale arrivals by `trace_sampling_rate_hz` (P F1 0.629 → 0.660) |
+| First fine-tune silently destroyed the model | labeller outputs [P,S,Noise] but PhaseNet channels are "NPS" | permute labels to model order + pre-training sanity assert (initial loss must be < 2) |
+| Second fine-tune collapsed to constant output at inference | dead channels → per-window std-normalize → 1e9-scale values → BatchNorm running_var poisoned to 1.4×10¹⁸ | freeze BN during fine-tune + clip inputs to ±30σ |
 
-## 下一步（規劃書 v2）
+The meta-lesson: **loss is a proxy; task-level evaluation is not optional.**
+The collapsed model had a beautiful training loss (0.115) and a
+plausible-looking val loss (0.21 ≈ the score of always predicting "noise"),
+yet scored F1 = 0 on the actual picking task.
 
-Phase 1b：**台灣微調**（Kaggle GPU，目標把 P F1 從 0.63 拉回 0.85+）、
-校準曲線（信心 vs. 命中率）、abstention 分析、CWANoise 誤報率量測。
-Phase 2：多站收斂（到時差定位、誤差橢圓、anytime prediction）。
-Phase 3：0403 花蓮／2025 大埔案例回放 + PWS 門檻決策層 + MapLibre 儀表板。
+## Roadmap
+
+- **Phase 2 — multi-station convergence**: hypocenter + magnitude updated as
+  stations trigger one by one; uncertainty ellipses; anytime prediction.
+- **Phase 3 — historical case replay**: 2024 Hualien M7.2 and 2025 Chiayi
+  events, decision layer aligned with Taiwan's public-alert thresholds;
+  MapLibre dashboard.
+- **Phase 1 extras**: false-alarm rate on CWANoise, confidence calibration
+  curves, longer training + partial BN unfreeze (current 0.70 is a
+  conservative 15-epoch single-year recipe; in-domain ceiling is ~0.85+).
+
+## Data & acknowledgements
+
+- **CWA Benchmark** (Taiwan): Tang, K.-W., K.-Y. Chen, D.-Y. Chen, T.-L. Chin,
+  and T.-Y. Hsu (2024), *The CWA Benchmark: A Seismic Dataset from Taiwan for
+  Seismic Research*, SRL, doi:10.1785/0220230393.
+- **PhaseNet**: Zhu, W. and G. C. Beroza (2019), GJI, doi:10.1093/gji/ggy423.
+- **SeisBench**: Woollam, J. et al. (2022), SRL, doi:10.1785/0220210324.
+- **Benchmark protocol**: Münchmeyer, J. et al. (2022), JGR: Solid Earth,
+  doi:10.1029/2021JB023499.
+- Iquique dataset: Woollam et al. (2019); STEAD: Mousavi et al. (2019).
+
+This is a research prototype. It must not be used as, or presented as, an
+operational earthquake warning service. Redistribution of real-time strong-
+motion alerts in Taiwan requires an agreement with the CWA.
+
+## License
+
+[MIT](LICENSE)
+
+---
+
+<a name="中文說明"></a>
+
+# 中文說明
+
+**台灣即時地震波相位辨識研究原型：串流回放引擎、跨域基準測試、CWA 微調 PhaseNet。**
+
+> 本專案將歷史地震波形以真實時間速度回放模擬即時串流，**不是**即時地震警報
+> 服務。台灣已有中央氣象署的官方預警系統；本專案研究的是預警背後的技術：
+> AI 能多快、多可靠地讀懂原始地震波，信心值該如何校準，以及過程中什麼會出錯。
+
+## 重點成果
+
+- **串流回放引擎**：ring buffer + 滑動視窗推論，真實時間節奏回放；輸出含信心
+  值的 picks 與逐步延遲（筆電 CPU p50 約 4–9 ms，遠低於 500 ms 的串流節奏）。
+- **跨域基準**（依 Münchmeyer et al. 2022 協定）：同一 PhaseNet 架構、兩組公開
+  預訓練權重、三個測試域。現成 PhaseNet 從原生區域搬到台灣，**P 波 F1 掉了
+  0.24**——「台灣需要在地微調」的量化證據。
+- **台灣微調**（CWA 2019 年 7 萬條、Kaggle T4、凍結 BatchNorm + 振幅裁剪）：
+  **P F1 0.660 → 0.702、S F1 0.557 → 0.680**，受益最大的正是跨域傷最重的
+  S 波（recall 0.52 → 0.69）。
+- **誠實的工程記錄**：七個真實故障（上游 Windows 網址 bug、死通道毒壞
+  BatchNorm 統計、標籤通道錯位……）連同根因與修法，見上方 Pitfalls 表。
+
+## 三個發現
+
+1. 台灣的 domain gap 遠大於智利——混合儀器（CWASN 短周期/寬頻 + TSMIP 強震儀）
+   與在地地質都有影響。
+2. 「用全球大資料訓練」不保證跨域穩健——STEAD 權重在所有測試域都輸給單一
+   區域網訓練的權重。
+3. 固定信心門檻不可跨權重沿用（STEAD 的 S 最佳門檻高達 0.80）——校準必須是
+   第一級評估指標。
+
+## 核心教訓
+
+**Loss 只是代理指標，任務級評估不可省。** 崩潰的模型有漂亮的 train loss
+（0.115）和看似合理的 val loss（0.21——恰好是「永遠回答噪音」的分數），
+但在真正的相位辨識任務上 F1 = 0。
+
+## 使用方式與後續路線
+
+安裝與指令見上方英文 Quick start；後續：Phase 2 多站收斂與定位（測站逐一
+觸發、誤差橢圓動態收斂）、Phase 3 歷史事件回放（0403 花蓮、2025 嘉義）與
+PWS 門檻決策層 + MapLibre 儀表板。
+
+本專案為研究原型，不得作為或宣稱為即時地震警報服務；台灣即時強震警報之
+再散布需與中央氣象署簽約。授權：MIT。
