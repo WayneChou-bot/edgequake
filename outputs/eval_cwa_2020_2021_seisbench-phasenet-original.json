@@ -1,0 +1,38 @@
+{
+  "picker": "seisbench-phasenet-original",
+  "dataset": "cwa_2020_2021",
+  "split": "test",
+  "n_windows": 1000,
+  "tolerance_s": 0.5,
+  "operating": {
+    "threshold": 0.3,
+    "phases": {
+      "P": {
+        "tp": 590,
+        "fp": 198,
+        "fn": 410,
+        "precision": 0.7487,
+        "recall": 0.59,
+        "f1": 0.66,
+        "residual_mae_s": 0.1383,
+        "residual_rmse_s": 0.1862,
+        "residual_std_s": 0.1701,
+        "n_residuals": 590
+      },
+      "S": {
+        "tp": 236,
+        "fp": 159,
+        "fn": 216,
+        "precision": 0.5975,
+        "recall": 0.5221,
+        "f1": 0.5573,
+        "residual_mae_s": 0.1607,
+        "residual_rmse_s": 0.2042,
+        "residual_std_s": 0.1753,
+        "n_residuals": 236
+      }
+    },
+    "noise_false_alarms": 0,
+    "noise_false_alarms_per_hour": null
+  }
+}

@@ -1,0 +1,6 @@
+numpy
+obspy>=1.4
+seisbench>=0.9
+torch
+matplotlib
+huggingface_hub

@@ -1,0 +1,38 @@
+{
+  "picker": "tf-phasenet-190703",
+  "dataset": "synthetic_test",
+  "split": "test",
+  "n_windows": 50,
+  "tolerance_s": 0.5,
+  "operating": {
+    "threshold": 0.3,
+    "phases": {
+      "P": {
+        "tp": 40,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "residual_mae_s": 0.188,
+        "residual_rmse_s": 0.1894,
+        "residual_std_s": 0.0233,
+        "n_residuals": 40
+      },
+      "S": {
+        "tp": 40,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "residual_mae_s": 0.0155,
+        "residual_rmse_s": 0.017,
+        "residual_std_s": 0.0081,
+        "n_residuals": 40
+      }
+    },
+    "noise_false_alarms": 0,
+    "noise_false_alarms_per_hour": 0.0
+  }
+}

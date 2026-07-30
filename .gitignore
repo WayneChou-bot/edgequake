@@ -1,0 +1,34 @@
+# data — never commit waveforms (GB-scale); they are reproducible via scripts
+data/
+*.hdf5
+*.mseed
+
+# external clones / large downloads
+PhaseNet/
+*.tar.gz
+*.zip
+
+# kaggle raw outputs (keep only what's copied into outputs/)
+kaggle/Train_output/
+
+# scratch / probe files
+outputs/*_broken.pt
+outputs/probe_*.pt
+outputs/ft_eval_v3_fresh.png
+zi54Ugiu
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# experiment tracking
+wandb/
+mlruns/

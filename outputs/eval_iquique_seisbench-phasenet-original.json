@@ -1,0 +1,38 @@
+{
+  "picker": "seisbench-phasenet-original",
+  "dataset": "iquique",
+  "split": "test",
+  "n_windows": 500,
+  "tolerance_s": 0.5,
+  "operating": {
+    "threshold": 0.3,
+    "phases": {
+      "P": {
+        "tp": 442,
+        "fp": 73,
+        "fn": 56,
+        "precision": 0.8583,
+        "recall": 0.8876,
+        "f1": 0.8727,
+        "residual_mae_s": 0.0902,
+        "residual_rmse_s": 0.1323,
+        "residual_std_s": 0.1308,
+        "n_residuals": 442
+      },
+      "S": {
+        "tp": 173,
+        "fp": 51,
+        "fn": 52,
+        "precision": 0.7723,
+        "recall": 0.7689,
+        "f1": 0.7706,
+        "residual_mae_s": 0.1473,
+        "residual_rmse_s": 0.1856,
+        "residual_std_s": 0.1854,
+        "n_residuals": 173
+      }
+    },
+    "noise_false_alarms": 0,
+    "noise_false_alarms_per_hour": null
+  }
+}

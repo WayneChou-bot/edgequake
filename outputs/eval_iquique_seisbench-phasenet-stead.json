@@ -1,0 +1,38 @@
+{
+  "picker": "seisbench-phasenet-stead",
+  "dataset": "iquique",
+  "split": "test",
+  "n_windows": 500,
+  "tolerance_s": 0.5,
+  "operating": {
+    "threshold": 0.3,
+    "phases": {
+      "P": {
+        "tp": 294,
+        "fp": 714,
+        "fn": 204,
+        "precision": 0.2917,
+        "recall": 0.5904,
+        "f1": 0.3904,
+        "residual_mae_s": 0.1153,
+        "residual_rmse_s": 0.1542,
+        "residual_std_s": 0.129,
+        "n_residuals": 294
+      },
+      "S": {
+        "tp": 198,
+        "fp": 988,
+        "fn": 27,
+        "precision": 0.1669,
+        "recall": 0.88,
+        "f1": 0.2807,
+        "residual_mae_s": 0.1712,
+        "residual_rmse_s": 0.2102,
+        "residual_std_s": 0.1806,
+        "n_residuals": 198
+      }
+    },
+    "noise_false_alarms": 0,
+    "noise_false_alarms_per_hour": null
+  }
+}

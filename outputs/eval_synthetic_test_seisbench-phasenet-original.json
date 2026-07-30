@@ -1,0 +1,38 @@
+{
+  "picker": "seisbench-phasenet-original",
+  "dataset": "synthetic_test",
+  "split": "test",
+  "n_windows": 50,
+  "tolerance_s": 0.5,
+  "operating": {
+    "threshold": 0.3,
+    "phases": {
+      "P": {
+        "tp": 40,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "residual_mae_s": 0.2175,
+        "residual_rmse_s": 0.2182,
+        "residual_std_s": 0.0174,
+        "n_residuals": 40
+      },
+      "S": {
+        "tp": 40,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "residual_mae_s": 0.015,
+        "residual_rmse_s": 0.0177,
+        "residual_std_s": 0.0102,
+        "n_residuals": 40
+      }
+    },
+    "noise_false_alarms": 0,
+    "noise_false_alarms_per_hour": 0.0
+  }
+}
