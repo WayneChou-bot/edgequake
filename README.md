@@ -28,6 +28,8 @@
   BatchNorm-stats poisoning by dead channels, label-channel misalignment, ...)
   with root causes and fixes — see [Pitfalls](#pitfalls-what-actually-broke).
 
+![Streaming replay demo — waveform with picks, rolling P/S probabilities, per-step inference latency](outputs/replay_demo.png)
+
 ## Results
 
 Phase-picking F1 on time-split test sets, ±0.5 s tolerance, threshold 0.3
@@ -41,6 +43,8 @@ unless noted:
 | stead (STEAD, global) | Iquique (Chile) | 0.390 | 0.281 | severe miscalibration |
 | stead | **CWA (Taiwan)** | **0.228** | **0.220** | best-threshold P only 0.25 |
 | **cwa-ft (this repo)** | **CWA (Taiwan)** | **0.702** | **0.680** @thr 0.5 | +0.04 P / +0.12 S |
+
+![Fine-tuned PhaseNet on CWA test years — residuals, threshold sweep, precision-recall](outputs/eval_cwa_2020_2021_seisbench-phasenet-ft-phasenet_cwa_ft.png)
 
 Three takeaways: (1) Taiwan's domain gap is far larger than Chile's — mixed
 instrumentation (CWASN short-period/broadband + TSMIP strong-motion) and local
@@ -91,7 +95,6 @@ src/edgequake/
 scripts/            # demo, evaluation CLI, dataset builders, CWA fetch/fix utilities
 kaggle/             # fine-tuning notebook (BN-freeze + amplitude-clip recipe)
 outputs/            # evaluation figures/JSON + finetuned weights (1.1 MB)
-docs/               # research notes and project plan
 ```
 
 ## Pitfalls (what actually broke)
