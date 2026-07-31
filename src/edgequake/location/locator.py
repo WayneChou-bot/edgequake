@@ -118,7 +118,10 @@ class PickLocator:
         sx, sy, sz = self._refine(sx, sy, sz, X, Y, T, SLOW)
         rms = self._misfit(sx, sy, sz, X, Y, T, SLOW)
         tt = self._tt(sx, sy, sz, X, Y, SLOW)
-        t0 = float((T - tt).mean())
+        # origin time from P legs only — P picks are sharper, and S legs
+        # inherit the vp/vs-ratio assumption error
+        p_leg = SLOW == 1.0
+        t0 = float((T - tt)[p_leg].mean())
         lat, lon = xy_to_geo(sx, sy, lat0, lon0)
 
         est = LocationEstimate(lat=float(lat), lon=float(lon),
