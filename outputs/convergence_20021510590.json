@@ -1,0 +1,212 @@
+{
+  "event_id": "20021510590",
+  "truth": {
+    "lat": 23.86,
+    "lon": 121.51,
+    "depth_km": 8.32,
+    "mag": 5.73,
+    "origin_time": "2020-02-15 11:00:06.500000",
+    "gap_deg": NaN
+  },
+  "vp_km_s": 7.0,
+  "steps": [
+    {
+      "n_stations": 3,
+      "t_since_first_trigger_s": 4.52,
+      "epicenter_error_km": 22.5,
+      "depth_est_km": 4.7,
+      "ellipse_major_km": 0,
+      "ellipse_minor_km": 0,
+      "rms_s": 0.0,
+      "est_lat": 24.0169,
+      "est_lon": 121.3704
+    },
+    {
+      "n_stations": 4,
+      "t_since_first_trigger_s": 5.72,
+      "epicenter_error_km": 23.7,
+      "depth_est_km": 22.4,
+      "ellipse_major_km": 24.7,
+      "ellipse_minor_km": 19.1,
+      "rms_s": 2.064,
+      "est_lat": 24.0553,
+      "est_lon": 121.4172
+    },
+    {
+      "n_stations": 5,
+      "t_since_first_trigger_s": 6.02,
+      "epicenter_error_km": 28.2,
+      "depth_est_km": 21.0,
+      "ellipse_major_km": 61.9,
+      "ellipse_minor_km": 21.3,
+      "rms_s": 2.283,
+      "est_lat": 24.1094,
+      "est_lon": 121.4572
+    },
+    {
+      "n_stations": 6,
+      "t_since_first_trigger_s": 6.04,
+      "epicenter_error_km": 30.8,
+      "depth_est_km": 18.6,
+      "ellipse_major_km": 63.7,
+      "ellipse_minor_km": 22.9,
+      "rms_s": 2.315,
+      "est_lat": 24.1358,
+      "est_lon": 121.4827
+    },
+    {
+      "n_stations": 7,
+      "t_since_first_trigger_s": 6.13,
+      "epicenter_error_km": 31.8,
+      "depth_est_km": 16.2,
+      "ellipse_major_km": 52.9,
+      "ellipse_minor_km": 16.0,
+      "rms_s": 2.262,
+      "est_lat": 24.1456,
+      "est_lon": 121.4932
+    },
+    {
+      "n_stations": 8,
+      "t_since_first_trigger_s": 6.28,
+      "epicenter_error_km": 30.3,
+      "depth_est_km": 14.1,
+      "ellipse_major_km": 61.0,
+      "ellipse_minor_km": 17.2,
+      "rms_s": 2.349,
+      "est_lat": 24.1227,
+      "est_lon": 121.43
+    },
+    {
+      "n_stations": 9,
+      "t_since_first_trigger_s": 6.47,
+      "epicenter_error_km": 29.9,
+      "depth_est_km": 11.9,
+      "ellipse_major_km": 52.4,
+      "ellipse_minor_km": 18.4,
+      "rms_s": 2.273,
+      "est_lat": 24.1149,
+      "est_lon": 121.4157
+    },
+    {
+      "n_stations": 10,
+      "t_since_first_trigger_s": 6.48,
+      "epicenter_error_km": 30.1,
+      "depth_est_km": 11.2,
+      "ellipse_major_km": 90.0,
+      "ellipse_minor_km": 31.0,
+      "rms_s": 2.194,
+      "est_lat": 24.1185,
+      "est_lon": 121.4233
+    },
+    {
+      "n_stations": 11,
+      "t_since_first_trigger_s": 6.5,
+      "epicenter_error_km": 29.7,
+      "depth_est_km": 9.5,
+      "ellipse_major_km": 72.9,
+      "ellipse_minor_km": 20.6,
+      "rms_s": 2.127,
+      "est_lat": 24.1125,
+      "est_lon": 121.4137
+    },
+    {
+      "n_stations": 12,
+      "t_since_first_trigger_s": 6.51,
+      "epicenter_error_km": 29.5,
+      "depth_est_km": 7.9,
+      "ellipse_major_km": 83.0,
+      "ellipse_minor_km": 17.2,
+      "rms_s": 2.065,
+      "est_lat": 24.1077,
+      "est_lon": 121.4062
+    },
+    {
+      "n_stations": 13,
+      "t_since_first_trigger_s": 6.86,
+      "epicenter_error_km": 29.5,
+      "depth_est_km": 7.4,
+      "ellipse_major_km": 69.6,
+      "ellipse_minor_km": 15.8,
+      "rms_s": 2.004,
+      "est_lat": 24.1107,
+      "est_lon": 121.4156
+    },
+    {
+      "n_stations": 14,
+      "t_since_first_trigger_s": 6.88,
+      "epicenter_error_km": 32.5,
+      "depth_est_km": 12.7,
+      "ellipse_major_km": 85.6,
+      "ellipse_minor_km": 26.9,
+      "rms_s": 2.166,
+      "est_lat": 24.1278,
+      "est_lon": 121.3826
+    },
+    {
+      "n_stations": 15,
+      "t_since_first_trigger_s": 6.89,
+      "epicenter_error_km": 33.7,
+      "depth_est_km": 12.9,
+      "ellipse_major_km": 74.8,
+      "ellipse_minor_km": 34.9,
+      "rms_s": 2.268,
+      "est_lat": 24.1273,
+      "est_lon": 121.3529
+    },
+    {
+      "n_stations": 16,
+      "t_since_first_trigger_s": 6.95,
+      "epicenter_error_km": 33.9,
+      "depth_est_km": 7.5,
+      "ellipse_major_km": 51.6,
+      "ellipse_minor_km": 19.1,
+      "rms_s": 2.239,
+      "est_lat": 24.1093,
+      "est_lon": 121.3186
+    },
+    {
+      "n_stations": 17,
+      "t_since_first_trigger_s": 6.96,
+      "epicenter_error_km": 34.2,
+      "depth_est_km": 0.5,
+      "ellipse_major_km": 64.3,
+      "ellipse_minor_km": 20.1,
+      "rms_s": 2.203,
+      "est_lat": 24.1018,
+      "est_lon": 121.3013
+    },
+    {
+      "n_stations": 18,
+      "t_since_first_trigger_s": 7.23,
+      "epicenter_error_km": 33.4,
+      "depth_est_km": 0.5,
+      "ellipse_major_km": 13.2,
+      "ellipse_minor_km": 9.3,
+      "rms_s": 2.189,
+      "est_lat": 24.0918,
+      "est_lon": 121.301
+    },
+    {
+      "n_stations": 19,
+      "t_since_first_trigger_s": 7.28,
+      "epicenter_error_km": 33.3,
+      "depth_est_km": 0.5,
+      "ellipse_major_km": 51.4,
+      "ellipse_minor_km": 23.0,
+      "rms_s": 2.142,
+      "est_lat": 24.0932,
+      "est_lon": 121.3047
+    },
+    {
+      "n_stations": 20,
+      "t_since_first_trigger_s": 7.48,
+      "epicenter_error_km": 33.3,
+      "depth_est_km": 0.5,
+      "ellipse_major_km": 22.2,
+      "ellipse_minor_km": 11.6,
+      "rms_s": 2.095,
+      "est_lat": 24.0932,
+      "est_lon": 121.3046
+    }
+  ]
+}
