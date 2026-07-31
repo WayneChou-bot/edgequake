@@ -28,11 +28,14 @@
   BatchNorm-stats poisoning by dead channels, label-channel misalignment, ...)
   with root causes and fixes — see [Pitfalls](#pitfalls-what-actually-broke).
 
-![Multi-station convergence replay — stations trigger one by one, the error ellipse shrinks, magnitude appears once S waves arrive](outputs/convergence_20021510590.gif)
+![Full-chain replay of the 2024-04-03 Hualien M7.2 earthquake — AI picks drive location, magnitude and city countdowns, with the official CWA timeline overlaid](outputs/convergence_0403.gif)
 
-*A real M5.7 Taiwan event replayed station-by-station: at +6 s after the first
-trigger the system already reports M5.6 ± 0.5; the 1σ ellipse shrinks from
-69×17 km to 9×3 km. (Catalog picks; homogeneous velocity model.)*
+*The 2024-04-03 Hualien M7.2 earthquake replayed end-to-end from raw GDMS
+waveforms: our fine-tuned PhaseNet picks 110/112 stations, location converges
+to ~18 km of the epicenter within 4 s of origin, and the PGA-based magnitude
+reads M6.0 at the moment CWA's 9-second first report said M6.2 — an
+independent open-source chain reproducing the operational system's early
+underestimation of M7+ events (saturation is physics, not implementation).*
 
 ## Results
 
@@ -168,6 +171,20 @@ Known limits (deliberate v1 scope): homogeneous vp floor ≈ 10–15 km epicente
 error (a 1-D Taiwan model + station corrections is the upgrade); PGA
 saturation degrades M6+ magnitudes (MAE 0.64) — the same physics behind
 operational underestimation of large events.
+
+## Phase 3 — Full-chain historical replays (in progress)
+
+`scripts/ingest_gdms.py` turns raw GDMS miniSEED into replay JSON: fine-tuned
+PhaseNet picks on continuous records (velocity channels preferred, HL
+fallback) + physical PGA via instrument response (dataless SEED). The Phase 2
+engine then replays end-to-end — **waveforms → AI picks → location →
+magnitude → city countdowns** — with the official CWA timeline overlaid.
+
+| Event | Geometry | Location | Magnitude vs official |
+|---|---|---|---|
+| **2024-04-03 Hualien M7.2** (offshore) | azimuthal gap seaward | ~18 km @ origin+4 s, 110/112 stations picked | ours M6.0 / CWA M6.2 at the 9-s report; M6.6 / M6.8 by ~15-18 s — parallel underestimation (M7+ PGA saturation) |
+| **2025-01-21 Chiayi Dapu ML6.4** (inland) | surrounded by stations | **1.3 km @ origin+8 s** | M6.8 ± 0.5 (slight over; one 2.1 g near-field station) |
+| replay caveats | — | pre-origin noise picks filtered by origin time (a production system needs phase association, e.g. GaMMA) | catalog-final PGA used once S+2 s has passed |
 
 ## Roadmap
 

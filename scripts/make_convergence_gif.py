@@ -42,6 +42,13 @@ CITIES = [("Taipei", 25.038, 121.514), ("Taichung", 24.147, 120.674),
           ("Kaohsiung", 22.627, 120.301)]
 VIEW = dict(lon=(119.7, 122.5), lat=(21.6, 25.6))
 
+# official EEW timeline markers, seconds after ORIGIN (shown once passed)
+OFFICIAL = {
+    "0403": [(9.0, "CWA rpt#1: M6.2 -> no Taipei alert"),
+             (15.0, "CWA rpt#2: M6.8")],
+    "dapu": [(7.9, "CWA alert issued (+~5s delivery)")],
+}
+
 
 def km_to_deg(km, lat):
     return km / KM_PER_DEG, km / (KM_PER_DEG * np.cos(np.radians(lat)))
@@ -165,6 +172,11 @@ def render_frame(ctx, now, est, mag, k, err_t, err_v, mag_age, eta_lines):
             line(f"{name:9s} S wave in {eta:4.0f} s", 10, ORANGE)
         else:
             line(f"{name:9s} S wave arrived", 10, INK2)
+    passed = [lbl for t_m, lbl in ctx.get("markers", []) if now >= t_m]
+    if passed:
+        y -= 0.01
+        for lbl in passed[-2:]:
+            line(lbl, 8.5, FLASH)
 
     # --- error vs time ---
     axe.plot(err_t, err_v, color=BLUE, linewidth=1.6)
@@ -175,7 +187,7 @@ def render_frame(ctx, now, est, mag, k, err_t, err_v, mag_age, eta_lines):
 
     fig.suptitle(
         f"EdgeQuake — real-time convergence replay · M{truth['mag']:.1f} "
-        f"{truth['origin_time'][:10]} Taiwan (CWA catalog picks)",
+        f"{truth['origin_time'][:10]} Taiwan ({ctx['source']})",
         color=INK, fontsize=10.5, x=0.02, ha="left")
     fig.text(0.02, 0.015, "Historical event replayed as a real-time stream — "
              "not a live warning service", color=INK2, fontsize=6.5)
@@ -190,6 +202,8 @@ def render_frame(ctx, now, est, mag, k, err_t, err_v, mag_age, eta_lines):
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--event", default="20021510590")
+    ap.add_argument("--replay-json", default=None,
+                    help="ingest_gdms.py output (AI picks) instead of catalog")
     ap.add_argument("--metadata-dir", default=None)
     ap.add_argument("--max-stations", type=int, default=40)
     ap.add_argument("--vp", type=float, default=6.2)
@@ -205,12 +219,16 @@ def main() -> None:
 
         meta_dir = Path(seisbench.cache_root) / "datasets" / "cwa"
 
-    from demo_convergence import load_event
+    from demo_convergence import load_event, load_replay_json
 
     from edgequake.location.locator import PickLocator, haversine_km
     from edgequake.location.magnitude import PgaMagnitude
 
-    ev, truth = load_event(meta_dir, args.event)
+    if args.replay_json:
+        ev, truth = load_replay_json(Path(args.replay_json))
+        args.event = Path(args.replay_json).stem.replace("replay_", "")
+    else:
+        ev, truth = load_event(meta_dir, args.event)
     n_max = min(args.max_stations, len(ev))
     t_ref = ev.t_p.values.min()
     t_p = (ev.t_p.values - t_ref)[:n_max]
@@ -222,8 +240,15 @@ def main() -> None:
     locator = PickLocator(vp_km_s=args.vp)
     magest = PgaMagnitude()
     t_end = float(t_p[-1]) + 3.0
+    # official markers: convert "after origin" to replay-timeline seconds
+    markers = []
+    if args.event in OFFICIAL and truth.get("origin_epoch"):
+        origin_rel = truth["origin_epoch"] - t_ref  # negative: origin before 1st trigger
+        markers = [(t_after + origin_rel, lbl) for t_after, lbl in OFFICIAL[args.event]]
     ctx = {"lats": lats, "lons": lons, "t_p": t_p, "truth": truth,
-           "vp": args.vp, "t_end": t_end, "coast": load_coastline()}
+           "vp": args.vp, "t_end": t_end, "coast": load_coastline(),
+           "markers": markers,
+           "source": truth.get("source", "CWA catalog picks")}
 
     frames, err_t, err_v = [], [], []
     est, last_k, mag_first = None, 0, None

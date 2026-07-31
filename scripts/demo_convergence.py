@@ -66,9 +66,46 @@ def load_event(metadata_dir: Path, event_id: str) -> tuple[pd.DataFrame, dict]:
     return ev, truth
 
 
+
+
+def load_replay_json(path: Path) -> tuple[pd.DataFrame, dict]:
+    """Load an ingest_gdms.py replay JSON (AI picks + physical PGA)."""
+    import json as _json
+
+    d = _json.loads(Path(path).read_text())
+    epoch = pd.Timestamp("1970-01-01")
+
+    def to_s(x):
+        if not x:
+            return np.nan
+        return (pd.to_datetime(x.replace("Z", "")) - epoch).total_seconds()
+
+    rows = []
+    for st in d["stations"]:
+        if not st["t_p"]:
+            continue
+        rows.append(dict(
+            station_code=st["code"], t_p=to_s(st["t_p"]), t_s=to_s(st["t_s"]),
+            station_latitude_deg=st["lat"], station_longitude_deg=st["lon"],
+            station_pga=st["pga_cmps2"] if st["pga_cmps2"] else np.nan,
+        ))
+    ev = pd.DataFrame(rows).sort_values("t_p").reset_index(drop=True)
+    tr = d["truth"]
+    truth = dict(lat=tr["lat"], lon=tr["lon"], depth_km=tr["depth_km"],
+                 mag=tr["mag"], origin_time=d["origin_utc"].replace("Z", ""),
+                 gap_deg=float("nan"),
+                 origin_epoch=to_s(d["origin_utc"]),
+                 source="AI picks, fine-tuned PhaseNet")
+    return ev, truth
+
+
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--event", default="20121013190")
+    ap.add_argument("--replay-json", default=None,
+                    help="ingest_gdms.py output (AI picks) instead of catalog")
     ap.add_argument("--metadata-dir", default=None)
     ap.add_argument("--max-stations", type=int, default=40)
     ap.add_argument("--vp", type=float, default=6.2)
@@ -85,7 +122,11 @@ def main() -> None:
     from edgequake.location.locator import PickLocator, haversine_km
     from edgequake.location.magnitude import PgaMagnitude
 
-    ev, truth = load_event(meta_dir, args.event)
+    if args.replay_json:
+        ev, truth = load_replay_json(Path(args.replay_json))
+        args.event = Path(args.replay_json).stem.replace("replay_", "")
+    else:
+        ev, truth = load_event(meta_dir, args.event)
     print(f"[conv] event {args.event}: M{truth['mag']} depth {truth['depth_km']} km, "
           f"{len(ev)} stations with P")
 
