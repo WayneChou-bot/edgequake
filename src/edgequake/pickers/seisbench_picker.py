@@ -27,7 +27,12 @@ class SeisBenchPhaseNet(Picker):
         architecture, then the state dict overrides the parameters."""
         import seisbench.models as sbm  # deferred import
 
-        self.model = sbm.PhaseNet.from_pretrained(weights)
+        if weights == "none":
+            # fresh architecture, no pretrained download — for offline use
+            # together with a full fine-tuned state dict
+            self.model = sbm.PhaseNet()
+        else:
+            self.model = sbm.PhaseNet.from_pretrained(weights)
         if state_dict_path:
             import torch
 

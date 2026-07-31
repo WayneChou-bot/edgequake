@@ -193,6 +193,8 @@ operational underestimation of large events.
 - **Benchmark protocol**: Münchmeyer, J. et al. (2022), JGR: Solid Earth,
   doi:10.1029/2021JB023499.
 - Iquique dataset: Woollam et al. (2019); STEAD: Mousavi et al. (2019).
+- CWASN waveforms obtained via the CWA Geophysical Database Management
+  System (GDMS): CWA Seismographic Network, doi:10.7914/SN/T5.
 
 This is a research prototype. It must not be used as, or presented as, an
 operational earthquake warning service. Redistribution of real-time strong-
