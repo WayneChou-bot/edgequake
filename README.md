@@ -28,7 +28,11 @@
   BatchNorm-stats poisoning by dead channels, label-channel misalignment, ...)
   with root causes and fixes — see [Pitfalls](#pitfalls-what-actually-broke).
 
-![Streaming replay demo — waveform with picks, rolling P/S probabilities, per-step inference latency](outputs/replay_demo.png)
+![Multi-station convergence replay — stations trigger one by one, the error ellipse shrinks, magnitude appears once S waves arrive](outputs/convergence_20021510590.gif)
+
+*A real M5.7 Taiwan event replayed station-by-station: at +6 s after the first
+trigger the system already reports M5.6 ± 0.5; the 1σ ellipse shrinks from
+69×17 km to 9×3 km. (Catalog picks; homogeneous velocity model.)*
 
 ## Results
 
@@ -83,6 +87,16 @@ Fine-tuning runs on Kaggle (free GPU): build the compact training subset
 locally with `scripts/make_cwa_train_subset.py` (~3.5 GB from the cached 2019
 chunk), upload it as a Kaggle Dataset, then run
 `kaggle/edgequake_cwa_finetune.ipynb`.
+
+Phase 2 (location + magnitude):
+
+```bash
+python scripts/build_event_catalog.py                       # 1,317 multi-station events
+python scripts/demo_convergence.py --event 20121013190      # 2020 Yilan M6.6 deep event
+python scripts/make_convergence_gif.py --event 20021510590  # animated replay GIF
+```
+
+![Streaming replay demo — waveform with picks, rolling P/S probabilities, per-step inference latency](outputs/replay_demo.png)
 
 ## Repository layout
 
