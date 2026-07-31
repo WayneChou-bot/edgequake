@@ -128,13 +128,57 @@ The collapsed model had a beautiful training loss (0.115) and a
 plausible-looking val loss (0.21 ≈ the score of always predicting "noise"),
 yet scored F1 = 0 on the actual picking task.
 
+## Phase 2 — Multi-station location & magnitude convergence
+
+Built on catalog P/S picks from 1,317 multi-station test-year events: a
+pick-based hypocenter locator (vectorized 3-D grid search + bounded
+least-squares, homogeneous velocity model, origin time from P legs), station
+bootstrap → 1σ error ellipses, and PGA-attenuation magnitude
+(`log10(PGA) = a·M + b·log10(R) + c`, fitted on the 2019 training year only —
+out-of-sample MAE **0.21 (M4–5)** / **0.23 (M5–6)**). Everything runs as an
+anytime estimator: each new trigger updates location + uncertainty + magnitude.
+
+Replay results on real events:
+
+- **Shallow M5.7 (2020-02-15, depth 8 km)**: magnitude available at **+6 s**
+  after the first trigger (M5.6 ± 0.5, catalog M5.73); 1σ ellipse shrinks
+  from 69×17 km to 9×3 km by +10 s.
+- **Deep offshore M6.6 (2020-12-10 Yilan, depth 76 km)**: epicenter error
+  122 km at 3 stations → 17 km at 40 stations (+11.5 s); depth only becomes
+  constrained once S arrivals join — the physics behind why deep offshore
+  events are hard for every EEW system.
+
+Three findings the convergence experiments surfaced:
+
+1. **Aperture beats station count.** The first 20 stations (arrival order,
+   small aperture) can mislocate by 200+ km with P only; the *same number* of
+   azimuthally spread stations achieves 13 km. Early-warning's fundamental
+   geometric limit, measured.
+2. **East-coast azimuthal gap → systematic bias.** For a coastal event with
+   no seaward stations, the estimate carries a ~30 km landward bias that
+   persists at 40 stations — the same mechanism that challenges operational
+   warnings for offshore Taiwan events.
+3. **Bootstrap ellipses understate true error.** The 1σ ellipse (data noise
+   only) shrinks to 9×3 km while the true error stays ~24 km: velocity-model
+   error is invisible to resampling. Displayed uncertainty must include a
+   model-error floor — a calibration lesson that carries into the Phase 3
+   decision layer (city countdowns as ranges, not points).
+
+Known limits (deliberate v1 scope): homogeneous vp floor ≈ 10–15 km epicenter
+error (a 1-D Taiwan model + station corrections is the upgrade); PGA
+saturation degrades M6+ magnitudes (MAE 0.64) — the same physics behind
+operational underestimation of large events.
+
 ## Roadmap
 
-- **Phase 2 — multi-station convergence**: hypocenter + magnitude updated as
-  stations trigger one by one; uncertainty ellipses; anytime prediction.
-- **Phase 3 — historical case replay**: 2024 Hualien M7.2 and 2025 Chiayi
-  events, decision layer aligned with Taiwan's public-alert thresholds;
-  MapLibre dashboard.
+- ~~Phase 2 — multi-station convergence~~ **done** (locator, magnitude,
+  animated replay).
+- **Phase 3 — decision layer & dashboard**: 2024 Hualien M7.2 replay (via
+  GDMS waveforms), county-level alert simulation against Taiwan's public-alert
+  thresholds, interactive MapLibre GL dashboard.
+- **Model upgrades**: 1-D Taiwan velocity model + station corrections;
+  model-picked arrivals (Phase 1 fine-tuned PhaseNet) replacing catalog picks
+  end-to-end; Pd-based magnitude for M6+ saturation.
 - **Phase 1 extras**: false-alarm rate on CWANoise, confidence calibration
   curves, longer training + partial BN unfreeze (current 0.70 is a
   conservative 15-epoch single-year recipe; in-domain ceiling is ~0.85+).
@@ -197,6 +241,17 @@ motion alerts in Taiwan requires an agreement with the CWA.
 **Loss 只是代理指標，任務級評估不可省。** 崩潰的模型有漂亮的 train loss
 （0.115）和看似合理的 val loss（0.21——恰好是「永遠回答噪音」的分數），
 但在真正的相位辨識任務上 F1 = 0。
+
+## Phase 2：多站定位與規模收斂
+
+以目錄 P/S 到時建立可解釋的定位器（向量化網格搜尋＋有界最佳化、bootstrap
+誤差橢圓）與 PGA 衰減規模估計（僅用 2019 訓練年擬合；樣本外 M4–5 誤差
+±0.21）。實測回放：淺層 M5.7 在**首站觸發後 6 秒**即報出 M5.6±0.5，橢圓從
+69×17 km 收斂至 9×3 km；宜蘭外海 76 km 深震誤差由 122 km（3 站）收斂至
+17 km（40 站，+11.5 秒）。三個發現：**測站幾何比數量重要**（同樣 20 站，
+到達順序取樣誤差 200+ km、方位角分散僅 13 km）；**東岸方位角缺口造成約
+30 km 系統偏差**；**bootstrap 橢圓蓋不住速度模型誤差**（顯示的不確定性
+必須加上模型誤差地板——Phase 3 決策層的城市倒數將以區間呈現）。
 
 ## 使用方式與後續路線
 
