@@ -19,29 +19,38 @@
       "ellipse_minor_km": 0,
       "rms_s": 0.001,
       "est_lat": 25.8262,
-      "est_lon": 121.8261
+      "est_lon": 121.8261,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 4,
       "t_since_first_trigger_s": 9.38,
       "epicenter_error_km": 117.2,
       "depth_est_km": 0.5,
-      "ellipse_major_km": 115.1,
-      "ellipse_minor_km": 44.2,
+      "ellipse_major_km": 115.5,
+      "ellipse_minor_km": 44.9,
       "rms_s": 1.651,
       "est_lat": 25.5896,
-      "est_lon": 121.3103
+      "est_lon": 121.3103,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 5,
       "t_since_first_trigger_s": 9.48,
       "epicenter_error_km": 117.0,
       "depth_est_km": 0.5,
-      "ellipse_major_km": 121.0,
-      "ellipse_minor_km": 53.6,
+      "ellipse_major_km": 120.9,
+      "ellipse_minor_km": 53.4,
       "rms_s": 1.513,
       "est_lat": 25.5724,
-      "est_lon": 121.2887
+      "est_lon": 121.2887,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 6,
@@ -52,7 +61,10 @@
       "ellipse_minor_km": 43.9,
       "rms_s": 1.437,
       "est_lat": 25.534,
-      "est_lon": 121.2492
+      "est_lon": 121.2492,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 7,
@@ -63,7 +75,10 @@
       "ellipse_minor_km": 32.4,
       "rms_s": 1.648,
       "est_lat": 25.3011,
-      "est_lon": 121.2202
+      "est_lon": 121.2202,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 8,
@@ -74,7 +89,10 @@
       "ellipse_minor_km": 37.0,
       "rms_s": 1.567,
       "est_lat": 25.2895,
-      "est_lon": 121.214
+      "est_lon": 121.214,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 9,
@@ -85,7 +103,10 @@
       "ellipse_minor_km": 16.7,
       "rms_s": 1.602,
       "est_lat": 25.2212,
-      "est_lon": 121.2327
+      "est_lon": 121.2327,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 10,
@@ -96,7 +117,10 @@
       "ellipse_minor_km": 24.7,
       "rms_s": 1.941,
       "est_lat": 25.173,
-      "est_lon": 121.2519
+      "est_lon": 121.2519,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 11,
@@ -107,7 +131,10 @@
       "ellipse_minor_km": 30.7,
       "rms_s": 2.016,
       "est_lat": 25.2015,
-      "est_lon": 121.2607
+      "est_lon": 121.2607,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 12,
@@ -118,7 +145,10 @@
       "ellipse_minor_km": 19.6,
       "rms_s": 2.042,
       "est_lat": 25.2245,
-      "est_lon": 121.2704
+      "est_lon": 121.2704,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 13,
@@ -129,7 +159,10 @@
       "ellipse_minor_km": 22.8,
       "rms_s": 2.046,
       "est_lat": 25.2433,
-      "est_lon": 121.2801
+      "est_lon": 121.2801,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 14,
@@ -140,7 +173,10 @@
       "ellipse_minor_km": 18.5,
       "rms_s": 2.135,
       "est_lat": 25.1797,
-      "est_lon": 121.2923
+      "est_lon": 121.2923,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 15,
@@ -151,7 +187,10 @@
       "ellipse_minor_km": 20.2,
       "rms_s": 2.136,
       "est_lat": 25.2021,
-      "est_lon": 121.3079
+      "est_lon": 121.3079,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 16,
@@ -161,8 +200,11 @@
       "ellipse_major_km": 122.3,
       "ellipse_minor_km": 23.6,
       "rms_s": 2.076,
-      "est_lat": 25.2069,
-      "est_lon": 121.3123
+      "est_lat": 25.207,
+      "est_lon": 121.3122,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 17,
@@ -173,7 +215,10 @@
       "ellipse_minor_km": 38.5,
       "rms_s": 2.068,
       "est_lat": 25.2189,
-      "est_lon": 121.3403
+      "est_lon": 121.3403,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 18,
@@ -184,7 +229,10 @@
       "ellipse_minor_km": 62.6,
       "rms_s": 2.049,
       "est_lat": 25.2171,
-      "est_lon": 121.3995
+      "est_lon": 121.3995,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 19,
@@ -195,7 +243,10 @@
       "ellipse_minor_km": 17.7,
       "rms_s": 1.997,
       "est_lat": 25.2173,
-      "est_lon": 121.4004
+      "est_lon": 121.4004,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 20,
@@ -206,7 +257,10 @@
       "ellipse_minor_km": 14.9,
       "rms_s": 2.203,
       "est_lat": 25.144,
-      "est_lon": 121.5852
+      "est_lon": 121.5852,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 21,
@@ -217,7 +271,10 @@
       "ellipse_minor_km": 22.8,
       "rms_s": 2.275,
       "est_lat": 25.1265,
-      "est_lon": 121.5642
+      "est_lon": 121.5642,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 22,
@@ -228,7 +285,10 @@
       "ellipse_minor_km": 11.3,
       "rms_s": 2.291,
       "est_lat": 25.107,
-      "est_lon": 121.5634
+      "est_lon": 121.5634,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 23,
@@ -239,7 +299,10 @@
       "ellipse_minor_km": 24.2,
       "rms_s": 2.289,
       "est_lat": 25.0913,
-      "est_lon": 121.5631
+      "est_lon": 121.5631,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 24,
@@ -250,7 +313,10 @@
       "ellipse_minor_km": 23.1,
       "rms_s": 2.44,
       "est_lat": 25.0476,
-      "est_lon": 121.771
+      "est_lon": 121.771,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 25,
@@ -261,7 +327,10 @@
       "ellipse_minor_km": 18.2,
       "rms_s": 2.47,
       "est_lat": 24.99,
-      "est_lon": 121.8037
+      "est_lon": 121.8037,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 26,
@@ -272,7 +341,10 @@
       "ellipse_minor_km": 16.1,
       "rms_s": 2.472,
       "est_lat": 24.9572,
-      "est_lon": 121.8234
+      "est_lon": 121.8234,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 27,
@@ -283,7 +355,10 @@
       "ellipse_minor_km": 18.7,
       "rms_s": 2.446,
       "est_lat": 24.9503,
-      "est_lon": 121.8648
+      "est_lon": 121.8648,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 28,
@@ -294,7 +369,10 @@
       "ellipse_minor_km": 22.7,
       "rms_s": 2.424,
       "est_lat": 24.9417,
-      "est_lon": 121.8932
+      "est_lon": 121.8932,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 29,
@@ -305,7 +383,10 @@
       "ellipse_minor_km": 17.4,
       "rms_s": 2.4,
       "est_lat": 24.9346,
-      "est_lon": 121.8908
+      "est_lon": 121.8908,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 30,
@@ -316,7 +397,10 @@
       "ellipse_minor_km": 20.5,
       "rms_s": 2.375,
       "est_lat": 24.9287,
-      "est_lon": 121.8885
+      "est_lon": 121.8885,
+      "mag_est": null,
+      "mag_sigma": null,
+      "n_mag_stations": 0
     },
     {
       "n_stations": 31,
@@ -327,7 +411,10 @@
       "ellipse_minor_km": 16.5,
       "rms_s": 2.339,
       "est_lat": 24.9281,
-      "est_lon": 121.8984
+      "est_lon": 121.8984,
+      "mag_est": 5.57,
+      "mag_sigma": 0.5,
+      "n_mag_stations": 1
     },
     {
       "n_stations": 32,
@@ -338,7 +425,10 @@
       "ellipse_minor_km": 14.5,
       "rms_s": 2.32,
       "est_lat": 24.9181,
-      "est_lon": 121.9137
+      "est_lon": 121.9137,
+      "mag_est": 5.56,
+      "mag_sigma": 0.5,
+      "n_mag_stations": 1
     },
     {
       "n_stations": 33,
@@ -349,7 +439,10 @@
       "ellipse_minor_km": 12.6,
       "rms_s": 2.286,
       "est_lat": 24.918,
-      "est_lon": 121.9188
+      "est_lon": 121.9188,
+      "mag_est": 5.56,
+      "mag_sigma": 0.5,
+      "n_mag_stations": 1
     },
     {
       "n_stations": 34,
@@ -360,7 +453,10 @@
       "ellipse_minor_km": 10.5,
       "rms_s": 2.257,
       "est_lat": 24.9115,
-      "est_lon": 121.9209
+      "est_lon": 121.9209,
+      "mag_est": 5.55,
+      "mag_sigma": 0.5,
+      "n_mag_stations": 1
     },
     {
       "n_stations": 35,
@@ -371,7 +467,10 @@
       "ellipse_minor_km": 11.9,
       "rms_s": 2.232,
       "est_lat": 24.9066,
-      "est_lon": 121.9283
+      "est_lon": 121.9283,
+      "mag_est": 5.55,
+      "mag_sigma": 0.5,
+      "n_mag_stations": 1
     },
     {
       "n_stations": 36,
@@ -382,7 +481,10 @@
       "ellipse_minor_km": 10.0,
       "rms_s": 2.208,
       "est_lat": 24.9031,
-      "est_lon": 121.9355
+      "est_lon": 121.9355,
+      "mag_est": 5.55,
+      "mag_sigma": 0.5,
+      "n_mag_stations": 1
     },
     {
       "n_stations": 37,
@@ -393,7 +495,10 @@
       "ellipse_minor_km": 10.0,
       "rms_s": 2.182,
       "est_lat": 24.9018,
-      "est_lon": 121.9416
+      "est_lon": 121.9416,
+      "mag_est": 5.55,
+      "mag_sigma": 0.5,
+      "n_mag_stations": 1
     },
     {
       "n_stations": 38,
@@ -404,7 +509,10 @@
       "ellipse_minor_km": 9.2,
       "rms_s": 2.186,
       "est_lat": 24.8932,
-      "est_lon": 121.943
+      "est_lon": 121.943,
+      "mag_est": 5.59,
+      "mag_sigma": 0.5,
+      "n_mag_stations": 1
     },
     {
       "n_stations": 39,
@@ -415,7 +523,10 @@
       "ellipse_minor_km": 10.0,
       "rms_s": 2.184,
       "est_lat": 24.8856,
-      "est_lon": 121.9437
+      "est_lon": 121.9437,
+      "mag_est": 5.63,
+      "mag_sigma": 0.5,
+      "n_mag_stations": 1
     },
     {
       "n_stations": 40,
@@ -426,7 +537,10 @@
       "ellipse_minor_km": 8.6,
       "rms_s": 2.161,
       "est_lat": 24.8832,
-      "est_lon": 121.9483
+      "est_lon": 121.9483,
+      "mag_est": 5.63,
+      "mag_sigma": 0.5,
+      "n_mag_stations": 1
     }
   ]
 }

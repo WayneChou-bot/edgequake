@@ -54,6 +54,9 @@ def load_event(metadata_dir: Path, event_id: str) -> tuple[pd.DataFrame, dict]:
            - epoch).dt.total_seconds()
     t_s[(t_s < t_origin - 10) | (t_s > t_origin + 600)] = np.nan
     ev["t_s"] = t_s
+    # per-station peak PGA across channels (for magnitude inversion)
+    pga_max = ev.groupby("station_code").trace_pga_cmps2.transform("max")
+    ev["station_pga"] = pga_max
     # one row per station: earliest P (stations can appear with multiple channels)
     ev = ev.sort_values("t_p").drop_duplicates("station_code", keep="first")
     r0 = ev.iloc[0]
@@ -80,6 +83,7 @@ def main() -> None:
         meta_dir = Path(seisbench.cache_root) / "datasets" / "cwa"
 
     from edgequake.location.locator import PickLocator, haversine_km
+    from edgequake.location.magnitude import PgaMagnitude
 
     ev, truth = load_event(meta_dir, args.event)
     print(f"[conv] event {args.event}: M{truth['mag']} depth {truth['depth_km']} km, "
@@ -91,6 +95,8 @@ def main() -> None:
     lats, lons = ev.station_latitude_deg.values, ev.station_longitude_deg.values
 
     locator = PickLocator(vp_km_s=args.vp)
+    magest = PgaMagnitude()
+    pga = ev.station_pga.values
     steps = []
     n_max = min(args.max_stations, len(ev))
     for k in range(3, n_max + 1):
@@ -101,6 +107,17 @@ def main() -> None:
         est = locator.locate(lats[:k], lons[:k], t_rel[:k], t_s=t_s_avail,
                              bootstrap=80)
         err = haversine_km(est.lat, est.lon, truth["lat"], truth["lon"])
+
+        # magnitude: only stations whose PGA is plausibly final (S passed +2s),
+        # distances from the CURRENT location estimate (location error
+        # propagates into magnitude — the honest real-time chain)
+        m_ok = np.isfinite(t_s_rel[:k]) & (t_s_rel[:k] + 2.0 <= now)
+        mag = None
+        if m_ok.any():
+            d_est = np.array([haversine_km(est.lat, est.lon, la, lo)
+                              for la, lo in zip(lats[:k][m_ok], lons[:k][m_ok])])
+            mag = magest.estimate(pga[:k][m_ok], d_est, est.depth_km)
+
         steps.append({
             "n_stations": k,
             "t_since_first_trigger_s": round(float(t_rel[k - 1]), 2),
@@ -110,13 +127,19 @@ def main() -> None:
             "ellipse_minor_km": round(est.ellipse_minor_km or 0, 1),
             "rms_s": round(est.rms_s, 3),
             "est_lat": round(est.lat, 4), "est_lon": round(est.lon, 4),
+            "mag_est": round(mag.mag, 2) if mag else None,
+            "mag_sigma": round(mag.sigma, 2) if mag else None,
+            "n_mag_stations": mag.n_stations if mag else 0,
         })
         if k in (3, 5, 8, 12, 20, n_max):
             s = steps[-1]
+            mtxt = (f"M{s['mag_est']:.1f}±{s['mag_sigma']:.1f}"
+                    if s["mag_est"] else "M --")
             print(f"  {k:3d} stations (+{s['t_since_first_trigger_s']:5.1f}s): "
                   f"err {s['epicenter_error_km']:6.1f} km, "
                   f"ellipse {s['ellipse_major_km']:.0f}x{s['ellipse_minor_km']:.0f} km, "
-                  f"depth {s['depth_est_km']:.0f} km (true {truth['depth_km']:.0f})")
+                  f"depth {s['depth_est_km']:.0f} km (true {truth['depth_km']:.0f}), "
+                  f"{mtxt} (true M{truth['mag']:.1f})")
 
     out_dir = ROOT / args.out
     out_dir.mkdir(exist_ok=True)

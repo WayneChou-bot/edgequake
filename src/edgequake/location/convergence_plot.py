@@ -30,8 +30,8 @@ def plot_convergence(result: dict, est_full, st_lats, st_lons, out_png: str):
     major = [s["ellipse_major_km"] for s in steps]
     t_trig = [s["t_since_first_trigger_s"] for s in steps]
 
-    fig, axes = plt.subplots(1, 3, figsize=(13, 4.2), facecolor=SURFACE,
-                             width_ratios=[1.2, 1, 1])
+    fig, axes = plt.subplots(1, 4, figsize=(16, 4.2), facecolor=SURFACE,
+                             width_ratios=[1.2, 1, 1, 1])
     for ax in axes:
         _style(ax)
 
@@ -76,6 +76,23 @@ def plot_convergence(result: dict, est_full, st_lats, st_lons, out_png: str):
     ax.set_ylabel("1σ ellipse major axis (km)", color=INK2, fontsize=9)
     ax.set_title("Uncertainty convergence", color=INK, fontsize=10, loc="left")
     ax.set_ylim(bottom=0)
+
+    # 4 — magnitude convergence (with sigma band), if available
+    ax = axes[3]
+    m_n = [s["n_stations"] for s in steps if s.get("mag_est")]
+    m_v = [s["mag_est"] for s in steps if s.get("mag_est")]
+    m_s = [s["mag_sigma"] for s in steps if s.get("mag_est")]
+    if m_v:
+        ax.fill_between(m_n, np.array(m_v) - np.array(m_s),
+                        np.array(m_v) + np.array(m_s),
+                        color=BLUE, alpha=0.15, linewidth=0)
+        ax.plot(m_n, m_v, color=BLUE, linewidth=2.0, label="estimate ±1σ")
+    ax.axhline(truth["mag"], color=ORANGE, linewidth=1.4,
+               linestyle=(0, (4, 3)), label=f"catalog M{truth['mag']:.1f}")
+    ax.set_xlabel("stations used", color=INK2, fontsize=9)
+    ax.set_ylabel("magnitude", color=INK2, fontsize=9)
+    ax.set_title("Magnitude convergence", color=INK, fontsize=10, loc="left")
+    ax.legend(frameon=False, fontsize=7.5, labelcolor=INK, loc="lower right")
 
     fig.suptitle(
         f"Multi-station convergence — event {result['event_id']} "
