@@ -88,6 +88,7 @@ def load_replay_json(path: Path) -> tuple[pd.DataFrame, dict]:
             station_code=st["code"], t_p=to_s(st["t_p"]), t_s=to_s(st["t_s"]),
             station_latitude_deg=st["lat"], station_longitude_deg=st["lon"],
             station_pga=st["pga_cmps2"] if st["pga_cmps2"] else np.nan,
+            p_prob=st.get("p_prob") if st.get("p_prob") else np.nan,
         ))
     ev = pd.DataFrame(rows).sort_values("t_p").reset_index(drop=True)
     tr = d["truth"]

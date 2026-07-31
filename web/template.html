@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EdgeQuake — Earthquake Early-Warning Replay Console</title>
+<style>
+  :root{
+    --surface:#1a1a19; --panel:#20201f; --land:#242423; --coast:#5a636b;
+    --ink:#ffffff; --ink2:#c3c2b7; --grid:#2e2e2d;
+    --blue:#3987e5; --orange:#d95926; --flash:#c98500; --alert:#e5484d;
+    --ok:#46a758;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{background:var(--surface); color:var(--ink);
+       font-family:'Segoe UI',system-ui,sans-serif; padding:18px 22px}
+  h1{font-size:17px; font-weight:600}
+  .sub{color:var(--ink2); font-size:11.5px; margin:4px 0 14px}
+  .tabs{display:flex; gap:8px; margin-bottom:12px}
+  .tab{background:var(--panel); border:1px solid var(--grid); color:var(--ink2);
+       padding:6px 14px; border-radius:6px; cursor:pointer; font-size:12.5px}
+  .tab.active{border-color:var(--blue); color:var(--ink)}
+  .banner{display:flex; align-items:baseline; gap:16px; padding:10px 16px;
+          border-radius:8px; margin-bottom:12px; border:1px solid var(--grid);
+          background:var(--panel)}
+  .bstate{font-weight:700; font-size:14.5px; letter-spacing:.4px}
+  .bdetail{color:var(--ink2); font-size:12px;
+           font-family:Consolas,monospace}
+  .banner.det{background:#31200c; border-color:#8a5a1a}
+  .banner.det .bstate{color:#f0a83c}
+  .banner.pws{background:#3a1214; border-color:var(--alert);
+              animation:pulse 1.6s infinite}
+  .banner.pws .bstate{color:#ff8a8e}
+  .banner.pws .bdetail{color:#f0c8c9}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(229,72,77,.35)}
+                   50%{box-shadow:0 0 0 9px rgba(229,72,77,0)}}
+  .layout{display:flex; gap:18px; flex-wrap:wrap}
+  .mapbox{background:var(--panel); border-radius:10px; padding:10px}
+  svg text{font-family:'Segoe UI',sans-serif}
+  .side{flex:1; min-width:320px; max-width:460px; display:flex;
+        flex-direction:column; gap:12px}
+  .card{background:var(--panel); border-radius:10px; padding:14px 16px}
+  .tbig{font-family:Consolas,monospace; font-size:26px}
+  .tsub{color:var(--ink2); font-size:10.5px; margin-bottom:8px}
+  .mag{font-family:Consolas,monospace; font-size:21px; color:var(--blue)}
+  .row{font-family:Consolas,monospace; font-size:12.5px; margin-top:4px}
+  .eta{color:var(--orange)} .muted{color:var(--ink2)}
+  .conf{display:inline-block; font-size:10.5px; font-weight:700;
+        padding:1px 8px; border-radius:9px; border:1px solid;
+        vertical-align:1px; letter-spacing:.3px}
+  .off{color:var(--flash); font-size:11.5px; margin-top:6px;
+       font-family:Consolas,monospace}
+  .cgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:5px}
+  .chip{font-size:10.5px; padding:4px 6px; border-radius:5px;
+        background:var(--surface); border:1px solid var(--grid);
+        color:var(--ink2); text-align:center}
+  .chip.i3{border-color:#7a4a1f; color:#e0a869}
+  .chip.i4{border-color:var(--orange); color:var(--orange)}
+  .chip.al{background:#3a1214; border-color:var(--alert); color:#ff8a8e;
+           font-weight:600}
+  .controls{display:flex; align-items:center; gap:10px; margin-top:14px}
+  button{background:var(--panel); color:var(--ink); border:1px solid var(--grid);
+         border-radius:6px; padding:6px 14px; cursor:pointer; font-size:13px}
+  button:hover{border-color:var(--blue)}
+  input[type=range]{flex:1; accent-color:var(--blue)}
+  .wfbox{background:var(--panel); border-radius:10px; padding:12px 14px;
+        margin-top:14px}
+  .wfhead{font-size:11px; color:var(--ink2); margin-bottom:6px;
+          display:flex; justify-content:space-between}
+  .foot{color:var(--ink2); font-size:10.5px; margin-top:14px}
+  .legend{font-size:10.5px; color:var(--ink2); margin-top:6px; max-width:540px}
+</style>
+</head>
+<body>
+<h1>EdgeQuake — Earthquake Early-Warning Replay Console</h1>
+<div class="sub">Historical events replayed as real-time streams — not a live
+warning service · full chain: raw waveforms → fine-tuned PhaseNet picks →
+location + magnitude → county alerts (CWA PWS thresholds)</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="banner" id="banner">
+  <span class="bstate" id="bstate">MONITORING</span>
+  <span class="bdetail" id="bdetail">waiting for station triggers…</span>
+</div>
+
+<div class="layout">
+  <div class="mapbox"><svg id="map"></svg>
+    <div class="legend">○ station · ● triggered (colored by measured
+      intensity once S passed) · ◎ estimate + 1σ ellipse · ★ catalog
+      epicenter · dashed circles: P / S wavefronts · dashed rings: predicted
+      intensity I≥4 / I≥5 · squares: county predicted intensity
+      (red ring = PWS alert)</div>
+  </div>
+  <div class="side">
+    <div class="card">
+      <div class="tbig" id="tclock">t = +0.0 s</div>
+      <div class="tsub">since first station trigger
+        (<span id="torigin"></span>)</div>
+      <div class="mag" id="mag">M — (awaiting S data)</div>
+      <div class="row" id="coords"></div>
+      <div class="row" id="loc"></div>
+      <div class="row" id="meta2"></div>
+      <div class="row eta" id="etas"></div>
+      <div id="official"></div>
+    </div>
+    <div class="card">
+      <div class="tsub">county predicted intensity (CWA scale) &amp; PWS alert
+        decision — rule: M≥5.0 &amp; I≥4, or M≥6.5 &amp; I≥3</div>
+      <div class="cgrid" id="cgrid"></div>
+    </div>
+    <div class="card">
+      <div class="controls">
+        <button id="play">▶ Play</button>
+        <button id="speed">1×</button>
+        <input type="range" id="slider" min="0" max="100" value="0" step="1">
+      </div>
+    </div>
+  </div>
+</div>
+<div class="wfbox">
+  <div class="wfhead"><span>三分量波形（垂直分量 Z）+ AI 相位標記 —
+    <span style="color:var(--blue)">P</span> /
+    <span style="color:var(--orange)">S</span></span>
+    <span id="wfnote"></span></div>
+  <canvas id="wf" width="1280" height="340"></canvas>
+</div>
+<div class="foot">EdgeQuake open-source research prototype ·
+  waveforms: CWA GDMS (doi:10.7914/SN/T5) · truth epicenters are approximate
+  CWA-report values · github.com/WayneChou-bot/edgequake</div>
+
+<script>
+/*__DATA__*/
+const M = DATA.map;
+let evKey = Object.keys(DATA.events)[0];
+let t = 0, playing = false, speed = 1, timer = null;
+
+const svg = document.getElementById('map');
+svg.setAttribute('width', M.w); svg.setAttribute('height', M.h);
+svg.setAttribute('viewBox', `0 0 ${M.w} ${M.h}`);
+
+function el(tag, attrs){ const e = document.createElementNS(
+  'http://www.w3.org/2000/svg', tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]); return e; }
+
+function ev(){ return DATA.events[evKey]; }
+function frame(){ const E = ev();
+  const i = Math.min(E.frames.length-1, Math.max(0, Math.round(t/E.dt)));
+  return E.frames[i]; }
+
+const IBINS = [[0.8,1],[2.5,2],[8,3],[25,4],[80,5],[140,5.5],[250,6],
+               [440,6.5],[800,7]];
+function pga2i(p){ let l = 0;
+  for(const [lo, lv] of IBINS) if(p >= lo) l = lv; return l; }
+function fmtI(i){ return {5:'5弱', 5.5:'5強', 6:'6弱', 6.5:'6強'}[i]
+  || String(i); }
+function iColor(i){ return i >= 5 ? '#e5484d' : i >= 4 ? '#d95926'
+  : i >= 3 ? '#c98500' : i >= 2 ? '#8f8f5a' : '#6f6f6d'; }
+function lonlat(lon, lat){
+  return [(lon - 119.7) / (122.5 - 119.7) * M.w,
+          (25.6 - lat) / (25.6 - 21.6) * M.h]; }
+
+function buildTabs(){
+  const box = document.getElementById('tabs'); box.innerHTML = '';
+  for(const k of Object.keys(DATA.events)){
+    const b = document.createElement('div');
+    b.className = 'tab' + (k===evKey ? ' active' : '');
+    b.textContent = DATA.events[k].title;
+    b.onclick = () => { evKey = k; t = 0; stop(); buildTabs(); render(); };
+    box.appendChild(b);
+  }
+}
+
+// ---- static map layers (built once): ocean, graticule, land, scale bar ----
+let gDyn = null;
+function buildStatic(){
+  svg.innerHTML = '';
+  const defs = el('defs', {});
+  defs.innerHTML =
+    `<linearGradient id="ocean" x1="0" y1="0" x2="0.25" y2="1">
+       <stop offset="0" stop-color="#1b2a38"/>
+       <stop offset="0.55" stop-color="#152230"/>
+       <stop offset="1" stop-color="#101a24"/>
+     </linearGradient>
+     <linearGradient id="landg" x1="0" y1="0" x2="0" y2="1">
+       <stop offset="0" stop-color="#2c2c2a"/>
+       <stop offset="1" stop-color="#1f1f1e"/>
+     </linearGradient>
+     <filter id="lsh" x="-30%" y="-30%" width="160%" height="160%">
+       <feDropShadow dx="0" dy="2.5" stdDeviation="5"
+         flood-color="#000000" flood-opacity="0.65"/>
+     </filter>
+     <radialGradient id="vign" cx="0.5" cy="0.42" r="0.95">
+       <stop offset="0.55" stop-color="#000000" stop-opacity="0"/>
+       <stop offset="1" stop-color="#000000" stop-opacity="0.28"/>
+     </radialGradient>`;
+  svg.appendChild(defs);
+  svg.appendChild(el('rect', {x:0, y:0, width:M.w, height:M.h,
+    fill:'url(#ocean)'}));
+
+  // graticule (1° grid) with labels
+  const gg = el('g', {});
+  for(let lon = 120; lon <= 122; lon++){
+    const [x] = lonlat(lon, 23);
+    gg.appendChild(el('line', {x1:x, y1:0, x2:x, y2:M.h,
+      stroke:'#ffffff', 'stroke-opacity':0.06}));
+    const tx = el('text', {x:x+4, y:13, 'font-size':9,
+      fill:'#7c8a99', 'fill-opacity':0.85});
+    tx.textContent = lon + '°E'; gg.appendChild(tx);
+  }
+  for(let lat = 22; lat <= 25; lat++){
+    const [, y] = lonlat(121, lat);
+    gg.appendChild(el('line', {x1:0, y1:y, x2:M.w, y2:y,
+      stroke:'#ffffff', 'stroke-opacity':0.06}));
+    const ty = el('text', {x:5, y:y-4, 'font-size':9,
+      fill:'#7c8a99', 'fill-opacity':0.85});
+    ty.textContent = lat + '°N'; gg.appendChild(ty);
+  }
+  svg.appendChild(gg);
+
+  // coast glow under land, then land with drop shadow
+  const glow = el('g', {});
+  for(const d of M.coast)
+    glow.appendChild(el('path', {d, fill:'none', stroke:'#3f5a72',
+      'stroke-width':4, 'stroke-opacity':0.45}));
+  svg.appendChild(glow);
+  const land = el('g', {filter:'url(#lsh)'});
+  for(const d of M.coast)
+    land.appendChild(el('path', {d, fill:'url(#landg)',
+      stroke:'var(--coast)', 'stroke-width':1}));
+  svg.appendChild(land);
+
+  // major-city labels
+  const big = ['Taipei', 'Taichung', 'Kaohsiung', 'Hualien', 'Taitung',
+               'Tainan', 'Yilan'];
+  for(const c of ev().counties){
+    if(!big.includes(c.name)) continue;
+    const tx = el('text', {x:c.x+6, y:c.y+3, 'font-size':9,
+      fill:'#98a2ad', 'fill-opacity':0.9});
+    tx.textContent = c.name; svg.appendChild(tx);
+  }
+
+  gDyn = el('g', {});
+  svg.appendChild(gDyn);
+
+  // vignette above dynamic layer (subtle depth), then scale bar
+  svg.appendChild(el('rect', {x:0, y:0, width:M.w, height:M.h,
+    fill:'url(#vign)', 'pointer-events':'none'}));
+  const sb = el('g', {});
+  const len = 50 * M.pxPerKm, x0 = 16, y0 = M.h - 16;
+  sb.appendChild(el('line', {x1:x0, y1:y0, x2:x0+len, y2:y0,
+    stroke:'#c3c2b7', 'stroke-width':1.5}));
+  for(const dx of [0, len/2, len])
+    sb.appendChild(el('line', {x1:x0+dx, y1:y0-4, x2:x0+dx, y2:y0,
+      stroke:'#c3c2b7', 'stroke-width':1.5}));
+  const st = el('text', {x:x0+len/2, y:y0-8, 'font-size':9,
+    fill:'#c3c2b7', 'text-anchor':'middle'});
+  st.textContent = '50 km'; sb.appendChild(st);
+  svg.appendChild(sb);
+}
+
+function confLevel(F){
+  if(F.emaj === undefined) return null;
+  if(F.k >= 8 && F.emaj <= 15) return ['HIGH', 'var(--ok)'];
+  if(F.k >= 5 && F.emaj <= 40) return ['MODERATE', '#f0a83c'];
+  return ['LOW', 'var(--alert)'];
+}
+
+function fmtOrigin(E){
+  const s = E.truth.origin_time;
+  if(!s) return '';
+  const d = new Date(s.replace(' ', 'T') + 'Z');
+  if(isNaN(d)) return s + ' UTC';
+  const p = (n) => String(n).padStart(2, '0');
+  const l = new Date(d.getTime() + 8 * 3600e3);
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth()+1)}-${p(d.getUTCDate())} ` +
+         `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())} UTC` +
+         ` · ${p(l.getUTCHours())}:${p(l.getUTCMinutes())} 台灣時間`;
+}
+
+function render(){
+  const E = ev(), F = frame();
+  gDyn.innerHTML = '';
+
+  // wavefronts + predicted-intensity contours + ellipse + estimate
+  if(F.lat !== undefined){
+    const [ex, ey] = lonlat(F.lon, F.lat);
+    const ta = t - F.t0;
+    for(const [v, col, wdt] of [[E.vp, '#8b97a3', 1],
+                                 [E.vp/1.73, 'var(--orange)', 1.6]]){
+      const r = v * ta * M.pxPerKm;
+      if(r > 0 && r < 900) gDyn.appendChild(el('circle', {cx:ex, cy:ey, r,
+        fill:'none', stroke:col, 'stroke-width':wdt,
+        'stroke-dasharray':'6 4'}));
+    }
+    // predicted-intensity rings from attenuation inversion (r4 / r5, km)
+    for(const [key, col, lbl] of [['r4', 'var(--orange)', 'I≥4'],
+                                   ['r5', 'var(--alert)', 'I≥5']]){
+      if(F[key] === undefined) continue;
+      const r = F[key] * M.pxPerKm;
+      if(r < 4 || r > 1400) continue;
+      gDyn.appendChild(el('circle', {cx:ex, cy:ey, r, fill:col,
+        'fill-opacity':0.05, stroke:col, 'stroke-width':1.1,
+        'stroke-opacity':0.85, 'stroke-dasharray':'2 3'}));
+      const tl = el('text', {x:ex, y:ey - r - 4, 'font-size':9.5,
+        fill:col, 'text-anchor':'middle', 'font-weight':600});
+      tl.textContent = lbl; gDyn.appendChild(tl);
+    }
+    if(F.emaj) gDyn.appendChild(el('ellipse', {cx:ex, cy:ey,
+      rx:F.emaj*M.pxPerKm, ry:F.emin*M.pxPerKm,
+      transform:`rotate(${90-F.eaz} ${ex} ${ey})`,
+      fill:'var(--blue)', 'fill-opacity':0.2, stroke:'var(--blue)',
+      'stroke-width':1.2}));
+    gDyn.appendChild(el('circle', {cx:ex, cy:ey, r:9, fill:'none',
+      stroke:'var(--blue)', 'stroke-width':1, 'stroke-opacity':0.55}));
+    gDyn.appendChild(el('circle', {cx:ex, cy:ey, r:5.5, fill:'var(--blue)',
+      stroke:'var(--surface)', 'stroke-width':1.5}));
+  }
+  // truth star
+  const T = E.truth;
+  gDyn.appendChild(el('text', {x:T.x, y:T.y+5, fill:'var(--orange)',
+    'font-size':16, 'text-anchor':'middle'})).textContent = '★';
+
+  // stations — colored by measured intensity once their S wave has passed
+  for(const s of E.stations){
+    const trig = s.tp <= t, fresh = trig && (t - s.tp <= 0.5);
+    const sDone = trig && s.ts !== null && s.ts !== undefined
+                  && t >= s.ts + 2 && s.pga !== null && s.pga !== undefined;
+    if(fresh){
+      gDyn.appendChild(el('circle', {cx:s.x, cy:s.y, r:8, fill:'none',
+        stroke:'var(--flash)', 'stroke-width':1.6}));
+      gDyn.appendChild(el('circle', {cx:s.x, cy:s.y, r:3,
+        fill:'var(--flash)'}));
+    } else if(sDone){
+      gDyn.appendChild(el('circle', {cx:s.x, cy:s.y, r:3.2,
+        fill:iColor(pga2i(s.pga)), stroke:'var(--surface)',
+        'stroke-width':0.7}));
+    } else if(trig)
+      gDyn.appendChild(el('circle', {cx:s.x, cy:s.y, r:2.6,
+        fill:'var(--ink2)'}));
+    else
+      gDyn.appendChild(el('circle', {cx:s.x, cy:s.y, r:2, fill:'none',
+        stroke:'#5f6a74', 'stroke-width':0.9}));
+  }
+
+  // counties
+  const chips = [];
+  let maxI = 0, nAlert = 0;
+  E.counties.forEach((c, ci) => {
+    const info = (F.cty || [])[ci] || {};
+    if(info.i !== undefined && info.i > maxI) maxI = info.i;
+    if(info.alert) nAlert++;
+    let fill = 'var(--grid)';
+    if(info.i >= 5) fill = '#e5484d';
+    else if(info.i >= 4) fill = 'var(--orange)';
+    else if(info.i >= 3) fill = '#8a5a25';
+    else if(info.i >= 1) fill = '#4a4a48';
+    gDyn.appendChild(el('rect', {x:c.x-3.5, y:c.y-3.5, width:7, height:7,
+      fill, stroke: info.alert ? 'var(--alert)' : 'var(--surface)',
+      'stroke-width': info.alert ? 2 : 0.8}));
+    const cls = 'chip' + (info.alert ? ' al' : info.i>=4 ? ' i4'
+                          : info.i>=3 ? ' i3' : '');
+    const itxt = info.i !== undefined ?
+      (info.alert ? ' ⚠' + fmtI(info.i) : ' ' + fmtI(info.i)) : ' –';
+    chips.push(`<div class="${cls}">${c.name}${itxt}</div>`);
+  });
+  document.getElementById('cgrid').innerHTML = chips.join('');
+
+  // alert banner (ShakeAlert-style state machine)
+  const bn = document.getElementById('banner');
+  const bs = document.getElementById('bstate');
+  const bd = document.getElementById('bdetail');
+  if(nAlert > 0){
+    bn.className = 'banner pws'; bs.textContent = '⚠ PUBLIC ALERT';
+    bd.textContent = `M${F.mag !== undefined ? F.mag.toFixed(1) : '–'}` +
+      ` · max predicted intensity ${fmtI(maxI)}` +
+      ` · ${nAlert} counties meet PWS criteria`;
+  } else if(F.mag !== undefined){
+    bn.className = 'banner det'; bs.textContent = 'EARTHQUAKE DETECTED';
+    bd.textContent = `M${F.mag.toFixed(1)} est · max predicted intensity ` +
+      `${fmtI(maxI)} · below public-alert thresholds`;
+  } else if(F.k >= 1){
+    bn.className = 'banner det'; bs.textContent = 'P-WAVE DETECTED';
+    bd.textContent = F.lat !== undefined ?
+      `${F.k} stations triggered · locating, awaiting S for magnitude…` :
+      `${F.k} station(s) triggered — need 3 to locate`;
+  } else {
+    bn.className = 'banner'; bs.textContent = 'MONITORING';
+    bd.textContent = 'waiting for station triggers…';
+  }
+
+  // readout
+  document.getElementById('tclock').textContent =
+    `t = +${t.toFixed(1)} s`;
+  const orel = E.origin_rel;
+  document.getElementById('torigin').textContent = orel !== null ?
+    `origin + ${(t - orel).toFixed(1)} s` : 'origin time unknown';
+  document.getElementById('mag').textContent = F.mag !== undefined ?
+    `M ${F.mag.toFixed(1)} ± ${F.msig.toFixed(1)}` : 'M — (awaiting S data)';
+  document.getElementById('coords').innerHTML = F.lat !== undefined ?
+    `est ${F.lat.toFixed(3)}°N ${F.lon.toFixed(3)}°E · depth ` +
+    `${F.depth.toFixed(0)} km` : '';
+  document.getElementById('loc').innerHTML = F.lat !== undefined ?
+    `stations ${F.k} · ellipse ` +
+    `${F.emaj.toFixed(0)}×${F.emin.toFixed(0)} km · ` +
+    `<span class="muted">err vs catalog ${F.err.toFixed(0)} km</span>` :
+    `<span class="muted">stations ${F.k} (locating needs 3)</span>`;
+  const cl = confLevel(F);
+  document.getElementById('meta2').innerHTML =
+    `<span class="muted">origin ${fmtOrigin(E)}</span>` +
+    (cl ? ` &nbsp;<span class="conf" style="color:${cl[1]};` +
+          `border-color:${cl[1]}">confidence ${cl[0]}</span>` : '');
+  const big3 = ['Taipei', 'Taichung', 'Kaohsiung'];
+  const etas = [];
+  E.counties.forEach((c, ci) => {
+    if(!big3.includes(c.name)) return;
+    const info = (F.cty || [])[ci];
+    if(info) etas.push(info.eta > 0 ?
+      `${c.name} S in ${Math.max(0, info.eta).toFixed(0)}s` :
+      `<span class="muted">${c.name} S arrived</span>`);
+  });
+  document.getElementById('etas').innerHTML = etas.join(' · ');
+  const passed = (E.official || [])
+    .filter(([ta]) => orel !== null && (t - orel) >= ta)
+    .map(([ta, lbl]) => `<div class="off">▸ [origin+${ta}s] ${lbl}</div>`);
+  document.getElementById('official').innerHTML = passed.join('');
+
+  document.getElementById('slider').max = Math.round(E.t_end / E.dt);
+  document.getElementById('slider').value = Math.round(t / E.dt);
+  renderWf();
+}
+
+function stop(){ playing = false; clearInterval(timer);
+  document.getElementById('play').textContent = '▶ Play'; }
+document.getElementById('play').onclick = () => {
+  if(playing){ stop(); return; }
+  playing = true; document.getElementById('play').textContent = '⏸ Pause';
+  if(t >= ev().t_end) t = 0;
+  timer = setInterval(() => {
+    t = Math.min(ev().t_end, t + ev().dt * speed);
+    render();
+    if(t >= ev().t_end) stop();
+  }, 250);
+};
+document.getElementById('speed').onclick = (e) => {
+  speed = speed === 1 ? 2 : speed === 2 ? 4 : 1;
+  e.target.textContent = speed + '×';
+};
+document.getElementById('slider').oninput = (e) => {
+  t = e.target.value * ev().dt; render();
+};
+
+// ---- waveform panel: responsive canvas + per-station info + time axis ----
+const wfc = document.getElementById('wf');
+const wctx = wfc.getContext('2d');
+const INFO_W = 215, AXIS_H = 20;
+function cssv(n){ return getComputedStyle(document.documentElement)
+  .getPropertyValue(n).trim(); }
+function sizeWf(){
+  const box = document.querySelector('.wfbox');
+  wfc.width = Math.max(700, box.clientWidth - 28);
+  wfc.height = 340;
+}
+window.addEventListener('resize', () => { sizeWf(); renderWf(); });
+
+function renderWf(){
+  const E = ev(), W = E.wf;
+  wctx.clearRect(0, 0, wfc.width, wfc.height);
+  if(!W || !W.strips.length){
+    document.getElementById('wfnote').textContent = 'no waveform data';
+    return; }
+  const plotW = wfc.width - INFO_W, plotH = wfc.height - AXIS_H;
+  const n = W.strips.length, hRow = plotH / n;
+  const total = W.strips[0].z.length / W.fs;
+  const xOf = (sec) => (sec - W.t0) / total * plotW;
+  const cInk = cssv('--ink'), cInk2 = cssv('--ink2'), cCoast = '#4a4a48';
+  const cBlue = cssv('--blue'), cOrange = cssv('--orange');
+
+  // info-column separator
+  wctx.strokeStyle = '#2e2e2d'; wctx.lineWidth = 1; wctx.beginPath();
+  wctx.moveTo(plotW + 7, 0); wctx.lineTo(plotW + 7, plotH); wctx.stroke();
+
+  W.strips.forEach((st, ri) => {
+    const y0 = ri * hRow + hRow / 2, amp = hRow * 0.40;
+    // row separator
+    if(ri){ wctx.strokeStyle = '#262625'; wctx.beginPath();
+      wctx.moveTo(0, ri * hRow); wctx.lineTo(plotW, ri * hRow);
+      wctx.stroke(); }
+    // waveform up to current time
+    const nShow = Math.min(st.z.length,
+      Math.max(0, Math.floor((t - W.t0) * W.fs)));
+    wctx.strokeStyle = cInk2; wctx.lineWidth = 1; wctx.beginPath();
+    for(let i = 0; i < nShow; i++){
+      const x = i / st.z.length * plotW, y = y0 - st.z[i] * amp;
+      i ? wctx.lineTo(x, y) : wctx.moveTo(x, y);
+    }
+    wctx.stroke();
+    // phase marks with letters
+    for(const [tt, col, lbl] of [[st.tp, cBlue, 'P'],
+                                  [st.ts, cOrange, 'S']]){
+      if(tt === null || tt === undefined || t < tt) continue;
+      const x = xOf(tt);
+      wctx.strokeStyle = col; wctx.lineWidth = 1.6; wctx.beginPath();
+      wctx.moveTo(x, ri * hRow + 3); wctx.lineTo(x, (ri + 1) * hRow - 3);
+      wctx.stroke();
+      wctx.fillStyle = col; wctx.font = 'bold 10px Consolas';
+      wctx.fillText(lbl, x + 3, ri * hRow + 12);
+    }
+    // station label (left) + info column (right)
+    wctx.fillStyle = cInk; wctx.font = 'bold 11px Consolas';
+    wctx.fillText(st.code + ' · ' + st.ch, 6, ri * hRow + 13);
+    const ix = plotW + 16;
+    let iy = ri * hRow + 14;
+    wctx.fillStyle = cInk; wctx.font = 'bold 10.5px Consolas';
+    wctx.fillText(st.code + '  ' + st.ch, ix, iy);
+    wctx.fillStyle = cInk2; wctx.font = '10px Consolas';
+    iy += 13;
+    wctx.fillText('epi dist ' + (st.dist !== null && st.dist !== undefined ?
+      st.dist.toFixed(0) + ' km' : '–'), ix, iy);
+    iy += 12;
+    const sPassed = st.ts !== null && st.ts !== undefined && t >= st.ts + 2;
+    if(sPassed && st.pga !== null && st.pga !== undefined){
+      const ii = pga2i(st.pga);
+      wctx.fillStyle = iColor(ii);
+      wctx.fillText('PGA ' + st.pga.toFixed(1) + ' gal → 震度' + fmtI(ii),
+                    ix, iy);
+      wctx.fillStyle = cInk2;
+    } else {
+      wctx.fillText(st.tp <= t ? 'PGA measuring…' : 'PGA –', ix, iy);
+    }
+    if(hRow >= 50){
+      iy += 12;
+      const pp = st.pprob !== null && st.pprob !== undefined ?
+        ('P conf ' + Math.round(st.pprob * 100) + '%') : 'P conf –';
+      wctx.fillText(pp + (st.ts ? ' · S +' +
+        (st.ts - st.tp).toFixed(1) + 's' : ''), ix, iy);
+    }
+  });
+
+  // time axis
+  wctx.strokeStyle = '#2e2e2d'; wctx.beginPath();
+  wctx.moveTo(0, plotH); wctx.lineTo(plotW, plotH); wctx.stroke();
+  wctx.fillStyle = cInk2; wctx.font = '9.5px Consolas';
+  for(let s = 0; s <= W.t0 + total - 1; s += 10){
+    const x = xOf(s);
+    wctx.strokeStyle = '#3a3a38'; wctx.beginPath();
+    wctx.moveTo(x, plotH); wctx.lineTo(x, plotH + 4); wctx.stroke();
+    wctx.fillText('+' + s + 's', x - 8, plotH + 14);
+  }
+  // sweep line
+  const xs = xOf(t);
+  if(xs <= plotW){
+    wctx.strokeStyle = cCoast; wctx.setLineDash([3, 3]); wctx.beginPath();
+    wctx.moveTo(xs, 0); wctx.lineTo(xs, plotH); wctx.stroke();
+    wctx.setLineDash([]);
+  }
+  document.getElementById('wfnote').textContent =
+    n + ' earliest stations · normalized · ' + W.fs + ' sps display';
+}
+buildStatic(); buildTabs(); sizeWf(); render();
+</script>
+</body>
+</html>
