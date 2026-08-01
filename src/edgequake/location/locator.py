@@ -62,12 +62,16 @@ class LocationEstimate:
 class PickLocator:
     def __init__(self, vp_km_s: float = VP_DEFAULT,
                  depth_grid=None, horiz_extent_km: float = 150.0,
-                 coarse_step_km: float = 10.0):
+                 coarse_step_km: float = 10.0, max_depth_km: float = None):
         self.vp = vp_km_s
         self.depth_grid = np.array(depth_grid if depth_grid is not None
                                    else [5, 10, 20, 30, 50, 75, 100, 130, 170])
         self.horiz_extent = horiz_extent_km
         self.coarse_step = coarse_step_km
+        # hard depth ceiling for the refinement stage; without it the trf
+        # bound is depth_grid[-1]*1.2, which lets systematically-late
+        # mispicks bury the source below the grid (observed: 120 km)
+        self.max_depth = max_depth_km
 
     VP_VS_RATIO = 1.73
 
@@ -177,7 +181,10 @@ class PickLocator:
         from scipy.optimize import least_squares
 
         ext = self.horiz_extent * 2
-        z_lo, z_hi = 0.5, float(self.depth_grid[-1]) * 1.2
+        z_hi = float(self.depth_grid[-1]) * 1.2
+        if self.max_depth is not None:
+            z_hi = min(z_hi, float(self.max_depth))
+        z_lo = 0.5
 
         def resid(p):
             r = t - self._tt(p[0], p[1], p[2], x, y, slow)

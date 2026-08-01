@@ -39,6 +39,8 @@ class LiveStation:
     pprob: float | None = None
     ts: float | None = None
     sprob: float | None = None
+    ai_mu: float | None = None     # MagNet early-magnitude (per station)
+    ai_sig: float | None = None
     last_data: float = 0.0
 
     def pga_since(self, t: float) -> float | None:
@@ -57,6 +59,7 @@ class LiveEngine:
         self.trigger_mode = trigger_mode
         self.trig_pga = trig_pga
         self.notifier = notifier
+        self.magnet = None          # set via load_magnet() (waveform modes)
         self.picker = picker
         self.thr = threshold
         self.buf_n = int(buf_s * FS)
@@ -68,10 +71,12 @@ class LiveEngine:
         self.stations = {m.code: LiveStation(m.code, m.lat, m.lon,
                                              m.pick_channel)
                          for m in stations_meta.values()}
-        # crustal depth grid: an unconstrained deep solution can absorb
-        # systematically-late mispicks (S picked as P) with tiny residuals
+        # crustal depth grid + HARD 80 km ceiling: an unconstrained deep
+        # solution absorbs systematically-late mispicks (S picked as P)
+        # with tiny residuals. Taiwan EEW targets are crustal.
         self.locator = PickLocator(depth_grid=[5, 10, 15, 20, 30, 40,
-                                               60, 80, 100])
+                                               60, 80],
+                                   max_depth_km=80.0)
         self.magest = PgaMagnitude()
         self.now = None
         self._last_infer = None
@@ -131,7 +136,70 @@ class LiveEngine:
             self._last_infer = self.now
             self._infer()
             self._associate()
+            if self.magnet is not None:
+                self._ai_magnitude()
             self._expire()
+
+    def load_magnet(self, path) -> bool:
+        """Load the distance-conditioned MagNet (v2) for AI early magnitude."""
+        try:
+            import torch
+
+            from ..models.magnet import MagNet
+
+            m = MagNet(n_aux=3)
+            m.load_state_dict(torch.load(str(path), map_location="cpu"))
+            m.eval()
+            self.magnet = m
+            return True
+        except Exception as e:
+            print(f"[engine] magnet not loaded ({e})")
+            return False
+
+    def _ai_magnitude(self):
+        """Per-station MagNet on the P+3s window, once available; then
+        inverse-variance aggregate with an event-correlation floor (the
+        blind-test lesson: station errors are correlated, never let the
+        aggregated sigma pretend otherwise)."""
+        import torch
+
+        prev = self.event.get("_est") if self.event else None
+        for st in self.stations.values():
+            if (st.tp is None or st.ai_mu is not None or len(st.buf) < 3
+                    or self.now < st.tp + 3.2):
+                continue
+            i0 = self.buf_n - int(round((self.now - (st.tp - 1.0)) * FS))
+            if i0 < 0 or i0 + 400 > self.buf_n:
+                continue
+            seg = np.stack([st.buf[c][i0:i0 + 400] for c in ("Z", "N", "E")
+                            if c in st.buf]).astype(np.float64)
+            if seg.shape[0] != 3:
+                continue
+            peak, std = float(np.abs(seg).max()), float(seg.std())
+            if peak <= 0 or std <= 0 or peak > 1e8:
+                continue
+            if prev is not None:
+                d = float(np.hypot(haversine_km(prev.lat, prev.lon,
+                                                st.lat, st.lon),
+                                   prev.depth_km))
+            else:
+                d = 40.0   # trained fallback prior
+            x = torch.tensor((seg / peak)[None].astype(np.float32))
+            aux = torch.tensor([[np.log10(peak), np.log10(std),
+                                 np.log10(max(d, 1.0))]],
+                               dtype=torch.float32)
+            mu, sig = self.magnet.estimate(x, aux)
+            st.ai_mu, st.ai_sig = float(mu[0]), float(sig[0])
+        if self.event is not None:
+            mus = [(s.ai_mu, s.ai_sig) for s in self.stations.values()
+                   if s.ai_mu is not None and s.code in self.event["members"]]
+            if mus:
+                w = np.array([1.0 / s ** 2 for _, s in mus])
+                m = np.array([m_ for m_, _ in mus])
+                self.event["ai_mag"] = round(float((w * m).sum() / w.sum()), 2)
+                self.event["ai_sig"] = round(
+                    float(np.sqrt(1.0 / w.sum() + 0.3 ** 2)), 2)
+                self.event["n_ai"] = len(mus)
 
     # ------------------------------------------------------------ picking
     def _infer(self):
@@ -355,7 +423,7 @@ class LiveEngine:
                      for k, v in ev.items()
                      if k in ("lat", "lon", "depth", "mag", "msig", "k",
                               "emaj", "emin", "eaz", "r4", "r5", "alert",
-                              "cty", "n_mag")}
+                              "cty", "n_mag", "ai_mag", "ai_sig", "n_ai")}
             event["age"] = round(self.now - ev["t_first"], 1)
             event["t0_age"] = round(self.now - ev["t0"], 1)
 

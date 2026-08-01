@@ -1040,6 +1040,10 @@ async function pollEngine(){
       `monitoring · ${S.n_live}/${S.n_stations} feeding · ` +
       `inference ${S.infer_ms} ms`;
   }
+  const ai = E && E.ai_mag !== undefined && E.ai_mag !== null ?
+    ((Z ? ' · AI M' : ' · AI M') + E.ai_mag.toFixed(1) +
+     '±' + E.ai_sig.toFixed(1) + ` (${E.n_ai})`) : '';
+  if(ai) eb.textContent += ai;
   elog.innerHTML = (S.log || []).slice(0, 3).map(x =>
     `<div>${new Date(x.t * 1e3).toISOString().slice(11, 19)} ${x.msg}</div>`
   ).join('');

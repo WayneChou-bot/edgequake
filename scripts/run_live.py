@@ -72,6 +72,11 @@ def main() -> None:
     ap.add_argument("--webroot",
                     default=str(ROOT / "outputs" / "console_web"),
                     help="shared runtime dir (also used by poll_cwa.py)")
+    ap.add_argument("--magnet",
+                    default=str(ROOT / "outputs" / "magnet_cwa_v2" /
+                                "magnet_cwa_v2.pt"),
+                    help="MagNet v2 weights for AI early magnitude "
+                         "(waveform sources only; '' to disable)")
     ap.add_argument("--notify", action="store_true",
                     help="send email/Telegram on PWS alert (config via env: "
                          "EQ_SMTP_USER/PASS/MAIL_TO, EQ_TG_TOKEN/CHAT)")
@@ -138,6 +143,9 @@ def main() -> None:
     engine = LiveEngine(picker, src.stations, threshold=args.threshold,
                         mode_label=label, notifier=notifier,
                         trigger_mode=trigger_mode)
+    if not trigger_mode and args.magnet and Path(args.magnet).exists():
+        if engine.load_magnet(args.magnet):
+            print("[live] AI early magnitude: MagNet v2 loaded")
     print(f"[live] {len(src.stations)} stations | "
           f"{'trigger mode (no picker)' if trigger_mode else picker.name}")
 
