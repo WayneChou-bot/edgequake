@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EdgeQuake — 台灣地震看板</title>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"
+      rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+  :root{
+    --surface:#1a1a19; --panel:#20201f; --grid:#2e2e2d; --ink:#ffffff;
+    --ink2:#c3c2b7; --blue:#3987e5; --orange:#d95926; --flash:#c98500;
+    --alert:#e5484d;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  html,body{height:100%}
+  body{background:var(--surface); color:var(--ink);
+       font-family:'Segoe UI',system-ui,sans-serif; display:flex;
+       flex-direction:column; padding:14px 16px; gap:10px}
+  h1{font-size:16px; font-weight:600}
+  .sub{color:var(--ink2); font-size:11px}
+  .statusbar{display:flex; align-items:baseline; gap:14px; background:var(--panel);
+    border:1px solid var(--grid); border-radius:8px; padding:8px 14px;
+    font-size:12.5px; flex-wrap:wrap}
+  .statusbar b{color:var(--orange); font-family:Consolas,monospace}
+  .statusbar .age{color:var(--ink2); font-size:11px; margin-left:auto;
+    font-family:Consolas,monospace}
+  .main{display:flex; gap:12px; flex:1; min-height:0}
+  #map{flex:1; border-radius:10px; background:#101a24; position:relative}
+  #mapmsg{position:absolute; inset:0; display:flex; align-items:center;
+    justify-content:center; color:var(--ink2); font-size:13px; z-index:5;
+    text-align:center; pointer-events:none}
+  .side{width:340px; display:flex; flex-direction:column; gap:8px; min-height:0}
+  .tabs{display:flex; gap:6px}
+  .tab{flex:1; text-align:center; background:var(--panel);
+    border:1px solid var(--grid); color:var(--ink2); padding:6px 0;
+    border-radius:6px; cursor:pointer; font-size:12.5px}
+  .tab.active{border-color:var(--blue); color:var(--ink)}
+  .list{flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px;
+    min-height:0}
+  .eq{background:var(--panel); border:1px solid var(--grid); border-radius:8px;
+    padding:8px 10px; cursor:pointer; display:flex; gap:10px;
+    align-items:center}
+  .eq:hover{border-color:var(--blue)}
+  .mchip{min-width:46px; text-align:center; font-family:Consolas,monospace;
+    font-weight:700; font-size:14px; border-radius:6px; padding:6px 0}
+  .eq .info{flex:1; min-width:0}
+  .eq .loc{font-size:12px; white-space:nowrap; overflow:hidden;
+    text-overflow:ellipsis}
+  .eq .meta{color:var(--ink2); font-size:10.5px;
+    font-family:Consolas,monospace; margin-top:2px}
+  .ibadge{font-size:10px; border:1px solid var(--flash); color:var(--flash);
+    padding:1px 5px; border-radius:4px; white-space:nowrap}
+  .basebtns{position:absolute; top:10px; left:10px; z-index:6; display:flex;
+    gap:5px}
+  .bb{background:rgba(26,26,25,.88); border:1px solid var(--grid);
+    color:var(--ink2); font-size:11px; padding:4px 9px; border-radius:5px;
+    cursor:pointer}
+  .bb.active{border-color:var(--blue); color:var(--ink)}
+  .foot{color:var(--ink2); font-size:10px}
+  .maplibregl-popup-content{background:var(--panel); color:var(--ink);
+    font-size:12px; border:1px solid var(--grid)}
+  .maplibregl-popup-tip{border-top-color:var(--panel) !important;
+    border-bottom-color:var(--panel) !important}
+</style>
+</head>
+<body>
+<div>
+  <h1>EdgeQuake — 台灣地震看板 <span class="sub">CWA 地震報告（約 1–2 分鐘延遲，速報非預警）＋ USGS 全球地震</span></h1>
+</div>
+<div class="statusbar" id="statusbar">
+  <span>最新：<b id="latest">載入中…</b></span>
+  <span class="age" id="age"></span>
+</div>
+<div class="main">
+  <div id="map">
+    <div class="basebtns">
+      <div class="bb active" data-base="dark">暗色底圖</div>
+      <div class="bb" data-base="emap">NLSC 電子地圖</div>
+      <div class="bb" data-base="photo">NLSC 正射影像</div>
+    </div>
+    <div id="mapmsg" style="display:none">地圖圖磚載入失敗（需要網路連線）</div>
+  </div>
+  <div class="side">
+    <div class="tabs">
+      <div class="tab active" data-tab="tw">台灣（CWA）</div>
+      <div class="tab" data-tab="world">世界 M4.5+（USGS）</div>
+    </div>
+    <div class="list" id="list"></div>
+  </div>
+</div>
+<div class="foot">資料：中央氣象署開放資料平臺（速報）、USGS Earthquake Hazards
+  Program、底圖 © CARTO/OpenStreetMap、內政部國土測繪中心 WMTS ·
+  EdgeQuake 研究原型，非官方警報服務 ·
+  github.com/WayneChou-bot/edgequake</div>
+
+<script>
+let tab = 'tw', cwaData = null, usgsData = null, map = null, mapReady = false;
+let lastCwaFetch = 0;
+
+const fmtT = (s) => s.replace(/^\d\d(\d\d)-/, '$1/').slice(0, 14);
+function magColor(m){
+  return m >= 6 ? '#e5484d' : m >= 5 ? '#d95926' : m >= 4 ? '#c98500'
+       : '#3987e5';
+}
+
+// ---------------- map ----------------
+const NLSC = (layer) =>
+  `https://wmts.nlsc.gov.tw/wmts/${layer}/default/GoogleMapsCompatible/{z}/{y}/{x}`;
+function initMap(){
+  if(typeof maplibregl === 'undefined'){
+    document.getElementById('mapmsg').style.display = 'flex';
+    return;
+  }
+  map = new maplibregl.Map({
+    container: 'map',
+    center: [121.2, 23.7], zoom: 6.3,
+    style: {
+      version: 8,
+      sources: {
+        carto: {type: 'raster', tileSize: 256,
+          tiles: ['a','b','c','d'].map(s =>
+            `https://${s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png`),
+          attribution: '© CARTO © OpenStreetMap'},
+        emap: {type: 'raster', tiles: [NLSC('EMAP')], tileSize: 256,
+          bounds: [117.8, 21.3, 122.6, 26.5], attribution: '© NLSC 國土測繪中心'},
+        photo: {type: 'raster', tiles: [NLSC('PHOTO2')], tileSize: 256,
+          bounds: [117.8, 21.3, 122.6, 26.5], attribution: '© NLSC 國土測繪中心'},
+        cwa: {type: 'geojson', data: {type: 'FeatureCollection', features: []}},
+        usgs: {type: 'geojson', data: {type: 'FeatureCollection', features: []}},
+      },
+      layers: [
+        {id: 'carto', type: 'raster', source: 'carto'},
+        {id: 'emap', type: 'raster', source: 'emap',
+         layout: {visibility: 'none'}},
+        {id: 'photo', type: 'raster', source: 'photo',
+         layout: {visibility: 'none'}},
+        {id: 'usgs-c', type: 'circle', source: 'usgs', paint: {
+          'circle-radius': ['interpolate', ['linear'], ['get', 'mag'],
+                            4.5, 4, 8, 14],
+          'circle-color': '#3987e5', 'circle-opacity': 0.55,
+          'circle-stroke-color': '#9ec4f0', 'circle-stroke-width': 1}},
+        {id: 'cwa-c', type: 'circle', source: 'cwa', paint: {
+          'circle-radius': ['interpolate', ['linear'], ['get', 'mag'],
+                            3, 4, 7, 16],
+          'circle-color': ['case', ['>=', ['get', 'mag'], 6], '#e5484d',
+            ['>=', ['get', 'mag'], 5], '#d95926', '#c98500'],
+          'circle-opacity': 0.6,
+          'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1}},
+      ],
+    },
+  });
+  map.addControl(new maplibregl.NavigationControl({showCompass: false}));
+  map.on('error', (e) => {  // tile errors: non-fatal, keep console clean
+    if(e && e.error && /tile/i.test(String(e.error.message || ''))) return;
+  });
+  map.on('load', () => { mapReady = true; pushMapData(); });
+  for(const src of ['cwa', 'usgs']){
+    map.on('click', src + '-c', (e) => {
+      const p = e.features[0].properties;
+      new maplibregl.Popup().setLngLat(e.lngLat).setHTML(
+        `<b style="color:${magColor(p.mag)}">M${(+p.mag).toFixed(1)}</b> ` +
+        `${p.loc}<br><span style="color:#c3c2b7">${p.t} · 深 ${p.depth} km` +
+        `${p.maxI ? ' · 最大震度 ' + p.maxI : ''}</span>` +
+        (p.url ? `<br><a href="${p.url}" target="_blank" ` +
+                 `style="color:#3987e5">詳細報告</a>` : '')
+      ).addTo(map);
+    });
+    map.on('mouseenter', src + '-c',
+           () => map.getCanvas().style.cursor = 'pointer');
+    map.on('mouseleave', src + '-c',
+           () => map.getCanvas().style.cursor = '');
+  }
+}
+
+document.querySelectorAll('.bb').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.bb').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  if(!mapReady) return;
+  const base = b.dataset.base;
+  map.setLayoutProperty('emap', 'visibility',
+                        base === 'emap' ? 'visible' : 'none');
+  map.setLayoutProperty('photo', 'visibility',
+                        base === 'photo' ? 'visible' : 'none');
+});
+
+function toGeojson(events){
+  return {type: 'FeatureCollection', features: (events || []).map(e => ({
+    type: 'Feature',
+    geometry: {type: 'Point', coordinates: [e.lon, e.lat]},
+    properties: e,
+  }))};
+}
+function pushMapData(){
+  if(!mapReady) return;
+  if(cwaData) map.getSource('cwa').setData(toGeojson(cwaData.events));
+  if(usgsData) map.getSource('usgs').setData(toGeojson(usgsData.events));
+}
+
+// ---------------- data ----------------
+async function fetchCWA(){
+  for(const url of ['/api/cwa', 'cwa_events.json']){
+    try{
+      const r = await fetch(url, {cache: 'no-store'});
+      if(!r.ok) continue;
+      cwaData = await r.json();
+      lastCwaFetch = Date.now();
+      render(); pushMapData();
+      return;
+    }catch(e){ /* try next */ }
+  }
+  document.getElementById('latest').textContent =
+    '無 CWA 資料（本機請先跑 poll_cwa.py，部署版需設 CWA_API_KEY）';
+}
+async function fetchUSGS(){
+  try{
+    const r = await fetch('https://earthquake.usgs.gov/earthquakes/feed/' +
+                          'v1.0/summary/4.5_day.geojson');
+    const gj = await r.json();
+    usgsData = {events: gj.features.map(f => ({
+      t: new Date(f.properties.time + 8 * 3600e3).toISOString()
+           .slice(0, 16).replace('T', ' '),
+      lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0],
+      depth: Math.round(f.geometry.coordinates[2]),
+      mag: f.properties.mag, loc: f.properties.place,
+      maxI: null, url: f.properties.url, kind: 'usgs',
+    }))};
+    render(); pushMapData();
+  }catch(e){ /* offline: leave list empty */ }
+}
+
+function render(){
+  const data = tab === 'tw' ? cwaData : usgsData;
+  const box = document.getElementById('list');
+  if(!data || !data.events || !data.events.length){
+    box.innerHTML = '<div class="eq"><div class="info">' +
+      '<div class="loc" style="color:#c3c2b7">沒有資料</div></div></div>';
+  } else {
+    box.innerHTML = data.events.map((e, i) => `
+      <div class="eq" onclick="fly(${e.lon},${e.lat})">
+        <div class="mchip" style="background:${magColor(e.mag)}22;
+             color:${magColor(e.mag)}; border:1px solid ${magColor(e.mag)}">
+          ${(+e.mag).toFixed(1)}</div>
+        <div class="info">
+          <div class="loc">${e.loc || '—'}</div>
+          <div class="meta">${fmtT(e.t)} · 深 ${e.depth} km` +
+          `${e.kind === 'local' ? ' · 小區域' : ''}</div>
+        </div>
+        ${e.maxI ? `<div class="ibadge">震度 ${e.maxI}</div>` : ''}
+      </div>`).join('');
+  }
+  const latest = cwaData && cwaData.events && cwaData.events[0];
+  if(latest){
+    document.getElementById('latest').textContent =
+      `M${(+latest.mag).toFixed(1)} ${latest.loc}（${fmtT(latest.t)}` +
+      `${latest.maxI ? '，最大震度 ' + latest.maxI : ''}）`;
+  }
+}
+function fly(lon, lat){
+  if(mapReady) map.flyTo({center: [lon, lat], zoom: 8});
+}
+
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  tab = b.dataset.tab;
+  render();
+});
+
+setInterval(() => {
+  const el = document.getElementById('age');
+  el.textContent = lastCwaFetch ?
+    `CWA 更新於 ${Math.round((Date.now() - lastCwaFetch) / 1000)} 秒前` : '';
+}, 1000);
+
+initMap();
+fetchCWA(); setInterval(fetchCWA, 60_000);
+fetchUSGS(); setInterval(fetchUSGS, 300_000);
+</script>
+</body>
+</html>

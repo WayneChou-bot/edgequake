@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EdgeQuake — 台灣地震主控台</title>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"
+      rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+  :root{
+    --surface:#1a1a19; --panel:#20201f; --land:#242423; --coast:#5a636b;
+    --ink:#ffffff; --ink2:#c3c2b7; --grid:#2e2e2d;
+    --blue:#3987e5; --orange:#d95926; --flash:#c98500; --alert:#e5484d;
+    --ok:#46a758;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{background:var(--surface); color:var(--ink);
+       font-family:'Segoe UI',system-ui,sans-serif; padding:14px 18px}
+  .hdr{display:flex; align-items:center; gap:20px; flex-wrap:wrap}
+  h1{font-size:17px; font-weight:600}
+  .topnav{display:flex; gap:6px}
+  .tnav{background:var(--panel); border:1px solid var(--grid);
+        color:var(--ink2); padding:6px 18px; border-radius:6px;
+        cursor:pointer; font-size:13px}
+  .tnav.active{border-color:var(--blue); color:var(--ink)}
+  .sub{color:var(--ink2); font-size:11px; margin:6px 0 12px}
+  .foot{color:var(--ink2); font-size:10px; margin-top:12px}
+  /* shared small tabs (event tabs / list tabs) */
+  .tabs{display:flex; gap:8px; margin-bottom:12px}
+  .tab{background:var(--panel); border:1px solid var(--grid);
+       color:var(--ink2); padding:6px 14px; border-radius:6px;
+       cursor:pointer; font-size:12.5px}
+  .tab.active{border-color:var(--blue); color:var(--ink)}
+  /* ---------- live view ---------- */
+  .statusbar{display:flex; align-items:baseline; gap:14px;
+    background:var(--panel); border:1px solid var(--grid); border-radius:8px;
+    padding:8px 14px; font-size:12.5px; flex-wrap:wrap; margin-bottom:10px}
+  .statusbar b{color:var(--orange); font-family:Consolas,monospace}
+  .statusbar .age{color:var(--ink2); font-size:11px; margin-left:auto;
+    font-family:Consolas,monospace}
+  .lmain{display:flex; gap:12px; height:calc(100vh - 210px);
+    min-height:480px}
+  #lmap{flex:1; border-radius:10px; background:#101a24; position:relative}
+  #mapmsg{position:absolute; inset:0; display:flex; align-items:center;
+    justify-content:center; color:var(--ink2); font-size:13px; z-index:5;
+    text-align:center; pointer-events:none}
+  .side2{width:350px; display:flex; flex-direction:column; gap:8px;
+    min-height:0}
+  .ecard{background:var(--panel); border:1px solid var(--grid);
+    border-radius:8px; padding:10px 12px}
+  .ecard .tsub{color:var(--ink2); font-size:10.5px; margin-bottom:6px}
+  .erow{font-family:Consolas,monospace; font-size:12px; margin-top:3px}
+  .elog{font-family:Consolas,monospace; font-size:10.5px;
+    color:var(--ink2); margin-top:5px; line-height:1.6}
+  .list{flex:1; overflow-y:auto; display:flex; flex-direction:column;
+    gap:6px; min-height:0}
+  .eq{background:var(--panel); border:1px solid var(--grid);
+    border-radius:8px; padding:8px 10px; cursor:pointer; display:flex;
+    gap:10px; align-items:center}
+  .eq:hover{border-color:var(--blue)}
+  .mchip{min-width:46px; text-align:center; font-family:Consolas,monospace;
+    font-weight:700; font-size:14px; border-radius:6px; padding:6px 0}
+  .eq .info{flex:1; min-width:0}
+  .eq .loc{font-size:12px; white-space:nowrap; overflow:hidden;
+    text-overflow:ellipsis}
+  .eq .meta{color:var(--ink2); font-size:10.5px;
+    font-family:Consolas,monospace; margin-top:2px}
+  .ibadge{font-size:10px; border:1px solid var(--flash); color:var(--flash);
+    padding:1px 5px; border-radius:4px; white-space:nowrap}
+  .spanrow{display:flex; gap:5px; align-items:center}
+  .sp{font-size:10.5px; padding:3px 9px; border:1px solid var(--grid);
+    border-radius:5px; color:var(--ink2); cursor:pointer;
+    background:var(--panel)}
+  .sp.active{border-color:var(--blue); color:var(--ink)}
+  .basebtns{position:absolute; top:10px; left:10px; z-index:6; display:flex;
+    gap:5px}
+  .bb{background:rgba(26,26,25,.88); border:1px solid var(--grid);
+    color:var(--ink2); font-size:11px; padding:4px 9px; border-radius:5px;
+    cursor:pointer}
+  .bb.active{border-color:var(--blue); color:var(--ink)}
+  .maplibregl-popup-content{background:var(--panel); color:var(--ink);
+    font-size:12px; border:1px solid var(--grid)}
+  .maplibregl-popup-tip{border-top-color:var(--panel) !important;
+    border-bottom-color:var(--panel) !important}
+  /* ---------- replay view ---------- */
+  .banner{display:flex; align-items:baseline; gap:16px; padding:10px 16px;
+          border-radius:8px; margin-bottom:12px; border:1px solid var(--grid);
+          background:var(--panel)}
+  .bstate{font-weight:700; font-size:14.5px; letter-spacing:.4px}
+  .bdetail{color:var(--ink2); font-size:12px;
+           font-family:Consolas,monospace}
+  .banner.det{background:#31200c; border-color:#8a5a1a}
+  .banner.det .bstate{color:#f0a83c}
+  .banner.pws{background:#3a1214; border-color:var(--alert);
+              animation:pulse 1.6s infinite}
+  .banner.pws .bstate{color:#ff8a8e}
+  .banner.pws .bdetail{color:#f0c8c9}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(229,72,77,.35)}
+                   50%{box-shadow:0 0 0 9px rgba(229,72,77,0)}}
+  .layout{display:flex; gap:18px; flex-wrap:wrap}
+  .mapbox{background:var(--panel); border-radius:10px; padding:10px}
+  svg text{font-family:'Segoe UI',sans-serif}
+  .side{flex:1; min-width:320px; max-width:460px; display:flex;
+        flex-direction:column; gap:12px}
+  .card{background:var(--panel); border-radius:10px; padding:14px 16px}
+  .tbig{font-family:Consolas,monospace; font-size:26px}
+  .tsub{color:var(--ink2); font-size:10.5px; margin-bottom:8px}
+  .mag{font-family:Consolas,monospace; font-size:21px; color:var(--blue)}
+  .row{font-family:Consolas,monospace; font-size:12.5px; margin-top:4px}
+  .eta{color:var(--orange)} .muted{color:var(--ink2)}
+  .conf{display:inline-block; font-size:10.5px; font-weight:700;
+        padding:1px 8px; border-radius:9px; border:1px solid;
+        vertical-align:1px; letter-spacing:.3px}
+  .off{color:var(--flash); font-size:11.5px; margin-top:6px;
+       font-family:Consolas,monospace}
+  .cgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:5px}
+  .chip{font-size:10.5px; padding:4px 6px; border-radius:5px;
+        background:var(--surface); border:1px solid var(--grid);
+        color:var(--ink2); text-align:center}
+  .chip.i3{border-color:#7a4a1f; color:#e0a869}
+  .chip.i4{border-color:var(--orange); color:var(--orange)}
+  .chip.al{background:#3a1214; border-color:var(--alert); color:#ff8a8e;
+           font-weight:600}
+  .controls{display:flex; align-items:center; gap:10px; margin-top:14px}
+  button{background:var(--panel); color:var(--ink);
+         border:1px solid var(--grid); border-radius:6px; padding:6px 14px;
+         cursor:pointer; font-size:13px}
+  button:hover{border-color:var(--blue)}
+  input[type=range]{flex:1; accent-color:var(--blue)}
+  .wfbox{background:var(--panel); border-radius:10px; padding:12px 14px;
+        margin-top:14px}
+  .wfhead{font-size:11px; color:var(--ink2); margin-bottom:6px;
+          display:flex; justify-content:space-between}
+  .legend{font-size:10.5px; color:var(--ink2); margin-top:6px;
+          max-width:540px}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <h1 id="ttl">EdgeQuake — 台灣地震主控台</h1>
+  <div class="topnav">
+    <div class="tnav active" data-view="live" id="nav-live">即時監測</div>
+    <div class="tnav" data-view="replay" id="nav-replay">歷史事件回放</div>
+    <div class="tnav" id="langbtn" title="切換語言 / switch language">EN</div>
+  </div>
+</div>
+<div class="sub" id="subt"></div>
+
+<!-- ================= LIVE VIEW ================= -->
+<div id="view-live">
+  <div class="statusbar">
+    <span>最新：<b id="latest">載入中…</b></span>
+    <span class="age" id="age"></span>
+  </div>
+  <div class="lmain">
+    <div id="lmap">
+      <div class="basebtns">
+        <div class="bb active" data-base="dark" id="bb-dark">暗色底圖</div>
+        <div class="bb" data-base="emap" id="bb-emap">NLSC 電子地圖</div>
+        <div class="bb" data-base="photo" id="bb-photo">NLSC 正射影像</div>
+      </div>
+      <div id="mapmsg" style="display:none">地圖圖磚載入失敗（需要網路連線）</div>
+    </div>
+    <div class="side2">
+      <div class="ecard" id="ecard">
+        <div class="tsub"><span id="etitle">live 引擎</span>
+          <span id="esrc"></span></div>
+        <div id="ebody" class="erow muted">引擎離線 —
+          本機執行 run_live.py 後自動連上</div>
+        <div class="elog" id="elog"></div>
+        <label id="egrow" style="display:none; font-size:10.5px;
+          color:var(--ink2); margin-top:6px; cursor:pointer">
+          <input type="checkbox" id="egshow">
+          <span id="egtxt">在地圖顯示演練圖層</span></label>
+      </div>
+      <div class="tabs" style="margin-bottom:0">
+        <div class="tab active" data-tab="tw" id="tab-tw"
+          style="flex:1;text-align:center">台灣（CWA）</div>
+        <div class="tab" data-tab="world" id="tab-world"
+          style="flex:1;text-align:center">世界 M4.5+（USGS）</div>
+      </div>
+      <div class="spanrow" id="uspanrow" style="display:none">
+        <span class="muted" style="font-size:10.5px" id="usplbl">USGS
+          範圍：</span>
+        <div class="sp" data-s="hour">1小時</div>
+        <div class="sp active" data-s="day">24小時</div>
+        <div class="sp" data-s="week">7天</div>
+        <div class="sp" data-s="month">30天</div>
+      </div>
+      <div class="list" id="list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= REPLAY VIEW ================= -->
+<div id="view-replay" style="display:none">
+  <div class="tabs" id="tabs"></div>
+  <div class="banner" id="banner">
+    <span class="bstate" id="bstate">MONITORING</span>
+    <span class="bdetail" id="bdetail">waiting for station triggers…</span>
+  </div>
+  <div class="layout">
+    <div class="mapbox"><svg id="map"></svg>
+      <div class="legend" id="legendtx"></div>
+    </div>
+    <div class="side">
+      <div class="card">
+        <div class="tbig" id="tclock">t = +0.0 s</div>
+        <div class="tsub" id="tsub1">since first station trigger
+          (<span id="torigin"></span>)</div>
+        <div class="mag" id="mag">M — (awaiting S data)</div>
+        <div class="row" id="coords"></div>
+        <div class="row" id="loc"></div>
+        <div class="row" id="meta2"></div>
+        <div class="row eta" id="etas"></div>
+        <div id="official"></div>
+      </div>
+      <div class="card">
+        <div class="tsub" id="tsub2">county predicted intensity (CWA
+          scale) &amp; PWS alert decision</div>
+        <div class="cgrid" id="cgrid"></div>
+      </div>
+      <div class="card">
+        <div class="controls">
+          <button id="play">▶ Play</button>
+          <button id="speed">1×</button>
+          <input type="range" id="slider" min="0" max="100" value="0" step="1">
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="wfbox">
+    <div class="wfhead"><span id="wfhd"></span>
+      <span id="wfnote"></span></div>
+    <canvas id="wf" width="1280" height="340"></canvas>
+  </div>
+</div>
+
+<div class="foot" id="foott"></div>
+
+<script>
+/*__DATA__*/
+let LANG = 'zh';
+const GTXT = {
+  ttl: {zh: 'EdgeQuake — 台灣地震主控台',
+        en: 'EdgeQuake — Taiwan Earthquake Console'},
+  nav_live: {zh: '即時監測', en: 'Live Monitor'},
+  nav_replay: {zh: '歷史事件回放', en: 'Event Replay'},
+  sub: {zh: '即時：CWA 地震報告（約 1–2 分鐘延遲，速報非預警）＋ USGS 全球地震＋本機 live 引擎狀態 · 回放：歷史事件以真實時間軸重演完整偵測鏈 · 研究原型，非官方警報服務',
+        en: 'Live: CWA earthquake reports (~1–2 min delay, bulletins not warnings) + USGS worldwide + local live engine · Replay: historical events re-run through the full detection chain on the true timeline · research prototype, not an official warning service'},
+  foot: {zh: '資料：中央氣象署開放資料平臺（速報）、CWA GDMS 歷史波形 (doi:10.7914/SN/T5)、USGS Earthquake Hazards Program、底圖 © CARTO/OpenStreetMap、內政部國土測繪中心 WMTS · 震央真值為 CWA 報告近似值 · EdgeQuake 研究原型，非官方警報服務 · github.com/WayneChou-bot/edgequake',
+        en: 'Data: CWA Open Data (bulletins), CWA GDMS historical waveforms (doi:10.7914/SN/T5), USGS Earthquake Hazards Program, basemap © CARTO/OpenStreetMap, NLSC WMTS · truth epicenters are approximate CWA-report values · EdgeQuake research prototype, not an official warning service · github.com/WayneChou-bot/edgequake'},
+};
+function applyLangGlobal(){
+  document.getElementById('ttl').textContent = GTXT.ttl[LANG];
+  document.getElementById('nav-live').textContent = GTXT.nav_live[LANG];
+  document.getElementById('nav-replay').textContent = GTXT.nav_replay[LANG];
+  document.getElementById('subt').textContent = GTXT.sub[LANG];
+  document.getElementById('foott').textContent = GTXT.foot[LANG];
+  document.getElementById('langbtn').textContent = LANG === 'zh' ? 'EN' : '中';
+}
+</script>
+<script>
+// ======================= REPLAY CONSOLE =======================
+(function(){
+const M = DATA.map;
+let evKey = Object.keys(DATA.events)[0];
+let t = 0, playing = false, speed = 1, timer = null;
+
+const svg = document.getElementById('map');
+svg.setAttribute('width', M.w); svg.setAttribute('height', M.h);
+svg.setAttribute('viewBox', `0 0 ${M.w} ${M.h}`);
+
+function el(tag, attrs){ const e = document.createElementNS(
+  'http://www.w3.org/2000/svg', tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]); return e; }
+
+function ev(){ return DATA.events[evKey]; }
+function frame(){ const E = ev();
+  const i = Math.min(E.frames.length-1, Math.max(0, Math.round(t/E.dt)));
+  return E.frames[i]; }
+
+const IBINS = [[0.8,1],[2.5,2],[8,3],[25,4],[80,5],[140,5.5],[250,6],
+               [440,6.5],[800,7]];
+function pga2i(p){ let l = 0;
+  for(const [lo, lv] of IBINS) if(p >= lo) l = lv; return l; }
+function fmtI(i){
+  const m = LANG === 'zh' ? {5:'5弱', 5.5:'5強', 6:'6弱', 6.5:'6強'}
+                          : {5:'5-', 5.5:'5+', 6:'6-', 6.5:'6+'};
+  return m[i] || String(i); }
+const C_ZH = {'Taipei':'台北','New Taipei':'新北','Keelung':'基隆',
+  'Taoyuan':'桃園','Hsinchu C.':'新竹市','Hsinchu Co.':'新竹縣',
+  'Miaoli':'苗栗','Taichung':'台中','Changhua':'彰化','Nantou':'南投',
+  'Yunlin':'雲林','Chiayi C.':'嘉義市','Chiayi Co.':'嘉義縣','Tainan':'台南',
+  'Kaohsiung':'高雄','Pingtung':'屏東','Yilan':'宜蘭','Hualien':'花蓮',
+  'Taitung':'台東','Penghu':'澎湖'};
+const cname = (n) => LANG === 'zh' ? (C_ZH[n] || n) : n;
+function iColor(i){ return i >= 5 ? '#e5484d' : i >= 4 ? '#d95926'
+  : i >= 3 ? '#c98500' : i >= 2 ? '#8f8f5a' : '#6f6f6d'; }
+function lonlat(lon, lat){
+  return [(lon - 119.7) / (122.5 - 119.7) * M.w,
+          (25.6 - lat) / (25.6 - 21.6) * M.h]; }
+
+function buildTabs(){
+  const box = document.getElementById('tabs'); box.innerHTML = '';
+  for(const k of Object.keys(DATA.events)){
+    const b = document.createElement('div');
+    b.className = 'tab' + (k===evKey ? ' active' : '');
+    b.textContent = DATA.events[k].title;
+    b.onclick = () => { evKey = k; t = 0; stop(); buildTabs(); render(); };
+    box.appendChild(b);
+  }
+}
+
+let gDyn = null;
+function buildStatic(){
+  svg.innerHTML = '';
+  const defs = el('defs', {});
+  defs.innerHTML =
+    `<linearGradient id="ocean" x1="0" y1="0" x2="0.25" y2="1">
+       <stop offset="0" stop-color="#1b2a38"/>
+       <stop offset="0.55" stop-color="#152230"/>
+       <stop offset="1" stop-color="#101a24"/>
+     </linearGradient>
+     <linearGradient id="landg" x1="0" y1="0" x2="0" y2="1">
+       <stop offset="0" stop-color="#2c2c2a"/>
+       <stop offset="1" stop-color="#1f1f1e"/>
+     </linearGradient>
+     <filter id="lsh" x="-30%" y="-30%" width="160%" height="160%">
+       <feDropShadow dx="0" dy="2.5" stdDeviation="5"
+         flood-color="#000000" flood-opacity="0.65"/>
+     </filter>
+     <radialGradient id="vign" cx="0.5" cy="0.42" r="0.95">
+       <stop offset="0.55" stop-color="#000000" stop-opacity="0"/>
+       <stop offset="1" stop-color="#000000" stop-opacity="0.28"/>
+     </radialGradient>`;
+  svg.appendChild(defs);
+  svg.appendChild(el('rect', {x:0, y:0, width:M.w, height:M.h,
+    fill:'url(#ocean)'}));
+  const gg = el('g', {});
+  for(let lon = 120; lon <= 122; lon++){
+    const [x] = lonlat(lon, 23);
+    gg.appendChild(el('line', {x1:x, y1:0, x2:x, y2:M.h,
+      stroke:'#ffffff', 'stroke-opacity':0.06}));
+    const tx = el('text', {x:x+4, y:13, 'font-size':9,
+      fill:'#7c8a99', 'fill-opacity':0.85});
+    tx.textContent = lon + '°E'; gg.appendChild(tx);
+  }
+  for(let lat = 22; lat <= 25; lat++){
+    const [, y] = lonlat(121, lat);
+    gg.appendChild(el('line', {x1:0, y1:y, x2:M.w, y2:y,
+      stroke:'#ffffff', 'stroke-opacity':0.06}));
+    const ty = el('text', {x:5, y:y-4, 'font-size':9,
+      fill:'#7c8a99', 'fill-opacity':0.85});
+    ty.textContent = lat + '°N'; gg.appendChild(ty);
+  }
+  svg.appendChild(gg);
+  const glow = el('g', {});
+  for(const d of M.coast)
+    glow.appendChild(el('path', {d, fill:'none', stroke:'#3f5a72',
+      'stroke-width':4, 'stroke-opacity':0.45}));
+  svg.appendChild(glow);
+  const land = el('g', {filter:'url(#lsh)'});
+  for(const d of M.coast)
+    land.appendChild(el('path', {d, fill:'url(#landg)',
+      stroke:'var(--coast)', 'stroke-width':1}));
+  svg.appendChild(land);
+  const big = ['Taipei', 'Taichung', 'Kaohsiung', 'Hualien', 'Taitung',
+               'Tainan', 'Yilan'];
+  for(const c of ev().counties){
+    if(!big.includes(c.name)) continue;
+    const tx = el('text', {x:c.x+6, y:c.y+3, 'font-size':9,
+      fill:'#98a2ad', 'fill-opacity':0.9});
+    tx.textContent = cname(c.name); svg.appendChild(tx);
+  }
+  gDyn = el('g', {});
+  svg.appendChild(gDyn);
+  svg.appendChild(el('rect', {x:0, y:0, width:M.w, height:M.h,
+    fill:'url(#vign)', 'pointer-events':'none'}));
+  const sb = el('g', {});
+  const len = 50 * M.pxPerKm, x0 = 16, y0 = M.h - 16;
+  sb.appendChild(el('line', {x1:x0, y1:y0, x2:x0+len, y2:y0,
+    stroke:'#c3c2b7', 'stroke-width':1.5}));
+  for(const dx of [0, len/2, len])
+    sb.appendChild(el('line', {x1:x0+dx, y1:y0-4, x2:x0+dx, y2:y0,
+      stroke:'#c3c2b7', 'stroke-width':1.5}));
+  const st = el('text', {x:x0+len/2, y:y0-8, 'font-size':9,
+    fill:'#c3c2b7', 'text-anchor':'middle'});
+  st.textContent = '50 km'; sb.appendChild(st);
+  svg.appendChild(sb);
+}
+
+function confLevel(F){
+  if(F.emaj === undefined) return null;
+  if(F.k >= 8 && F.emaj <= 15) return ['HIGH', 'var(--ok)'];
+  if(F.k >= 5 && F.emaj <= 40) return ['MODERATE', '#f0a83c'];
+  return ['LOW', 'var(--alert)'];
+}
+
+function fmtOrigin(E){
+  const s = E.truth.origin_time;
+  if(!s) return '';
+  const d = new Date(s.replace(' ', 'T') + 'Z');
+  if(isNaN(d)) return s + ' UTC';
+  const p = (n) => String(n).padStart(2, '0');
+  const l = new Date(d.getTime() + 8 * 3600e3);
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth()+1)}-${p(d.getUTCDate())} ` +
+         `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())} UTC` +
+         ` · ${p(l.getUTCHours())}:${p(l.getUTCMinutes())}` +
+         (LANG === 'zh' ? ' 台灣時間' : ' Taiwan time');
+}
+
+function render(){
+  const E = ev(), F = frame();
+  gDyn.innerHTML = '';
+  if(F.lat !== undefined){
+    const [ex, ey] = lonlat(F.lon, F.lat);
+    const ta = t - F.t0;
+    for(const [v, col, wdt] of [[E.vp, '#8b97a3', 1],
+                                 [E.vp/1.73, 'var(--orange)', 1.6]]){
+      const r = v * ta * M.pxPerKm;
+      if(r > 0 && r < 900) gDyn.appendChild(el('circle', {cx:ex, cy:ey, r,
+        fill:'none', stroke:col, 'stroke-width':wdt,
+        'stroke-dasharray':'6 4'}));
+    }
+    for(const [key, col, lbl] of [['r4', 'var(--orange)', 'I≥4'],
+                                   ['r5', 'var(--alert)', 'I≥5']]){
+      if(F[key] === undefined) continue;
+      const r = F[key] * M.pxPerKm;
+      if(r < 4 || r > 1400) continue;
+      gDyn.appendChild(el('circle', {cx:ex, cy:ey, r, fill:col,
+        'fill-opacity':0.05, stroke:col, 'stroke-width':1.1,
+        'stroke-opacity':0.85, 'stroke-dasharray':'2 3'}));
+      const tl = el('text', {x:ex, y:ey - r - 4, 'font-size':9.5,
+        fill:col, 'text-anchor':'middle', 'font-weight':600});
+      tl.textContent = lbl; gDyn.appendChild(tl);
+    }
+    if(F.emaj) gDyn.appendChild(el('ellipse', {cx:ex, cy:ey,
+      rx:F.emaj*M.pxPerKm, ry:F.emin*M.pxPerKm,
+      transform:`rotate(${90-F.eaz} ${ex} ${ey})`,
+      fill:'var(--blue)', 'fill-opacity':0.2, stroke:'var(--blue)',
+      'stroke-width':1.2}));
+    gDyn.appendChild(el('circle', {cx:ex, cy:ey, r:9, fill:'none',
+      stroke:'var(--blue)', 'stroke-width':1, 'stroke-opacity':0.55}));
+    gDyn.appendChild(el('circle', {cx:ex, cy:ey, r:5.5, fill:'var(--blue)',
+      stroke:'var(--surface)', 'stroke-width':1.5}));
+  }
+  const T = E.truth;
+  gDyn.appendChild(el('text', {x:T.x, y:T.y+5, fill:'var(--orange)',
+    'font-size':16, 'text-anchor':'middle'})).textContent = '★';
+
+  for(const s of E.stations){
+    const trig = s.tp <= t, fresh = trig && (t - s.tp <= 0.5);
+    const sDone = trig && s.ts !== null && s.ts !== undefined
+                  && t >= s.ts + 2 && s.pga !== null && s.pga !== undefined;
+    if(fresh){
+      gDyn.appendChild(el('circle', {cx:s.x, cy:s.y, r:8, fill:'none',
+        stroke:'var(--flash)', 'stroke-width':1.6}));
+      gDyn.appendChild(el('circle', {cx:s.x, cy:s.y, r:3,
+        fill:'var(--flash)'}));
+    } else if(sDone){
+      gDyn.appendChild(el('circle', {cx:s.x, cy:s.y, r:3.2,
+        fill:iColor(pga2i(s.pga)), stroke:'var(--surface)',
+        'stroke-width':0.7}));
+    } else if(trig)
+      gDyn.appendChild(el('circle', {cx:s.x, cy:s.y, r:2.6,
+        fill:'var(--ink2)'}));
+    else
+      gDyn.appendChild(el('circle', {cx:s.x, cy:s.y, r:2, fill:'none',
+        stroke:'#5f6a74', 'stroke-width':0.9}));
+  }
+
+  const chips = [];
+  let maxI = 0, nAlert = 0;
+  E.counties.forEach((c, ci) => {
+    const info = (F.cty || [])[ci] || {};
+    if(info.i !== undefined && info.i > maxI) maxI = info.i;
+    if(info.alert) nAlert++;
+    let fill = 'var(--grid)';
+    if(info.i >= 5) fill = '#e5484d';
+    else if(info.i >= 4) fill = 'var(--orange)';
+    else if(info.i >= 3) fill = '#8a5a25';
+    else if(info.i >= 1) fill = '#4a4a48';
+    gDyn.appendChild(el('rect', {x:c.x-3.5, y:c.y-3.5, width:7, height:7,
+      fill, stroke: info.alert ? 'var(--alert)' : 'var(--surface)',
+      'stroke-width': info.alert ? 2 : 0.8}));
+    const cls = 'chip' + (info.alert ? ' al' : info.i>=4 ? ' i4'
+                          : info.i>=3 ? ' i3' : '');
+    const itxt = info.i !== undefined ?
+      (info.alert ? ' ⚠' + fmtI(info.i) : ' ' + fmtI(info.i)) : ' –';
+    chips.push(`<div class="${cls}">${cname(c.name)}${itxt}</div>`);
+  });
+  document.getElementById('cgrid').innerHTML = chips.join('');
+
+  const bn = document.getElementById('banner');
+  const bs = document.getElementById('bstate');
+  const bd = document.getElementById('bdetail');
+  const Z = LANG === 'zh';
+  if(nAlert > 0){
+    bn.className = 'banner pws';
+    bs.textContent = Z ? '⚠ 公開警報' : '⚠ PUBLIC ALERT';
+    const m = F.mag !== undefined ? F.mag.toFixed(1) : '–';
+    bd.textContent = Z ?
+      `M${m} · 最大預測震度 ${fmtI(maxI)} · ${nAlert} 縣市達 PWS 門檻` :
+      `M${m} · max predicted intensity ${fmtI(maxI)} · ${nAlert} ` +
+      `counties meet PWS criteria`;
+  } else if(F.mag !== undefined){
+    bn.className = 'banner det';
+    bs.textContent = Z ? '偵測到地震' : 'EARTHQUAKE DETECTED';
+    bd.textContent = Z ?
+      `估計 M${F.mag.toFixed(1)} · 最大預測震度 ${fmtI(maxI)} · 未達公開警報門檻` :
+      `M${F.mag.toFixed(1)} est · max predicted intensity ` +
+      `${fmtI(maxI)} · below public-alert thresholds`;
+  } else if(F.k >= 1){
+    bn.className = 'banner det';
+    bs.textContent = Z ? '偵測到 P 波' : 'P-WAVE DETECTED';
+    bd.textContent = F.lat !== undefined ?
+      (Z ? `${F.k} 站觸發 · 定位中，等待 S 波估規模…` :
+       `${F.k} stations triggered · locating, awaiting S for magnitude…`) :
+      (Z ? `${F.k} 站觸發 — 定位需 3 站` :
+       `${F.k} station(s) triggered — need 3 to locate`);
+  } else {
+    bn.className = 'banner';
+    bs.textContent = Z ? '監測中' : 'MONITORING';
+    bd.textContent = Z ? '等待測站觸發…' : 'waiting for station triggers…';
+  }
+
+  document.getElementById('tclock').textContent =
+    `t = +${t.toFixed(1)} s`;
+  const orel = E.origin_rel;
+  document.getElementById('torigin').textContent = orel !== null ?
+    (Z ? `發震後 +${(t - orel).toFixed(1)} 秒` :
+     `origin + ${(t - orel).toFixed(1)} s`) :
+    (Z ? '發震時刻未知' : 'origin time unknown');
+  document.getElementById('mag').textContent = F.mag !== undefined ?
+    `M ${F.mag.toFixed(1)} ± ${F.msig.toFixed(1)}` :
+    (Z ? 'M —（等待 S 波）' : 'M — (awaiting S data)');
+  document.getElementById('coords').innerHTML = F.lat !== undefined ?
+    (Z ? `估計 ${F.lat.toFixed(3)}°N ${F.lon.toFixed(3)}°E · 深度 ` +
+         `${F.depth.toFixed(0)} km` :
+     `est ${F.lat.toFixed(3)}°N ${F.lon.toFixed(3)}°E · depth ` +
+     `${F.depth.toFixed(0)} km`) : '';
+  document.getElementById('loc').innerHTML = F.lat !== undefined ?
+    (Z ? `測站 ${F.k} · 誤差橢圓 ` +
+         `${F.emaj.toFixed(0)}×${F.emin.toFixed(0)} km · ` +
+         `<span class="muted">與目錄誤差 ${F.err.toFixed(0)} km</span>` :
+     `stations ${F.k} · ellipse ` +
+     `${F.emaj.toFixed(0)}×${F.emin.toFixed(0)} km · ` +
+     `<span class="muted">err vs catalog ${F.err.toFixed(0)} km</span>`) :
+    (Z ? `<span class="muted">測站 ${F.k}（定位需 3 站）</span>` :
+     `<span class="muted">stations ${F.k} (locating needs 3)</span>`);
+  const cl = confLevel(F);
+  const clZh = {HIGH: '高', MODERATE: '中', LOW: '低'};
+  document.getElementById('meta2').innerHTML =
+    `<span class="muted">${Z ? '發震 ' : 'origin '}${fmtOrigin(E)}</span>` +
+    (cl ? ` &nbsp;<span class="conf" style="color:${cl[1]};` +
+          `border-color:${cl[1]}">` +
+          (Z ? `可信度 ${clZh[cl[0]]}` : `confidence ${cl[0]}`) +
+          `</span>` : '');
+  const big3 = ['Taipei', 'Taichung', 'Kaohsiung'];
+  const etas = [];
+  E.counties.forEach((c, ci) => {
+    if(!big3.includes(c.name)) return;
+    const info = (F.cty || [])[ci];
+    if(info) etas.push(info.eta > 0 ?
+      (Z ? `${cname(c.name)} S 波 ${Math.max(0, info.eta).toFixed(0)} 秒後` :
+       `${c.name} S in ${Math.max(0, info.eta).toFixed(0)}s`) :
+      `<span class="muted">${cname(c.name)}` +
+      `${Z ? ' S 波已到' : ' S arrived'}</span>`);
+  });
+  document.getElementById('etas').innerHTML = etas.join(' · ');
+  const passed = (E.official || [])
+    .filter(([ta]) => orel !== null && (t - orel) >= ta)
+    .map(([ta, lbl]) => `<div class="off">▸ [origin+${ta}s] ${lbl}</div>`);
+  document.getElementById('official').innerHTML = passed.join('');
+
+  document.getElementById('slider').max = Math.round(E.t_end / E.dt);
+  document.getElementById('slider').value = Math.round(t / E.dt);
+  renderWf();
+}
+
+function stop(){ playing = false; clearInterval(timer);
+  document.getElementById('play').textContent =
+    LANG === 'zh' ? '▶ 播放' : '▶ Play'; }
+document.getElementById('play').onclick = () => {
+  if(playing){ stop(); return; }
+  playing = true; document.getElementById('play').textContent =
+    LANG === 'zh' ? '⏸ 暫停' : '⏸ Pause';
+  if(t >= ev().t_end) t = 0;
+  timer = setInterval(() => {
+    t = Math.min(ev().t_end, t + ev().dt * speed);
+    render();
+    if(t >= ev().t_end) stop();
+  }, 250);
+};
+document.getElementById('speed').onclick = (e) => {
+  speed = speed === 1 ? 2 : speed === 2 ? 4 : 1;
+  e.target.textContent = speed + '×';
+};
+document.getElementById('slider').oninput = (e) => {
+  t = e.target.value * ev().dt; render();
+};
+
+const wfc = document.getElementById('wf');
+const wctx = wfc.getContext('2d');
+const INFO_W = 215, AXIS_H = 20;
+function cssv(n){ return getComputedStyle(document.documentElement)
+  .getPropertyValue(n).trim(); }
+function sizeWf(){
+  const box = document.querySelector('#view-replay .wfbox');
+  wfc.width = Math.max(700, box.clientWidth - 28);
+  wfc.height = 340;
+}
+window.addEventListener('resize', () => { sizeWf(); renderWf(); });
+
+function renderWf(){
+  const E = ev(), W = E.wf;
+  wctx.clearRect(0, 0, wfc.width, wfc.height);
+  if(!W || !W.strips.length){
+    document.getElementById('wfnote').textContent = 'no waveform data';
+    return; }
+  const plotW = wfc.width - INFO_W, plotH = wfc.height - AXIS_H;
+  const n = W.strips.length, hRow = plotH / n;
+  const total = W.strips[0].z.length / W.fs;
+  const xOf = (sec) => (sec - W.t0) / total * plotW;
+  const cInk = cssv('--ink'), cInk2 = cssv('--ink2'), cCoast = '#4a4a48';
+  const cBlue = cssv('--blue'), cOrange = cssv('--orange');
+  wctx.strokeStyle = '#2e2e2d'; wctx.lineWidth = 1; wctx.beginPath();
+  wctx.moveTo(plotW + 7, 0); wctx.lineTo(plotW + 7, plotH); wctx.stroke();
+  W.strips.forEach((st, ri) => {
+    const y0 = ri * hRow + hRow / 2, amp = hRow * 0.40;
+    if(ri){ wctx.strokeStyle = '#262625'; wctx.beginPath();
+      wctx.moveTo(0, ri * hRow); wctx.lineTo(plotW, ri * hRow);
+      wctx.stroke(); }
+    const nShow = Math.min(st.z.length,
+      Math.max(0, Math.floor((t - W.t0) * W.fs)));
+    wctx.strokeStyle = cInk2; wctx.lineWidth = 1; wctx.beginPath();
+    for(let i = 0; i < nShow; i++){
+      const x = i / st.z.length * plotW, y = y0 - st.z[i] * amp;
+      i ? wctx.lineTo(x, y) : wctx.moveTo(x, y);
+    }
+    wctx.stroke();
+    for(const [tt, col, lbl] of [[st.tp, cBlue, 'P'],
+                                  [st.ts, cOrange, 'S']]){
+      if(tt === null || tt === undefined || t < tt) continue;
+      const x = xOf(tt);
+      wctx.strokeStyle = col; wctx.lineWidth = 1.6; wctx.beginPath();
+      wctx.moveTo(x, ri * hRow + 3); wctx.lineTo(x, (ri + 1) * hRow - 3);
+      wctx.stroke();
+      wctx.fillStyle = col; wctx.font = 'bold 10px Consolas';
+      wctx.fillText(lbl, x + 3, ri * hRow + 12);
+    }
+    wctx.fillStyle = cInk; wctx.font = 'bold 11px Consolas';
+    wctx.fillText(st.code + ' · ' + st.ch, 6, ri * hRow + 13);
+    const ix = plotW + 16;
+    let iy = ri * hRow + 14;
+    wctx.fillStyle = cInk; wctx.font = 'bold 10.5px Consolas';
+    wctx.fillText(st.code + '  ' + st.ch, ix, iy);
+    wctx.fillStyle = cInk2; wctx.font = '10px Consolas';
+    iy += 13;
+    wctx.fillText((LANG === 'zh' ? '震央距 ' : 'epi dist ') +
+      (st.dist !== null && st.dist !== undefined ?
+      st.dist.toFixed(0) + ' km' : '–'), ix, iy);
+    iy += 12;
+    const sPassed = st.ts !== null && st.ts !== undefined && t >= st.ts + 2;
+    if(sPassed && st.pga !== null && st.pga !== undefined){
+      const ii = pga2i(st.pga);
+      wctx.fillStyle = iColor(ii);
+      wctx.fillText('PGA ' + st.pga.toFixed(1) + ' gal → ' +
+        (LANG === 'zh' ? '震度' : 'int. ') + fmtI(ii), ix, iy);
+      wctx.fillStyle = cInk2;
+    } else {
+      wctx.fillText(st.tp <= t ?
+        (LANG === 'zh' ? 'PGA 量測中…' : 'PGA measuring…') : 'PGA –',
+        ix, iy);
+    }
+    if(hRow >= 50){
+      iy += 12;
+      const pl = LANG === 'zh' ? 'P 信心 ' : 'P conf ';
+      const pp = st.pprob !== null && st.pprob !== undefined ?
+        (pl + Math.round(st.pprob * 100) + '%') : pl + '–';
+      wctx.fillText(pp + (st.ts ? ' · S +' +
+        (st.ts - st.tp).toFixed(1) + 's' : ''), ix, iy);
+    }
+  });
+  wctx.strokeStyle = '#2e2e2d'; wctx.beginPath();
+  wctx.moveTo(0, plotH); wctx.lineTo(plotW, plotH); wctx.stroke();
+  wctx.fillStyle = cInk2; wctx.font = '9.5px Consolas';
+  for(let s = 0; s <= W.t0 + total - 1; s += 10){
+    const x = xOf(s);
+    wctx.strokeStyle = '#3a3a38'; wctx.beginPath();
+    wctx.moveTo(x, plotH); wctx.lineTo(x, plotH + 4); wctx.stroke();
+    wctx.fillText('+' + s + 's', x - 8, plotH + 14);
+  }
+  const xs = xOf(t);
+  if(xs <= plotW){
+    wctx.strokeStyle = cCoast; wctx.setLineDash([3, 3]); wctx.beginPath();
+    wctx.moveTo(xs, 0); wctx.lineTo(xs, plotH); wctx.stroke();
+    wctx.setLineDash([]);
+  }
+  document.getElementById('wfnote').textContent = LANG === 'zh' ?
+    `最早觸發的 ${n} 站 · 正規化 · ${W.fs} sps 顯示` :
+    n + ' earliest stations · normalized · ' + W.fs + ' sps display';
+}
+function applyStaticR(){
+  const Z = LANG === 'zh';
+  document.getElementById('tsub1').innerHTML =
+    (Z ? '自首站觸發起（' : 'since first station trigger (') +
+    '<span id="torigin"></span>' + (Z ? '）' : ')');
+  document.getElementById('tsub2').textContent = Z ?
+    '縣市預測震度（CWA 級距）與 PWS 警報判定 — 規則：M≥5.0 且震度≥4，或 M≥6.5 且震度≥3' :
+    'county predicted intensity (CWA scale) & PWS alert decision — ' +
+    'rule: M≥5.0 & I≥4, or M≥6.5 & I≥3';
+  document.getElementById('legendtx').textContent = Z ?
+    '○ 測站 · ● 已觸發（S 波通過後按實測震度著色） · ◎ 估計震央＋1σ 誤差橢圓 · ' +
+    '★ 目錄震央 · 虛線圓：P／S 波前 · 虛線環：預測震度 I≥4／I≥5 · ' +
+    '方塊：縣市預測震度（紅框＝PWS 警報）' :
+    '○ station · ● triggered (colored by measured intensity once S passed)' +
+    ' · ◎ estimate + 1σ ellipse · ★ catalog epicenter · dashed circles: ' +
+    'P / S wavefronts · dashed rings: predicted intensity I≥4 / I≥5 · ' +
+    'squares: county predicted intensity (red ring = PWS alert)';
+  document.getElementById('wfhd').innerHTML = (Z ?
+    '三分量波形（垂直分量 Z）+ AI 相位標記 — ' :
+    'Vertical-component waveforms + AI phase picks — ') +
+    '<span style="color:var(--blue)">P</span> / ' +
+    '<span style="color:var(--orange)">S</span>';
+  if(!playing) document.getElementById('play').textContent =
+    Z ? '▶ 播放' : '▶ Play';
+}
+applyStaticR(); buildStatic(); buildTabs(); sizeWf(); render();
+window.__replayShow = function(){ sizeWf(); render(); };
+window.__applyLangReplay = function(){
+  applyStaticR(); buildStatic(); buildTabs(); render(); };
+})();
+</script>
+<script>
+// ======================= LIVE VIEW =======================
+(function(){
+let tab = 'tw', cwaData = null, usgsData = null, map = null, mapReady = false;
+let lastCwaFetch = 0;
+
+const fmtT = (s) => String(s).replace(/^\d\d(\d\d)-/, '$1/').slice(0, 14);
+function magColor(m){
+  return m >= 6 ? '#e5484d' : m >= 5 ? '#d95926' : m >= 4 ? '#c98500'
+       : '#3987e5';
+}
+function fmtI(i){
+  return (LANG === 'zh' ? {5:'5弱',5.5:'5強',6:'6弱',6.5:'6強'}
+                        : {5:'5-',5.5:'5+',6:'6-',6.5:'6+'})[i] || String(i);}
+function dispI(s){ return LANG === 'zh' ? s :
+  String(s).replace('級', '').replace('弱', '-').replace('強', '+'); }
+
+const NLSC = (layer) =>
+  `https://wmts.nlsc.gov.tw/wmts/${layer}/default/GoogleMapsCompatible/{z}/{y}/{x}`;
+function initMap(){
+  if(typeof maplibregl === 'undefined'){
+    document.getElementById('mapmsg').style.display = 'flex';
+    return;
+  }
+  map = new maplibregl.Map({
+    container: 'lmap',
+    center: [121.2, 23.7], zoom: 6.3,
+    style: {
+      version: 8,
+      sources: {
+        carto: {type: 'raster', tileSize: 256,
+          tiles: ['a','b','c','d'].map(s =>
+            `https://${s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png`),
+          attribution: '© CARTO © OpenStreetMap'},
+        emap: {type: 'raster', tiles: [NLSC('EMAP')], tileSize: 256,
+          bounds: [117.8, 21.3, 122.6, 26.5],
+          attribution: '© NLSC 國土測繪中心'},
+        photo: {type: 'raster', tiles: [NLSC('PHOTO2')], tileSize: 256,
+          bounds: [117.8, 21.3, 122.6, 26.5],
+          attribution: '© NLSC 國土測繪中心'},
+        cwa: {type: 'geojson',
+          data: {type: 'FeatureCollection', features: []}},
+        usgs: {type: 'geojson',
+          data: {type: 'FeatureCollection', features: []}},
+        engine: {type: 'geojson',
+          data: {type: 'FeatureCollection', features: []}},
+      },
+      layers: [
+        {id: 'carto', type: 'raster', source: 'carto'},
+        {id: 'emap', type: 'raster', source: 'emap',
+         layout: {visibility: 'none'}},
+        {id: 'photo', type: 'raster', source: 'photo',
+         layout: {visibility: 'none'}},
+        {id: 'usgs-c', type: 'circle', source: 'usgs', paint: {
+          'circle-radius': ['interpolate', ['linear'], ['get', 'mag'],
+                            4.5, 4, 8, 14],
+          'circle-color': '#3987e5', 'circle-opacity': 0.55,
+          'circle-stroke-color': '#9ec4f0', 'circle-stroke-width': 1}},
+        {id: 'cwa-c', type: 'circle', source: 'cwa', paint: {
+          'circle-radius': ['interpolate', ['linear'], ['get', 'mag'],
+                            3, 4, 7, 16],
+          'circle-color': ['case', ['>=', ['get', 'mag'], 6], '#e5484d',
+            ['>=', ['get', 'mag'], 5], '#d95926', '#c98500'],
+          'circle-opacity': 0.6,
+          'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1}},
+        {id: 'engine-rings', type: 'line', source: 'engine',
+         filter: ['==', ['geometry-type'], 'LineString'], paint: {
+          'line-color': ['match', ['get', 'kind'], 'p', '#8b97a3',
+            's', '#d95926', 'r4', '#d95926', 'r5', '#e5484d', '#ffffff'],
+          'line-width': ['match', ['get', 'kind'], 's', 2, 1.2],
+          'line-dasharray': [2, 2]}},
+        {id: 'engine-epi', type: 'circle', source: 'engine',
+         filter: ['==', ['geometry-type'], 'Point'], paint: {
+          'circle-radius': 7, 'circle-color': '#3987e5',
+          'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1.5}},
+      ],
+    },
+  });
+  map.addControl(new maplibregl.NavigationControl({showCompass: false}));
+  map.on('load', () => { mapReady = true; pushMapData(); });
+  for(const src of ['cwa', 'usgs']){
+    map.on('click', src + '-c', (e) => {
+      showPopup(e.features[0].properties, e.lngLat);
+    });
+    map.on('mouseenter', src + '-c',
+           () => map.getCanvas().style.cursor = 'pointer');
+    map.on('mouseleave', src + '-c',
+           () => map.getCanvas().style.cursor = '');
+  }
+}
+
+document.querySelectorAll('#view-live .bb').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#view-live .bb')
+    .forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  if(!mapReady) return;
+  const base = b.dataset.base;
+  map.setLayoutProperty('emap', 'visibility',
+                        base === 'emap' ? 'visible' : 'none');
+  map.setLayoutProperty('photo', 'visibility',
+                        base === 'photo' ? 'visible' : 'none');
+});
+
+let curPopup = null;
+function showPopup(p, lngLat){
+  if(!mapReady) return;
+  if(curPopup) curPopup.remove();
+  curPopup = new maplibregl.Popup({maxWidth: '280px'})
+    .setLngLat(lngLat || [p.lon, p.lat])
+    .setHTML(
+      `<b style="color:${magColor(p.mag)};font-size:14px">` +
+      `M${(+p.mag).toFixed(1)}</b> ${p.loc}<br>` +
+      `<span style="color:#c3c2b7">${p.t} · ` +
+      `${LANG === 'zh' ? '深度' : 'depth'} ${p.depth} km · ` +
+      `${(+p.lat).toFixed(2)}°N ${(+p.lon).toFixed(2)}°E` +
+      `${p.maxI ? '<br>' + (LANG === 'zh' ? '台灣最大震度 ' :
+        'max intensity (TW) ') + dispI(p.maxI) : ''}` +
+      `${p.kind === 'local' ?
+        (LANG === 'zh' ? ' · 小區域有感' : ' · local felt report') : ''}` +
+      `</span>` +
+      (p.url ? `<br><a href="${p.url}" target="_blank" ` +
+               `style="color:#3987e5">` + (LANG === 'zh' ?
+               'CWA/USGS 詳細報告 ↗' : 'full report ↗') + `</a>` : ''))
+    .addTo(map);
+}
+
+function toGeojson(events){
+  return {type: 'FeatureCollection', features: (events || []).map(e => ({
+    type: 'Feature',
+    geometry: {type: 'Point', coordinates: [e.lon, e.lat]},
+    properties: e,
+  }))};
+}
+function pushMapData(){
+  if(!mapReady) return;
+  if(cwaData) map.getSource('cwa').setData(toGeojson(cwaData.events));
+  if(usgsData) map.getSource('usgs').setData(toGeojson(usgsData.events));
+}
+
+async function fetchCWA(){
+  for(const url of ['/api/cwa', 'cwa_events.json']){
+    try{
+      const r = await fetch(url, {cache: 'no-store'});
+      if(!r.ok) continue;
+      cwaData = await r.json();
+      lastCwaFetch = Date.now();
+      render(); pushMapData();
+      return;
+    }catch(e){ /* try next */ }
+  }
+  document.getElementById('latest').textContent = LANG === 'zh' ?
+    '無 CWA 速報資料（本機請跑 poll_cwa.py，部署版需設 CWA_API_KEY）' :
+    'no CWA data (run poll_cwa.py locally, or set CWA_API_KEY on the ' +
+    'deployment)';
+}
+let usgsSpan = 'day';   // 'day' = past 24 h, 'week' = past 7 days
+async function fetchUSGS(){
+  try{
+    const r = await fetch('https://earthquake.usgs.gov/earthquakes/feed/' +
+                          `v1.0/summary/4.5_${usgsSpan}.geojson`);
+    const gj = await r.json();
+    usgsData = {events: gj.features.map(f => ({
+      t: new Date(f.properties.time + 8 * 3600e3).toISOString()
+           .slice(0, 16).replace('T', ' '),
+      lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0],
+      depth: Math.round(f.geometry.coordinates[2]),
+      mag: f.properties.mag, loc: f.properties.place,
+      maxI: null, url: f.properties.url, kind: 'usgs',
+    }))};
+    render(); pushMapData();
+  }catch(e){ /* offline */ }
+}
+
+function render(){
+  const data = tab === 'tw' ? cwaData : usgsData;
+  const box = document.getElementById('list');
+  if(!data || !data.events || !data.events.length){
+    box.innerHTML = '<div class="eq"><div class="info">' +
+      '<div class="loc" style="color:#c3c2b7">' +
+      (LANG === 'zh' ? '沒有資料' : 'no data') + '</div></div></div>';
+  } else {
+    box.innerHTML = data.events.map((e) => `
+      <div class="eq" data-lon="${e.lon}" data-lat="${e.lat}">
+        <div class="mchip" style="background:${magColor(e.mag)}22;
+             color:${magColor(e.mag)}; border:1px solid ${magColor(e.mag)}">
+          ${(+e.mag).toFixed(1)}</div>
+        <div class="info">
+          <div class="loc">${e.loc || '—'}</div>
+          <div class="meta">${fmtT(e.t)} · ${LANG === 'zh' ? '深' : 'depth'} ` +
+          `${e.depth} km` +
+          `${e.kind === 'local' ?
+            (LANG === 'zh' ? ' · 小區域' : ' · local') : ''}</div>
+        </div>
+        ${e.maxI ? `<div class="ibadge">` +
+          `${LANG === 'zh' ? '震度 ' : 'int. '}${dispI(e.maxI)}</div>` : ''}
+      </div>`).join('');
+    const evs = data.events;
+    box.querySelectorAll('.eq').forEach((el, i) => el.onclick = () => {
+      const e = evs[i];
+      if(!mapReady) return;
+      map.flyTo({center: [e.lon, e.lat],
+                 zoom: e.kind === 'usgs' ? 6 : 8});
+      showPopup(e);
+    });
+  }
+  const latest = cwaData && cwaData.events && cwaData.events[0];
+  if(latest){
+    document.getElementById('latest').textContent =
+      LANG === 'zh' ?
+      `M${(+latest.mag).toFixed(1)} ${latest.loc}（${fmtT(latest.t)}` +
+      `${latest.maxI ? '，最大震度 ' + latest.maxI : ''}）` :
+      `M${(+latest.mag).toFixed(1)} ${latest.loc} (${fmtT(latest.t)}` +
+      `${latest.maxI ? ', max int. ' + dispI(latest.maxI) : ''})`;
+  }
+}
+
+document.querySelectorAll('#view-live .tab[data-tab]')
+  .forEach(b => b.onclick = () => {
+    document.querySelectorAll('#view-live .tab[data-tab]')
+      .forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    tab = b.dataset.tab;
+    document.getElementById('uspanrow').style.display =
+      tab === 'world' ? 'flex' : 'none';
+    render();
+  });
+document.querySelectorAll('#uspanrow .sp').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#uspanrow .sp')
+    .forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  usgsSpan = b.dataset.s;
+  usgsData = null; render();
+  fetchUSGS();
+});
+
+// ---- live engine status (state.json written by run_live.py) ----
+function ringCoords(lon, lat, rkm){
+  const n = 72, pts = [];
+  for(let i = 0; i <= n; i++){
+    const a = i / n * 2 * Math.PI;
+    pts.push([lon + rkm * Math.sin(a) /
+                (111.19 * Math.cos(lat * Math.PI / 180)),
+              lat + rkm * Math.cos(a) / 111.19]);
+  }
+  return pts;
+}
+async function pollEngine(){
+  let S = null;
+  try{
+    const r = await fetch('state.json', {cache: 'no-store'});
+    if(r.ok) S = await r.json();
+  }catch(e){ /* offline */ }
+  const eb = document.getElementById('ebody');
+  const elog = document.getElementById('elog');
+  const esrc = document.getElementById('esrc');
+  const fresh = S && (Date.now() / 1e3 - S.updated_wall) < 6;
+  const card = document.getElementById('ecard');
+  if(!fresh){
+    // deployed (non-localhost) with no engine reachable: hide the card
+    // entirely — public visitors have no engine to start
+    const isLocal = ['localhost', '127.0.0.1'].includes(location.hostname)
+      || location.protocol === 'file:';
+    card.style.display = isLocal ? '' : 'none';
+    eb.className = 'erow muted';
+    eb.textContent = LANG === 'zh' ?
+      '引擎離線 — 本機執行 run_live.py 後自動連上' :
+      'engine offline — run run_live.py locally to connect';
+    esrc.textContent = ''; elog.textContent = '';
+    if(mapReady) map.getSource('engine').setData(
+      {type: 'FeatureCollection', features: []});
+    return;
+  }
+  card.style.display = '';
+  // REPLAY mode = a rehearsal on historical waveforms — it must NEVER look
+  // like a current earthquake next to the real CWA feed
+  const isReplay = /^REPLAY/i.test(S.mode || '');
+  const Z = LANG === 'zh';
+  document.getElementById('etitle').textContent = isReplay ?
+    (Z ? 'live 引擎（重播演練，非即時）' :
+     'Live engine (replay rehearsal — not real-time)') :
+    (Z ? 'live 引擎' : 'Live engine');
+  document.getElementById('egrow').style.display = isReplay ? 'block' : 'none';
+  esrc.textContent = '· ' + S.mode;
+  const E = S.event;
+  const alert = E && E.alert;
+  if(alert){
+    eb.className = 'erow';
+    eb.style.color = isReplay ? '#f0a83c' : '#ff8a8e';
+    eb.textContent = (isReplay ? (Z ? '演練警報' : 'REHEARSAL ALERT')
+      : (Z ? '⚠ 公開警報' : '⚠ PUBLIC ALERT')) +
+      ` · M${E.mag !== undefined && E.mag !== null
+      ? E.mag.toFixed(1) : '–'} · ${E.k} ${Z ? '站' : 'stn'} · ` +
+      `${Z ? '深' : 'depth'} ${E.depth.toFixed(0)} km`;
+  } else if(E){
+    eb.className = 'erow'; eb.style.color = '#f0a83c';
+    eb.textContent = (isReplay ? (Z ? '演練·' : 'rehearsal·') : '') +
+      (Z ? `偵測中 · ${E.k} 站` : `locating · ${E.k} stn`) +
+      (E.mag !== undefined && E.mag !== null ?
+       ` · M${E.mag.toFixed(1)}` : (Z ? ' · 等待 S 波' : ' · awaiting S'));
+  } else {
+    eb.className = 'erow muted'; eb.style.color = '';
+    eb.textContent = Z ?
+      `監測中 · ${S.n_live}/${S.n_stations} 站串流 · 推論 ${S.infer_ms} ms` :
+      `monitoring · ${S.n_live}/${S.n_stations} feeding · ` +
+      `inference ${S.infer_ms} ms`;
+  }
+  elog.innerHTML = (S.log || []).slice(0, 3).map(x =>
+    `<div>${new Date(x.t * 1e3).toISOString().slice(11, 19)} ${x.msg}</div>`
+  ).join('');
+  if(mapReady){
+    const feats = [];
+    // replay overlay only when the user explicitly opts in
+    const showOverlay = !isReplay ||
+      document.getElementById('egshow').checked;
+    if(showOverlay && E && E.lat !== undefined){
+      feats.push({type: 'Feature', properties: {kind: 'epi'},
+        geometry: {type: 'Point', coordinates: [E.lon, E.lat]}});
+      const rings = [['p', 6.2 * E.t0_age], ['s', 6.2 / 1.73 * E.t0_age],
+                     ['r4', E.r4], ['r5', E.r5]];
+      for(const [kind, r] of rings){
+        if(!r || r <= 0 || r > 600) continue;
+        feats.push({type: 'Feature', properties: {kind},
+          geometry: {type: 'LineString',
+                     coordinates: ringCoords(E.lon, E.lat, r)}});
+      }
+    }
+    map.getSource('engine').setData(
+      {type: 'FeatureCollection', features: feats});
+  }
+}
+
+setInterval(() => {
+  const el2 = document.getElementById('age');
+  const secs = Math.round((Date.now() - lastCwaFetch) / 1000);
+  el2.textContent = lastCwaFetch ? (LANG === 'zh' ?
+    `CWA 更新於 ${secs} 秒前` : `CWA updated ${secs}s ago`) : '';
+}, 1000);
+
+function applyStaticL(){
+  const Z = LANG === 'zh';
+  document.getElementById('bb-dark').textContent = Z ? '暗色底圖' : 'Dark base';
+  document.getElementById('bb-emap').textContent =
+    Z ? 'NLSC 電子地圖' : 'NLSC e-map';
+  document.getElementById('bb-photo').textContent =
+    Z ? 'NLSC 正射影像' : 'NLSC imagery';
+  document.getElementById('mapmsg').textContent = Z ?
+    '地圖圖磚載入失敗（需要網路連線）' :
+    'map tiles failed to load (network required)';
+  document.getElementById('tab-tw').textContent =
+    Z ? '台灣（CWA）' : 'Taiwan (CWA)';
+  document.getElementById('tab-world').textContent =
+    Z ? '世界 M4.5+（USGS）' : 'World M4.5+ (USGS)';
+  document.getElementById('usplbl').textContent =
+    Z ? 'USGS 範圍：' : 'USGS window:';
+  const sp = {hour: Z ? '1小時' : '1h', day: Z ? '24小時' : '24h',
+              week: Z ? '7天' : '7d', month: Z ? '30天' : '30d'};
+  document.querySelectorAll('#uspanrow .sp').forEach(
+    b => b.textContent = sp[b.dataset.s]);
+  document.getElementById('egtxt').textContent = Z ?
+    '在地圖顯示演練圖層' : 'show rehearsal overlay on map';
+  const lt = document.querySelector('.statusbar span');
+  lt.childNodes[0].textContent = Z ? '最新：' : 'Latest: ';
+}
+applyStaticL();
+initMap();
+fetchCWA(); setInterval(fetchCWA, 60_000);
+fetchUSGS(); setInterval(fetchUSGS, 300_000);
+pollEngine(); setInterval(pollEngine, 1500);
+window.__liveShow = function(){ if(map) map.resize(); };
+window.__applyLangLive = function(){
+  applyStaticL(); render(); pollEngine(); };
+})();
+</script>
+<script>
+// ======================= TOP-LEVEL VIEW SWITCH =======================
+document.querySelectorAll('.tnav[data-view]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tnav[data-view]')
+    .forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  const v = b.dataset.view;
+  document.getElementById('view-live').style.display =
+    v === 'live' ? '' : 'none';
+  document.getElementById('view-replay').style.display =
+    v === 'replay' ? '' : 'none';
+  if(v === 'replay' && window.__replayShow) window.__replayShow();
+  if(v === 'live' && window.__liveShow) window.__liveShow();
+});
+document.getElementById('langbtn').onclick = () => {
+  LANG = LANG === 'zh' ? 'en' : 'zh';
+  applyLangGlobal();
+  if(window.__applyLangReplay) window.__applyLangReplay();
+  if(window.__applyLangLive) window.__applyLangLive();
+};
+applyLangGlobal();
+</script>
+</body>
+</html>

@@ -150,13 +150,19 @@ def main() -> None:
 
     data = {"events": events, "map": {"w": W, "h": H, "pxPerKm": PX_PER_KM,
                                       "coast": coastline_paths()}}
-    template = (ROOT / "web" / "template.html").read_text()
+    template = (ROOT / "web" / "app_template.html").read_text(
+        encoding="utf-8")
     html = template.replace("/*__DATA__*/", "const DATA = " +
                             json.dumps(data, separators=(",", ":")) + ";")
     out = ROOT / "docs" / "index.html"
     out.parent.mkdir(exist_ok=True)
-    out.write_text(html)
+    out.write_text(html, encoding="utf-8")
     print(f"[dash] wrote {out} ({out.stat().st_size / 1e6:.2f} MB)")
+    # the same unified file IS the Vercel deployment page
+    vercel = ROOT / "vercel" / "index.html"
+    if vercel.parent.exists():
+        vercel.write_text(html, encoding="utf-8")
+        print(f"[dash] synced {vercel}")
 
 
 if __name__ == "__main__":

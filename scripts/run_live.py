@@ -68,7 +68,12 @@ def main() -> None:
     ap.add_argument("--server", default="geofon.gfz.de:18000")
     ap.add_argument("--streams", default="",
                     help="seedlink: NET.STA.SEL comma list, e.g. GE.WLF.BH?")
-    ap.add_argument("--webroot", default=str(ROOT / "outputs" / "live_web"))
+    ap.add_argument("--webroot",
+                    default=str(ROOT / "outputs" / "console_web"),
+                    help="shared runtime dir (also used by poll_cwa.py)")
+    ap.add_argument("--notify", action="store_true",
+                    help="send email/Telegram on PWS alert (config via env: "
+                         "EQ_SMTP_USER/PASS/MAIL_TO, EQ_TG_TOKEN/CHAT)")
     args = ap.parse_args()
 
     from edgequake.live.engine import LiveEngine
@@ -78,9 +83,13 @@ def main() -> None:
     webroot = Path(args.webroot)
     webroot.mkdir(parents=True, exist_ok=True)
     (webroot / "state.json").unlink(missing_ok=True)  # no stale state
-    shutil.copy(ROOT / "web" / "live.html", webroot / "index.html")
-    shutil.copy(ROOT / "assets" / "taiwan_coastline_ne50m.json",
-                webroot / "coast.json")
+    # ONE source of truth: docs/index.html (built by build_dashboard.py).
+    # The runtime dir is a disposable cache — always refresh the copy.
+    built = ROOT / "docs" / "index.html"
+    if not built.exists():
+        raise SystemExit("docs/index.html missing — run "
+                         "scripts/build_dashboard.py first")
+    shutil.copy(built, webroot / "index.html")
 
     if args.source == "replay":
         base = Path(args.base_dir)
@@ -102,10 +111,17 @@ def main() -> None:
         src = SeedLinkSource(args.server, streams, meta)
         label = f"SEEDLINK {args.server}"
 
+    notifier = None
+    if args.notify:
+        from edgequake.live.notify import Notifier
+
+        notifier = Notifier.from_env()
+        print(f"[live] notify channels: {notifier.channels or 'NONE'}")
+
     picker = SeisBenchPhaseNet(weights=args.weights,
                                state_dict_path=args.state_dict or None)
     engine = LiveEngine(picker, src.stations, threshold=args.threshold,
-                        mode_label=label)
+                        mode_label=label, notifier=notifier)
     print(f"[live] {len(src.stations)} stations | picker {picker.name}")
 
     serve(webroot, args.port)

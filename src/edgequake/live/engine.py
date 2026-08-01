@@ -49,7 +49,8 @@ class LiveStation:
 class LiveEngine:
     def __init__(self, picker, stations_meta, buf_s=120.0, stride_s=1.0,
                  threshold=0.3, assoc_n=3, assoc_win_s=15.0,
-                 event_timeout_s=60.0, mode_label="replay"):
+                 event_timeout_s=60.0, mode_label="replay", notifier=None):
+        self.notifier = notifier
         self.picker = picker
         self.thr = threshold
         self.buf_n = int(buf_s * FS)
@@ -211,6 +212,15 @@ class LiveEngine:
         t_s = np.array([(s.ts - t_ref) if s_ok(s) else np.nan
                         for s in members])
         est = self.locator.locate(lats, lons, t_p, t_s=t_s, bootstrap=40)
+        # a deep solution (>90 km) that used S legs is almost always
+        # S-mispick absorption (systematically-late legs at 1.73x slowness
+        # fit best by burying the source). Taiwan EEW targets are crustal —
+        # retry with P legs only before accepting a deep solution.
+        if est.depth_km > 90 and np.isfinite(t_s).any():
+            est_p = self.locator.locate(lats, lons, t_p, t_s=None,
+                                        bootstrap=40)
+            if est_p.depth_km < est.depth_km:
+                est = est_p
         # prune members that stopped fitting (residual > 4 s) — takes effect
         # on the next cycle's relocation
         d_hyp = np.array([np.hypot(haversine_km(est.lat, est.lon, la, lo),
@@ -274,6 +284,12 @@ class LiveEngine:
         if any_alert and not ev.get("alerted"):
             ev["alerted"] = True
             self._log("PWS ALERT criteria met")
+            if self.notifier and self.notifier.channels:
+                from .notify import format_alert
+                ev_snap = dict(ev, cty=cty)
+                subject, body = format_alert(ev_snap, self.mode_label)
+                self.notifier.send(subject, body)   # non-blocking
+                self._log(f"notification sent ({'+'.join(self.notifier.channels)})")
         ev["cty"] = cty
         ev["alert"] = any_alert
 
@@ -363,6 +379,6 @@ class LiveEngine:
 
     def write_state(self, path):
         tmp = str(path) + ".tmp"
-        with open(tmp, "w") as f:
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(self.state(), f, separators=(",", ":"))
         os.replace(tmp, path)
