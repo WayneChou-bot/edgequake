@@ -49,7 +49,13 @@ class LiveStation:
 class LiveEngine:
     def __init__(self, picker, stations_meta, buf_s=120.0, stride_s=1.0,
                  threshold=0.3, assoc_n=3, assoc_win_s=15.0,
-                 event_timeout_s=60.0, mode_label="replay", notifier=None):
+                 event_timeout_s=60.0, mode_label="replay", notifier=None,
+                 trigger_mode=False, trig_pga=2.5):
+        # trigger_mode: sources that deliver per-station PGA values instead
+        # of waveforms (e.g. TREM RTS). No PhaseNet, no S picks — a PGA
+        # jump IS the arrival; magnitude waits a fixed dwell after trigger.
+        self.trigger_mode = trigger_mode
+        self.trig_pga = trig_pga
         self.notifier = notifier
         self.picker = picker
         self.thr = threshold
@@ -92,6 +98,17 @@ class LiveEngine:
         for p in tick.packets:
             st = self.stations.get(p.code)
             if st is None:
+                continue
+            if p.kind == "trig":
+                pga_now = float(p.data[0])
+                st.acc_peaks.append((p.t0, pga_now))
+                if len(st.acc_peaks) > 400:
+                    st.acc_peaks = st.acc_peaks[-400:]
+                st.last_data = self.now
+                if st.tp is None and pga_now >= self.trig_pga:
+                    st.tp = p.t0
+                    st.pprob = 0.9 if pga_now >= 8.0 else 0.6
+                    self._log(f"trigger {st.code} (PGA {pga_now:.1f} gal)")
                 continue
             if p.kind == "acc":
                 if len(p.data):
@@ -239,7 +256,12 @@ class LiveEngine:
         mag = None
         m_pga, m_d = [], []
         for s in members:
-            if s.ts is None or s.ts + 2.0 > self.now:
+            if self.trigger_mode:
+                # no S picks: PGA is plausibly final a fixed dwell after
+                # the trigger (S passes within ~8 s for near stations)
+                if self.now < s.tp + 8.0:
+                    continue
+            elif s.ts is None or s.ts + 2.0 > self.now:
                 continue
             pga = s.pga_since(s.tp - 1.0)
             if pga:

@@ -11,6 +11,12 @@ PhaseNet/
 # kaggle raw outputs (keep only what's copied into outputs/)
 kaggle/Train_output/
 
+# runtime cache for the local console (copies of docs/index.html + live
+# state.json / cwa_events.json that change every second)
+outputs/console_web/
+outputs/live_web/
+outputs/monitor_web/
+
 # scratch / probe files
 outputs/*_broken.pt
 outputs/probe_*.pt

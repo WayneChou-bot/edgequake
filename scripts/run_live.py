@@ -53,7 +53,8 @@ def serve(webroot: Path, port: int):
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--source", choices=["replay", "seedlink"],
+    ap.add_argument("--source",
+                    choices=["replay", "seedlink", "trem", "trem-sim"],
                     default="replay")
     ap.add_argument("--event", choices=list(EVENTS), default="0403")
     ap.add_argument("--base-dir", default=str(ROOT.parent))
@@ -101,6 +102,17 @@ def main() -> None:
         src = ReplaySource([base / dirname / f for f in files], dataless,
                            speed=args.speed, max_stations=args.max_stations)
         label = f"REPLAY {args.event} @ {args.speed:g}x"
+    elif args.source == "trem":
+        from edgequake.live.trem import TremRtsSource
+
+        src = TremRtsSource()
+        label = "TREM-RTS LIVE (ExpTech community MEMS net)"
+    elif args.source == "trem-sim":
+        from edgequake.live.trem import TremSimSource
+
+        src = TremSimSource(ROOT / "outputs" / f"replay_{args.event}.json",
+                            speed=args.speed)
+        label = f"TREM-SIM {args.event} @ {args.speed:g}x"
     else:
         streams = [tuple(s.split(".")) for s in args.streams.split(",") if s]
         if not streams:
@@ -118,11 +130,16 @@ def main() -> None:
         notifier = Notifier.from_env()
         print(f"[live] notify channels: {notifier.channels or 'NONE'}")
 
-    picker = SeisBenchPhaseNet(weights=args.weights,
-                               state_dict_path=args.state_dict or None)
+    trigger_mode = args.source in ("trem", "trem-sim")
+    picker = None
+    if not trigger_mode:   # trigger mode needs no waveform picker
+        picker = SeisBenchPhaseNet(weights=args.weights,
+                                   state_dict_path=args.state_dict or None)
     engine = LiveEngine(picker, src.stations, threshold=args.threshold,
-                        mode_label=label, notifier=notifier)
-    print(f"[live] {len(src.stations)} stations | picker {picker.name}")
+                        mode_label=label, notifier=notifier,
+                        trigger_mode=trigger_mode)
+    print(f"[live] {len(src.stations)} stations | "
+          f"{'trigger mode (no picker)' if trigger_mode else picker.name}")
 
     serve(webroot, args.port)
     print(f"[live] console: http://localhost:{args.port}")

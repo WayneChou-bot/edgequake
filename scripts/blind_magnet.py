@@ -36,9 +36,17 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--event", choices=["0403", "dapu"], default="0403")
     ap.add_argument("--base-dir", default=str(ROOT.parent))
-    ap.add_argument("--weights", default=str(ROOT / "outputs" / "magnet_cwa.pt"))
+    ap.add_argument("--weights", default=None)
+    ap.add_argument("--v2", action="store_true",
+                    help="distance-conditioned model: aux includes the "
+                         "hypocentral distance from the LIVE location "
+                         "estimate at that moment (never the truth)")
     ap.add_argument("--out", default="outputs")
     args = ap.parse_args()
+    if args.weights is None:
+        args.weights = str(ROOT / "outputs" / "magnet_cwa_v2" /
+                           "magnet_cwa_v2.pt" if args.v2
+                           else ROOT / "outputs" / "magnet_cwa.pt")
 
     import obspy
     import torch
@@ -64,9 +72,29 @@ def main() -> None:
         fam, comp = tr.stats.channel[:2], tr.stats.channel[-1]
         by_sta.setdefault(tr.stats.station, {}).setdefault(fam, {})[comp] = tr
 
-    model = MagNet()
+    model = MagNet(n_aux=3 if args.v2 else 2)
     model.load_state_dict(torch.load(args.weights, map_location="cpu"))
     model.eval()
+
+    # location-estimate timeline for the v2 distance input: what the
+    # real-time chain believed at each moment (honest — not the catalog)
+    conv = json.loads((ROOT / "outputs" /
+                       f"convergence_{args.event}.json").read_text())
+    t_first_p = min(obspy.UTCDateTime(s["t_p"]) for s in replay["stations"]
+                    if s["t_p"])
+
+    def est_at(t_rel_first):
+        """Latest location estimate available at t seconds after the first
+        trigger; None before the first 3-station solution."""
+        best = None
+        for st in conv["steps"]:
+            if st["t_since_first_trigger_s"] <= t_rel_first:
+                best = st
+            else:
+                break
+        return best
+
+    from edgequake.location.locator import haversine_km
 
     rows = []
     for s in replay["stations"]:
@@ -100,13 +128,24 @@ def main() -> None:
         if peak <= 0 or std <= 0 or peak > 1e8:
             continue
         x = torch.tensor((seg / peak)[None].astype(np.float32))
-        aux = torch.tensor([[np.log10(peak), np.log10(std)]],
-                           dtype=torch.float32)
+        aux_v = [np.log10(peak), np.log10(std)]
+        d_used = None
+        if args.v2:
+            e = est_at(float(tp - t_first_p) + 3.0)
+            if e is not None:
+                d_ep = haversine_km(e["est_lat"], e["est_lon"],
+                                    s["lat"], s["lon"])
+                d_used = float(np.hypot(d_ep, e["depth_est_km"]))
+            else:
+                d_used = 40.0   # trained fallback prior (no location yet)
+            aux_v.append(np.log10(max(d_used, 1.0)))
+        aux = torch.tensor([aux_v], dtype=torch.float32)
         with torch.no_grad():
             mu, sig = model.estimate(x, aux)
         rows.append(dict(code=s["code"], ch=fam,
                          t_avail=float(tp - origin) + 3.0,
-                         mu=float(mu[0]), sigma=float(sig[0])))
+                         mu=float(mu[0]), sigma=float(sig[0]),
+                         d_used=(round(d_used, 1) if d_used else None)))
 
     rows.sort(key=lambda r: r["t_avail"])
     # cumulative inverse-variance aggregation in arrival order
@@ -133,8 +172,10 @@ def main() -> None:
 
     from build_dashboard import OFFICIAL
 
+    tag = "_v2" if args.v2 else ""
     summary = dict(
-        event=args.event, truth_mag=truth_mag, n_stations=len(rows),
+        event=args.event, model="v2-dist" if args.v2 else "v1",
+        truth_mag=truth_mag, n_stations=len(rows),
         first_ai=dict(t=round(agg[0]["t"], 1), mag=round(agg[0]["mag"], 2),
                       sigma=round(agg[0]["sigma"], 2)) if agg else None,
         ai_at=[dict(t=round(a["t"], 1), n=a["n"], mag=round(a["mag"], 2),
@@ -146,7 +187,7 @@ def main() -> None:
              "lower bound (correlated stations); trained <=2019, this "
              "event is out-of-time",
     )
-    out_json = ROOT / args.out / f"blind_magnet_{args.event}.json"
+    out_json = ROOT / args.out / f"blind_magnet{tag}_{args.event}.json"
     out_json.write_text(json.dumps(
         {"summary": summary, "stations": rows, "aggregate": agg}, indent=1))
     print(json.dumps(summary, indent=1))
@@ -165,11 +206,21 @@ def main() -> None:
     ta = [a["t"] for a in agg]
     ma = [a["mag"] for a in agg]
     sa = [a["sigma"] for a in agg]
+    # v2 runs overlay the v1 baseline for the before/after story
+    if args.v2:
+        v1p = ROOT / args.out / f"blind_magnet_{args.event}.json"
+        if v1p.exists():
+            v1 = json.loads(v1p.read_text())["aggregate"]
+            ax.step([a["t"] for a in v1], [a["mag"] for a in v1],
+                    where="post", color="#8b97a3", lw=1.4, ls="--",
+                    label="AI v1 (no distance input)")
     ax.fill_between(ta, [m - s for m, s in zip(ma, sa)],
                     [m + s for m, s in zip(ma, sa)],
                     color="#3987e5", alpha=0.18, step="post")
     ax.step(ta, ma, where="post", color="#3987e5", lw=2,
-            label="AI early magnitude (P+3s windows, aggregated)")
+            label="AI early magnitude" +
+            (" v2 (distance-conditioned)" if args.v2 else
+             " (P+3s windows, aggregated)"))
     if phys:
         ax.step([t for t, _ in phys], [m for _, m in phys], where="post",
                 color="#d95926", lw=2,
@@ -187,7 +238,7 @@ def main() -> None:
     leg = ax.legend(facecolor="#20201f", edgecolor="#4a4a48", fontsize=8)
     for txt in leg.get_texts():
         txt.set_color("#c3c2b7")
-    out_png = ROOT / args.out / f"blind_magnet_{args.event}.png"
+    out_png = ROOT / args.out / f"blind_magnet{tag}_{args.event}.png"
     plt.tight_layout()
     plt.savefig(out_png, dpi=150, facecolor=fig.get_facecolor())
     print(f"[blind] wrote {out_json.name} / {out_png.name}")

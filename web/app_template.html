@@ -249,8 +249,8 @@ const GTXT = {
   nav_replay: {zh: '歷史事件回放', en: 'Event Replay'},
   sub: {zh: '即時：CWA 地震報告（約 1–2 分鐘延遲，速報非預警）＋ USGS 全球地震＋本機 live 引擎狀態 · 回放：歷史事件以真實時間軸重演完整偵測鏈 · 研究原型，非官方警報服務',
         en: 'Live: CWA earthquake reports (~1–2 min delay, bulletins not warnings) + USGS worldwide + local live engine · Replay: historical events re-run through the full detection chain on the true timeline · research prototype, not an official warning service'},
-  foot: {zh: '資料：中央氣象署開放資料平臺（速報）、CWA GDMS 歷史波形 (doi:10.7914/SN/T5)、USGS Earthquake Hazards Program、底圖 © CARTO/OpenStreetMap、內政部國土測繪中心 WMTS · 震央真值為 CWA 報告近似值 · EdgeQuake 研究原型，非官方警報服務 · github.com/WayneChou-bot/edgequake',
-        en: 'Data: CWA Open Data (bulletins), CWA GDMS historical waveforms (doi:10.7914/SN/T5), USGS Earthquake Hazards Program, basemap © CARTO/OpenStreetMap, NLSC WMTS · truth epicenters are approximate CWA-report values · EdgeQuake research prototype, not an official warning service · github.com/WayneChou-bot/edgequake'},
+  foot: {zh: '資料：中央氣象署開放資料平臺（速報）、CWA GDMS 歷史波形 (doi:10.7914/SN/T5)、USGS Earthquake Hazards Program、底圖 © CARTO/OpenStreetMap、內政部國土測繪中心 WMTS、ExpTech TREM（社群觀測網，僅供參考） · 震央真值為 CWA 報告近似值 · EdgeQuake 研究原型，非官方警報服務 · github.com/WayneChou-bot/edgequake',
+        en: 'Data: CWA Open Data (bulletins), CWA GDMS historical waveforms (doi:10.7914/SN/T5), USGS Earthquake Hazards Program, basemap © CARTO/OpenStreetMap, NLSC WMTS, ExpTech TREM (community network, reference only) · truth epicenters are approximate CWA-report values · EdgeQuake research prototype, not an official warning service · github.com/WayneChou-bot/edgequake'},
 };
 function applyLangGlobal(){
   document.getElementById('ttl').textContent = GTXT.ttl[LANG];
@@ -1009,7 +1009,7 @@ async function pollEngine(){
   card.style.display = '';
   // REPLAY mode = a rehearsal on historical waveforms — it must NEVER look
   // like a current earthquake next to the real CWA feed
-  const isReplay = /^REPLAY/i.test(S.mode || '');
+  const isReplay = /^(REPLAY|TREM-SIM)/i.test(S.mode || '');
   const Z = LANG === 'zh';
   document.getElementById('etitle').textContent = isReplay ?
     (Z ? 'live 引擎（重播演練，非即時）' :
@@ -1099,8 +1099,8 @@ function applyStaticL(){
 }
 applyStaticL();
 initMap();
-fetchCWA(); setInterval(fetchCWA, 60_000);
-fetchUSGS(); setInterval(fetchUSGS, 300_000);
+fetchCWA(); setInterval(fetchCWA, 30_000);
+fetchUSGS(); setInterval(fetchUSGS, 120_000);
 pollEngine(); setInterval(pollEngine, 1500);
 window.__liveShow = function(){ if(map) map.resize(); };
 window.__applyLangLive = function(){

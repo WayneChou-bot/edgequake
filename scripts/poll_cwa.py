@@ -116,7 +116,7 @@ def serve(webroot: Path, port: int):
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--key", default=os.environ.get("CWA_API_KEY", ""))
-    ap.add_argument("--interval", type=int, default=60)
+    ap.add_argument("--interval", type=int, default=30)
     ap.add_argument("--out", default=str(ROOT / "outputs" / "console_web"),
                     help="shared runtime dir (also used by run_live.py)")
     ap.add_argument("--serve", action="store_true")
