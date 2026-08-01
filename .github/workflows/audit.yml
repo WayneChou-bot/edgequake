@@ -74,3 +74,23 @@ jobs:
           git commit -m "shadow audit: ${{ steps.check.outputs.id }}" || exit 0
           git pull --rebase origin main
           git push
+
+      - name: Notify audit result
+        if: steps.check.outputs.new == 'true'
+        env:
+          EQ_WEBHOOK_URL: ${{ secrets.EQ_WEBHOOK_URL }}
+          EQ_WEBHOOK_TOKEN: ${{ secrets.EQ_WEBHOOK_TOKEN }}
+          EVENT_ID: ${{ steps.check.outputs.id }}
+        run: |
+          python3 - <<'PYEOF'
+          import json, os, urllib.request, urllib.parse
+          url = (os.environ["EQ_WEBHOOK_URL"] + "?token="
+                 + urllib.parse.quote(os.environ["EQ_WEBHOOK_TOKEN"]))
+          body = open("audit_log.txt", encoding="utf-8").read()[-1500:]
+          data = json.dumps({
+              "subject": "EdgeQuake 稽核完成: " + os.environ["EVENT_ID"],
+              "body": body}).encode()
+          req = urllib.request.Request(
+              url, data=data, headers={"Content-Type": "application/json"})
+          print(urllib.request.urlopen(req, timeout=20).read()[:80])
+          PYEOF
