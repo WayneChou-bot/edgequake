@@ -35,13 +35,20 @@ DISCLAIMER = ("此為 EdgeQuake 個人研究原型自動發送，非中央氣象
 
 
 class Notifier:
-    def __init__(self, email_cfg=None, telegram_cfg=None):
+    def __init__(self, email_cfg=None, telegram_cfg=None, webhook_cfg=None):
         self.email_cfg = email_cfg
         self.telegram_cfg = telegram_cfg
+        self.webhook_cfg = webhook_cfg
 
     @classmethod
     def from_env(cls) -> "Notifier":
-        email_cfg = telegram_cfg = None
+        email_cfg = telegram_cfg = webhook_cfg = None
+        # webhook (e.g. Google Apps Script doPost): the engine POSTs
+        # {subject, body}; the script sends the mail under YOUR Google
+        # account — no SMTP credentials anywhere. See extras/notify_webhook.gs
+        if os.environ.get("EQ_WEBHOOK_URL"):
+            webhook_cfg = dict(url=os.environ["EQ_WEBHOOK_URL"],
+                               token=os.environ.get("EQ_WEBHOOK_TOKEN", ""))
         if os.environ.get("EQ_SMTP_USER") and os.environ.get("EQ_SMTP_PASS"):
             email_cfg = dict(
                 user=os.environ["EQ_SMTP_USER"],
@@ -55,7 +62,7 @@ class Notifier:
         if os.environ.get("EQ_TG_TOKEN") and os.environ.get("EQ_TG_CHAT"):
             telegram_cfg = dict(token=os.environ["EQ_TG_TOKEN"],
                                 chat=os.environ["EQ_TG_CHAT"])
-        return cls(email_cfg, telegram_cfg)
+        return cls(email_cfg, telegram_cfg, webhook_cfg)
 
     @property
     def channels(self) -> list[str]:
@@ -64,6 +71,8 @@ class Notifier:
             out.append("email")
         if self.telegram_cfg:
             out.append("telegram")
+        if self.webhook_cfg:
+            out.append("webhook")
         return out
 
     # ------------------------------------------------------------- sending
@@ -77,6 +86,9 @@ class Notifier:
         if self.telegram_cfg:
             threads.append(threading.Thread(
                 target=self._telegram, args=(subject, body), daemon=True))
+        if self.webhook_cfg:
+            threads.append(threading.Thread(
+                target=self._webhook, args=(subject, body), daemon=True))
         for t in threads:
             t.start()
         if block:
@@ -98,6 +110,21 @@ class Notifier:
             print(f"[notify] email sent to {len(cfg['to'])} recipient(s)")
         except Exception as e:  # never crash the engine over a notification
             print(f"[notify] email FAILED: {e}")
+
+    def _webhook(self, subject, body):
+        cfg = self.webhook_cfg
+        try:
+            url = cfg["url"]
+            if cfg.get("token"):
+                sep = "&" if "?" in url else "?"
+                url = f"{url}{sep}token={urllib.parse.quote(cfg['token'])}"
+            data = json.dumps({"subject": subject, "body": body}).encode()
+            req = urllib.request.Request(
+                url, data=data, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=15) as r:
+                print(f"[notify] webhook: {r.read(80).decode(errors='replace')}")
+        except Exception as e:
+            print(f"[notify] webhook FAILED: {e}")
 
     def _telegram(self, subject, body):
         cfg = self.telegram_cfg
