@@ -99,8 +99,10 @@
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(229,72,77,.35)}
                    50%{box-shadow:0 0 0 9px rgba(229,72,77,0)}}
   .layout{display:flex; gap:18px; flex-wrap:wrap}
-  .mapbox{background:var(--panel); border-radius:10px; padding:10px}
-  .mapbox svg{display:block; width:min(420px, 34vw); height:auto}
+  /* panel width locked to the svg width (+padding) so no dead strip */
+  .mapbox{background:var(--panel); border-radius:10px; padding:10px;
+          flex:0 0 auto; width:calc(min(420px, 34vw) + 20px)}
+  .mapbox svg{display:block; width:100%; height:auto}
   svg text{font-family:'Segoe UI',sans-serif}
   .side{flex:1; min-width:320px; display:flex;
         flex-direction:column; gap:12px}
@@ -130,11 +132,12 @@
          cursor:pointer; font-size:13px}
   button:hover{border-color:var(--blue)}
   input[type=range]{flex:1; accent-color:var(--blue)}
-  .wfbox{background:var(--panel); border-radius:10px; padding:12px 14px}
+  /* fills the remaining column height -> bottoms of both columns align */
+  .wfbox{background:var(--panel); border-radius:10px; padding:12px 14px;
+         flex:1 1 0; min-height:220px; overflow:hidden}
   .wfhead{font-size:11px; color:var(--ink2); margin-bottom:6px;
           display:flex; justify-content:space-between}
-  .legend{font-size:10.5px; color:var(--ink2); margin-top:6px;
-          max-width:540px}
+  .legend{font-size:10.5px; color:var(--ink2); margin-top:6px}
   /* ---------- AI signal-intelligence overlay (both maps) ---------- */
   .mapbox{position:relative}
   .intel{position:absolute; right:12px; bottom:16px; z-index:6;
@@ -787,7 +790,9 @@ function cssv(n){ return getComputedStyle(document.documentElement)
 function sizeWf(){
   const box = document.querySelector('#view-replay .wfbox');
   wfc.width = Math.max(360, box.clientWidth - 28);
-  wfc.height = 340;
+  // flex-basis 0 makes the box height independent of the canvas, so we
+  // can safely fill whatever the column allotted (minus header+padding)
+  wfc.height = Math.max(260, box.clientHeight - 52);
 }
 window.addEventListener('resize', () => { sizeWf(); renderWf(); });
 
