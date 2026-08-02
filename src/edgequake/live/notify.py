@@ -157,6 +157,16 @@ def format_alert(ev: dict, mode_label: str) -> tuple[str, str]:
     eta_lines = " · ".join(
         f"{n} S波 {etas[n]:.0f}s" for n in ("Taipei", "Taichung", "Kaohsiung")
         if etas.get(n) is not None and etas[n] > 0)
+    exp = ev.get("exposure") or {}
+
+    def fmt_pop(n):
+        return (f"{n/1e4:.0f}萬" if n >= 1e5 else
+                f"{n/1e4:.1f}萬" if n >= 1e4 else str(int(n)))
+
+    exp_line = (f"預估曝險人口 震度3+ {fmt_pop(exp['i3'])} · "
+                f"4+ {fmt_pop(exp['i4'])} · 5+ {fmt_pop(exp['i5'])} "
+                f"({exp.get('pop_version', '')}，點震源近似)\n"
+                if exp else "")
     subject = f"⚠ EdgeQuake {mtxt} 地震警報（研究原型）"
     body = (
         f"{mtxt} est · 震央 {ev.get('lat', 0):.2f}N {ev.get('lon', 0):.2f}E "
@@ -164,6 +174,7 @@ def format_alert(ev: dict, mode_label: str) -> tuple[str, str]:
         f"定位測站 {ev.get('k', 0)} · 最大預測震度 {fmt_i(imax)}\n"
         f"達 PWS 門檻縣市 ({len(alerts)}): {', '.join(alerts[:8])}"
         f"{'…' if len(alerts) > 8 else ''}\n"
+        f"{exp_line}"
         f"{eta_lines}\n"
         f"來源: {mode_label}"
     )

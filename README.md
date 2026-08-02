@@ -319,12 +319,34 @@ well as true site geology, and TREM MEMS station codes are not in the CWA
 catalog, so live trigger-mode magnitudes are (for now) uncorrected —
 self-calibrating TREM terms from accumulated live data is on the roadmap.
 
+## Phase 8 — LLM event reports · Phase 9 — PAGER-style exposure
+
+Every audited event now gets an automated bilingual narrative report
+(`scripts/llm_report.py`, Gemini flash, free tier): the LLM is restricted
+to narrating numbers the pipeline computed — nothing invented, silence
+framed as restraint when correct, research-prototype disclaimer mandatory.
+Reports live in the audit record and expand in the console's audit tab.
+
+Exposure turns magnitudes into impact: predicted PGA on the WorldPop
+Global2 1 km population grid (R2025A, year-2026 constrained UN-adjusted
+estimates: 23.1 M people over ~29k inhabited cells; CC BY 4.0), summed
+per intensity band — "M7.2 off Hualien" becomes "~7 M people in I4+
+shaking" in well under a millisecond, recomputed on every live magnitude
+update and shown in the intel card, alert notifications, audit log, and
+LLM reports.
+Population data is versioned (`pop_version` stored per audit record;
+quarterly staleness check via `fetch_pop_grid.py --check-update`) so new
+data never silently rewrites historical audits. Stated limits: point
+source, average site, static residential population — order-of-magnitude
+numbers by design.
+
 ## Roadmap
 
-- ~~Phases 0–7~~ **done**: replay engine → cross-domain benchmark → Taiwan
+- ~~Phases 0–9~~ **done**: replay engine → cross-domain benchmark → Taiwan
   fine-tune → locator/magnitude → full-chain replays + console → live engine
   + notifications → AI early magnitude → TREM real-time + automated audit →
-  cloud state relay + public audit log + site-effect correction.
+  cloud state relay + public audit log + site-effect correction → LLM event
+  reports → PAGER-style population exposure.
 - **TREM site terms**: self-calibrate MEMS station terms from accumulated
   live trigger data so trigger-mode magnitudes get the Phase 7 treatment.
 - **Anytime magnitude (v3)**: growing-window MagNet heads (P+3/6/9 s) against
@@ -340,6 +362,11 @@ self-calibrating TREM terms from accumulated live data is on the roadmap.
   conservative 15-epoch single-year recipe; in-domain ceiling is ~0.85+).
 
 ## Data & acknowledgements
+
+- **WorldPop** (www.worldpop.org): Taiwan 1 km population grid, Global2
+  release R2025A (2015–2030, constrained UN-adjusted; we use the 2026
+  estimate), School of Geography and Environmental Science, University of
+  Southampton. CC BY 4.0.
 
 - **CWA Benchmark** (Taiwan): Tang, K.-W., K.-Y. Chen, D.-Y. Chen, T.-L. Chin,
   and T.-Y. Hsu (2024), *The CWA Benchmark: A Seismic Dataset from Taiwan for

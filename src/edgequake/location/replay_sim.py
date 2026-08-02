@@ -50,7 +50,7 @@ def pws_alert(mag: float, intensity: float) -> bool:
 
 
 def simulate(ev, truth, vp=6.2, dt=0.25, max_stations=60, bootstrap=60,
-             site_terms=None):
+             site_terms=None, exposure_model=None):
     """ev: DataFrame from load_replay_json/load_event; returns dict payload."""
     n_max = min(max_stations, len(ev))
     t_ref = float(ev.t_p.values.min())
@@ -111,6 +111,10 @@ def simulate(ev, truth, vp=6.2, dt=0.25, max_stations=60, bootstrap=60,
             if mag:
                 frame["mag"] = round(mag.mag, 2)
                 frame["msig"] = round(mag.sigma, 2)
+                if exposure_model is not None:
+                    e = exposure_model.exposure(est.lat, est.lon,
+                                                est.depth_km, mag.mag)
+                    frame["exp"] = {k: e[k] for k in ("i3", "i4", "i5")}
                 # predicted-intensity contour radii from the attenuation model
                 a_, b_, c_ = (DEFAULT_COEF["a"], DEFAULT_COEF["b"],
                               DEFAULT_COEF["c"])
@@ -154,6 +158,8 @@ def simulate(ev, truth, vp=6.2, dt=0.25, max_stations=60, bootstrap=60,
         "origin_rel": (round(truth["origin_epoch"] - t_ref, 2)
                        if truth.get("origin_epoch") else None),
         "source": truth.get("source", "catalog picks"),
+        "pop_version": (exposure_model.version
+                        if exposure_model is not None else None),
         "vp": vp, "dt": dt, "t_end": round(t_end, 2),
         "stations": [{"code": str(c), "lat": round(float(la), 4),
                       "lon": round(float(lo), 4), "tp": round(float(tp), 2),

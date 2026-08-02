@@ -302,9 +302,25 @@ const GTXT = {
   nav_audit: {zh: '稽核紀錄', en: 'Audit Log'},
   sub: {zh: '即時：CWA 地震報告（約 1–2 分鐘延遲，速報非預警）＋ USGS 全球地震＋雲端 live 引擎（TREM 真即時偵測） · 回放：歷史事件以真實時間軸重演完整偵測鏈 · 研究原型，非官方警報服務',
         en: 'Live: CWA earthquake reports (~1–2 min delay, bulletins not warnings) + USGS worldwide + cloud live engine (TREM real-time detection) · Replay: historical events re-run through the full detection chain on the true timeline · research prototype, not an official warning service'},
-  foot: {zh: '資料：中央氣象署開放資料平臺（速報）、CWA GDMS 歷史波形 (doi:10.7914/SN/T5)、USGS Earthquake Hazards Program、底圖 © CARTO/OpenStreetMap、內政部國土測繪中心 WMTS、ExpTech TREM（社群觀測網，僅供參考） · 震央真值為 CWA 報告近似值 · EdgeQuake 研究原型，非官方警報服務 · github.com/WayneChou-bot/edgequake',
-        en: 'Data: CWA Open Data (bulletins), CWA GDMS historical waveforms (doi:10.7914/SN/T5), USGS Earthquake Hazards Program, basemap © CARTO/OpenStreetMap, NLSC WMTS, ExpTech TREM (community network, reference only) · truth epicenters are approximate CWA-report values · EdgeQuake research prototype, not an official warning service · github.com/WayneChou-bot/edgequake'},
+  foot: {zh: '資料：中央氣象署開放資料平臺（速報）、CWA GDMS 歷史波形 (doi:10.7914/SN/T5)、USGS Earthquake Hazards Program、底圖 © CARTO/OpenStreetMap、內政部國土測繪中心 WMTS、ExpTech TREM（社群觀測網，僅供參考）、人口網格 WorldPop (CC BY 4.0) · 震央真值為 CWA 報告近似值 · EdgeQuake 研究原型，非官方警報服務 · github.com/WayneChou-bot/edgequake',
+        en: 'Data: CWA Open Data (bulletins), CWA GDMS historical waveforms (doi:10.7914/SN/T5), USGS Earthquake Hazards Program, basemap © CARTO/OpenStreetMap, NLSC WMTS, ExpTech TREM (community network, reference only), population grid WorldPop (CC BY 4.0) · truth epicenters are approximate CWA-report values · EdgeQuake research prototype, not an official warning service · github.com/WayneChou-bot/edgequake'},
 };
+function fmtPop(n){
+  if(LANG === 'zh'){
+    if(n >= 1e8) return (n/1e8).toFixed(1) + '億';
+    if(n >= 1e5) return Math.round(n/1e4) + '萬';
+    if(n >= 1e4) return (n/1e4).toFixed(1) + '萬';
+    return String(n);
+  }
+  if(n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if(n >= 1e3) return Math.round(n/1e3) + 'k';
+  return String(n);
+}
+function fmtExp(e){
+  // {i3,i4,i5} -> 'I3+ 1108萬 · I4+ 511萬 · I5+ 218萬'
+  return ['i3','i4','i5'].filter(k => e[k] !== undefined)
+    .map((k,idx) => `I${k[1]}+ <b>${fmtPop(e[k])}</b>`).join(' · ');
+}
 function applyLangGlobal(){
   document.getElementById('ttl').textContent = GTXT.ttl[LANG];
   document.getElementById('nav-live').textContent = GTXT.nav_live[LANG];
@@ -643,11 +659,13 @@ function intelHTML(o){
   const rows = [];
   const L = Z ?
     {firstP: '首個P波', stations: '觸發測站', physM: '物理規模',
-     aiM: 'AI 規模', epi: '震央信心', eew: 'EEW判定', lead: '預警餘裕'} :
+     aiM: 'AI 規模', epi: '震央信心', eew: 'EEW判定', exp: '曝險人口',
+     lead: '預警餘裕'} :
     {firstP: 'First P', stations: 'Stations', physM: 'Physics M',
-     aiM: 'AI M', epi: 'Epi conf', eew: 'EEW', lead: 'Lead time'};
+     aiM: 'AI M', epi: 'Epi conf', eew: 'EEW', exp: 'Exposure',
+     lead: 'Lead time'};
   for(const k of ['firstP', 'stations', 'physM', 'aiM', 'epi', 'eew',
-                  'lead'])
+                  'exp', 'lead'])
     if(o[k]) rows.push(`<span class="dim">${pad(L[k], Z ? 6 : 10)}</span>` +
                        o[k]);
   return `<div class="ih">AI SIGNAL INTELLIGENCE</div>` + rows.join('\n');
@@ -695,6 +713,7 @@ function renderIntel(E, F){
   } else if(F.mag !== undefined)
     o.eew = `<span class="dim">${Z ? '未達 M≥4.5·I≥3' :
       'below M≥4.5·I≥3'}</span>`;
+  if(F.exp) o.exp = fmtExp(F.exp);
   const ld = bestLead(BIG3, F.cty ? F.cty.map((c, i) =>
     ({name: E.counties[i].name, eta: c.eta})) : null, Z);
   if(ld) o.lead = ld + ` <span class="dim">${Z ? 'S 波抵達前' : 'to S'}</span>`;
@@ -1223,6 +1242,7 @@ async function pollEngine(){
         `<b style="color:var(--flash)">${E.t_eew_rel !== undefined ?
         `origin+${E.t_eew_rel.toFixed(1)}s` : '✓'}</b> ` +
         `<span class="dim">${Z ? 'M≥4.5·I≥3 達標' : 'M≥4.5·I≥3 met'}</span>`);
+    if(E.exposure) lab(Z ? '曝險人口' : 'Exposure', fmtExp(E.exposure));
     let best = null;
     for(const c of E.cty || [])
       if(['Taipei', 'Taichung', 'Kaohsiung'].includes(c.name) &&
@@ -1325,18 +1345,23 @@ const T = {
     'engine would have performed, compared against the CWA catalog. ' +
     'Fully automated, every event kept — no cherry-picking.'},
   cols: {zh: ['事件', '發震時刻 (UTC)', 'CWA M', 'EdgeQuake M', 'ΔM',
-              '定位誤差', '首次定位', 'EEW 判定', '首報規模', 'PWS 警報'],
+              '定位誤差', '首次定位', 'EEW 判定', '首報規模', 'I≥4 曝險',
+              'PWS 警報'],
          en: ['Event', 'Origin (UTC)', 'CWA M', 'EdgeQuake M', 'ΔM',
-              'Loc err', 'First loc', 'EEW', 'First M', 'PWS alert']},
+              'Loc err', 'First loc', 'EEW', 'First M', 'I4+ exposure',
+              'PWS alert']},
   stats: {zh: ['稽核事件', '平均 |ΔM|', '平均定位誤差', '平均首次定位',
                '平均 EEW 判定', 'PWS 警報次數'],
           en: ['Events audited', 'Mean |ΔM|', 'Mean loc err',
                'Mean first loc', 'Mean EEW time', 'PWS alerts']},
   eewhint: {zh: 'EEW 判定＝達到 CWA 強震即時警報發布條件（M≥4.5 且預估震度≥3）' +
-             '的時刻；CWA 官方效能為發震後約 10–20 秒。',
+             '的時刻；CWA 官方效能為發震後約 10–20 秒。曝險人口＝WorldPop 1 km ' +
+             '人口網格 × 預測震度（點震源、平均場址、常住人口），為數量級估計。',
             en: 'EEW = instant the CWA earthquake-early-warning issuance ' +
              'rule (M≥4.5 & predicted intensity ≥3) is met; official CWA ' +
-             'performance is ~10–20 s after origin.'},
+             'performance is ~10–20 s after origin. Exposure = WorldPop ' +
+             '1 km population grid × predicted intensity (point source, ' +
+             'average site, residential population) — order-of-magnitude.'},
   empty: {zh: '尚無稽核紀錄 — 下一次 CWA 顯著有感地震報告釋出波形後自動出現。',
           en: 'No audit records yet — the next CWA significant-earthquake ' +
               'waveform release will appear here automatically.'},
@@ -1411,7 +1436,7 @@ function renderAudit(){
     const rep = e.report_md ?
       `<span class="replbl">${T.rep[LANG]}</span>` : '';
     const detail = (e.report_md && openId === e.id) ?
-      `<tr class="repRow"><td colspan="10"><span class="dim" style="color:` +
+      `<tr class="repRow"><td colspan="11"><span class="dim" style="color:` +
       `var(--blue);font-size:10px">${T.repby[LANG]}${e.report_model || ''}` +
       `</span>\n${reportText(e, LANG)}</td></tr>` : '';
     return `<tr${e.report_md ? ` class="hasrep" data-eid="${e.id}"` : ''}>
@@ -1431,6 +1456,8 @@ function renderAudit(){
       <td>${e.t_first_mag_s !== null && e.first_mag !== null ?
         `M${e.first_mag.toFixed(1)} @ ` + (Z ? `+${e.t_first_mag_s}s`
         : `+${e.t_first_mag_s}s`) : '–'}</td>
+      <td>${e.exposure ? fmtPop(e.exposure.i4) +
+        (Z ? ' 人' : '') : '–'}</td>
       <td style="color:${e.alert_fired ? 'var(--alert)' : 'var(--ok)'}">${
         e.alert_fired ? T.fired[LANG] : T.never[LANG]}</td>
     </tr>${detail}`;

@@ -130,9 +130,11 @@ def main() -> None:
         ev, truth = load_replay_json(p)
         print(f"[dash] simulating {key} ({len(ev)} stations)...")
         from edgequake.location.site import load_site_terms
+        from edgequake.impact import get_model
         site_terms = load_site_terms(ROOT / "outputs" / "site_terms.json")
         payload = simulate(ev, truth, max_stations=60,
-                           site_terms=site_terms)
+                           site_terms=site_terms,
+                           exposure_model=get_model())
         payload["title"] = TITLES[key]
         payload["official"] = OFFICIAL.get(key, [])
         # projected coordinates baked in

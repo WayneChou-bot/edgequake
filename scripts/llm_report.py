@@ -50,7 +50,10 @@ how the engine did on the true timeline (first location, first magnitude
 and how it evolved to the final value vs the CWA catalog value, epicenter
 error); the EEW-criteria instant versus CWA's official 10-20 s issuance
 performance; whether the public-alert (PWS) gate fired and why that was
-the correct decision for this event size.
+the correct decision for this event size. If an "exposure" field exists,
+mention the estimated population in intensity-4+ (and 3+) shaking as an
+order-of-magnitude figure, citing pop_version, and note it assumes a point
+source and average site conditions. Terminology: EEW 的中文為「強震即時警報」.
 
 Hard rules: use ONLY numbers present in the record — never invent data.
 State times as 發震後 X 秒 / origin+Xs. If alert_fired is false for a

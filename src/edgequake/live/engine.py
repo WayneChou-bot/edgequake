@@ -91,6 +91,12 @@ class LiveEngine:
         # magnitude inversion (unknown codes -> no correction). The alert
         # gates keep using RAW observed PGA — real shaking is real.
         self.site_terms = site_terms or {}
+        # Phase 9 population exposure (None if the asset is absent)
+        try:
+            from ..impact import get_model
+            self.impact = get_model()
+        except Exception:
+            self.impact = None
         self.now = None
         self._last_infer = None
         self.event = None            # dict while active
@@ -381,6 +387,9 @@ class LiveEngine:
                 r_hyp = 10 ** ((a_ * mag.mag + c_ - np.log10(pga_th)) / (-b_))
                 r2 = r_hyp ** 2 - est.depth_km ** 2
                 ev[key_r] = round(float(np.sqrt(r2)), 1) if r2 > 0 else None
+            if self.impact is not None:   # ~0.4 ms on the 1 km grid
+                ev["exposure"] = self.impact.exposure(
+                    est.lat, est.lon, est.depth_km, mag.mag)
 
         # alert quality gate: never issue a public-alert flag from a weak
         # solution (few stations / huge uncertainty), and NEVER without
@@ -474,7 +483,7 @@ class LiveEngine:
                      if k in ("lat", "lon", "depth", "mag", "msig", "k",
                               "emaj", "emin", "eaz", "r4", "r5", "alert",
                               "cty", "n_mag", "ai_mag", "ai_sig", "n_ai",
-                              "bconf", "eew")}
+                              "bconf", "eew", "exposure")}
             event["age"] = round(self.now - ev["t_first"], 1)
             event["t0_age"] = round(self.now - ev["t0"], 1)
             if "t_eew" in ev:   # EEW issuance instant, origin-relative

@@ -1,0 +1,12 @@
+name: pop-grid-check
+on:
+  schedule:
+    - cron: "0 2 1 1,4,7,10 *"   # quarterly
+  workflow_dispatch: {}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install numpy
+      - run: python scripts/fetch_pop_grid.py --check-update
