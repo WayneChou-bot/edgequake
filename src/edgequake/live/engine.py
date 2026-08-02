@@ -52,12 +52,20 @@ class LiveEngine:
     def __init__(self, picker, stations_meta, buf_s=120.0, stride_s=1.0,
                  threshold=0.3, assoc_n=3, assoc_win_s=15.0,
                  event_timeout_s=60.0, mode_label="replay", notifier=None,
-                 trigger_mode=False, trig_pga=2.5):
+                 trigger_mode=False, trig_pga=8.0, alert_min_pga=25.0):
         # trigger_mode: sources that deliver per-station PGA values instead
         # of waveforms (e.g. TREM RTS). No PhaseNet, no S picks — a PGA
         # jump IS the arrival; magnitude waits a fixed dwell after trigger.
         self.trigger_mode = trigger_mode
+        # LESSON (first live night on TREM, 2026-08-02): urban MEMS noise
+        # floor is 2-4 gal — a 2.5 gal threshold produced phantom M6.6+
+        # alerts from randomly-associated noise spikes fitted as a
+        # deep/offshore event. Hence: 8 gal threshold, 2-consecutive-poll
+        # persistence, 150 km declaration radius, and alerts require
+        # >=25 gal actually OBSERVED somewhere.
         self.trig_pga = trig_pga
+        self.alert_min_pga = alert_min_pga
+        self._pend_trig: dict[str, float] = {}
         self.notifier = notifier
         self.magnet = None          # set via load_magnet() (waveform modes)
         self.picker = picker
@@ -110,10 +118,21 @@ class LiveEngine:
                 if len(st.acc_peaks) > 400:
                     st.acc_peaks = st.acc_peaks[-400:]
                 st.last_data = self.now
-                if st.tp is None and pga_now >= self.trig_pga:
-                    st.tp = p.t0
-                    st.pprob = 0.9 if pga_now >= 8.0 else 0.6
-                    self._log(f"trigger {st.code} (PGA {pga_now:.1f} gal)")
+                if st.tp is None:
+                    if pga_now >= self.trig_pga:
+                        t_first = self._pend_trig.get(p.code)
+                        if t_first is not None and p.t0 - t_first <= 2.5:
+                            # sustained over two polls -> real shaking
+                            st.tp = t_first
+                            st.pprob = 0.9 if pga_now >= 25.0 else 0.6
+                            self._pend_trig.pop(p.code, None)
+                            self._log(f"trigger {st.code} "
+                                      f"(PGA {pga_now:.1f} gal)")
+                        else:   # no pending, or stale pending: (re)arm
+                            self._pend_trig[p.code] = p.t0
+                    else:
+                        # single-poll spike (door slam / truck): discard
+                        self._pend_trig.pop(p.code, None)
                 continue
             if p.kind == "acc":
                 if len(p.data):
@@ -238,7 +257,11 @@ class LiveEngine:
             if self._quiet_until and self.now < self._quiet_until:
                 return
             for i, s in enumerate(picked):
-                grp = [x for x in picked[i:] if x.tp <= s.tp + self.assoc_win_s]
+                grp = [x for x in picked[i:]
+                       if x.tp <= s.tp + self.assoc_win_s
+                       # a real wavefront is spatially coherent: the
+                       # declaring group must sit near the first station
+                       and haversine_km(s.lat, s.lon, x.lat, x.lon) <= 150.0]
                 # coda re-triggers are uniformly low-confidence: demand at
                 # least two confident picks before declaring an event
                 n_conf = sum(1 for x in grp if (x.pprob or 0) >= 0.5)
@@ -350,8 +373,12 @@ class LiveEngine:
                 ev[key_r] = round(float(np.sqrt(r2)), 1) if r2 > 0 else None
 
         # alert quality gate: never issue a public-alert flag from a weak
-        # solution (few stations / huge uncertainty)
-        q_ok = len(members) >= 6 and (est.ellipse_major_km or 999) <= 80
+        # solution (few stations / huge uncertainty), and NEVER without
+        # strong shaking actually observed somewhere — a real M6.5+ puts
+        # >=25 gal on near stations; phantom events never do
+        obs_pga = max((s.pga_since(s.tp - 1.0) or 0.0) for s in members)
+        q_ok = (len(members) >= 6 and (est.ellipse_major_km or 999) <= 80
+                and obs_pga >= self.alert_min_pga)
 
         vs = self.locator.vp / 1.73
         cty, any_alert = [], False
