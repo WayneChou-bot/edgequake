@@ -141,9 +141,14 @@ def main() -> None:
     if not trigger_mode:   # trigger mode needs no waveform picker
         picker = SeisBenchPhaseNet(weights=args.weights,
                                    state_dict_path=args.state_dict or None)
+    from edgequake.location.site import load_site_terms
+
+    site_terms = load_site_terms(ROOT / "outputs" / "site_terms.json")
+    if site_terms:
+        print(f"[live] site terms loaded ({len(site_terms)} stations)")
     engine = LiveEngine(picker, src.stations, threshold=args.threshold,
                         mode_label=label, notifier=notifier,
-                        trigger_mode=trigger_mode)
+                        trigger_mode=trigger_mode, site_terms=site_terms)
     if not trigger_mode and args.magnet and Path(args.magnet).exists():
         if engine.load_magnet(args.magnet):
             print("[live] AI early magnitude: MagNet v2 loaded")

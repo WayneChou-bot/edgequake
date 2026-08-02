@@ -291,14 +291,41 @@ Three data layers, each with the strongest access Taiwan actually offers:
 3. **Research-grade history — CWA GDMS + CWA Benchmark**: the blind-test
    and training substrate of Phases 1–3.
 
+## Phase 7 — Empirical site-effect correction
+
+Every station sits on different ground: soft-basin sites (Taipei basin,
+coastal plains) systematically amplify PGA, rock sites damp it. From
+327k catalog traces (2019–2021 metadata only — the `trace_pga_cmps2`
+column, no waveforms needed), `scripts/build_site_terms.py` computes each
+station's median log-residual against our GMPE: its **site term dS**.
+737 stations got terms; 488 have |dS|>0.2 — enough to bias a
+single-station magnitude by ≥0.25 units. Runtime PGA is divided by
+10^dS before magnitude inversion (`outputs/site_terms.json`, loaded
+everywhere; alert gates keep using raw PGA — real shaking is real).
+
+Blind-test result (final magnitude vs CWA catalog):
+
+| event | raw | site-corrected | truth |
+|---|---|---|---|
+| 2026 Taitung | M4.76 (Δ0.06) | M4.81 (Δ0.11) | M4.7 |
+| 2024-0403 Hualien | M7.39 (Δ0.19) | M7.11 (Δ0.09) | M7.2 |
+| 2025 Dapu | M6.65 (Δ0.25) | M6.34 (Δ0.06) | M6.4 |
+
+Mean final-M error halves (0.17 → 0.09); the Taitung first estimate also
+drops from M6.2 to M5.9. Honest caveats: the terms absorb a small global
+offset (+0.28 mean) from the max-PGA-per-station aggregation convention as
+well as true site geology, and TREM MEMS station codes are not in the CWA
+catalog, so live trigger-mode magnitudes are (for now) uncorrected —
+self-calibrating TREM terms from accumulated live data is on the roadmap.
+
 ## Roadmap
 
-- ~~Phases 0–6~~ **done**: replay engine → cross-domain benchmark → Taiwan
+- ~~Phases 0–7~~ **done**: replay engine → cross-domain benchmark → Taiwan
   fine-tune → locator/magnitude → full-chain replays + console → live engine
-  + notifications → AI early magnitude → TREM real-time + automated audit.
-- **Always-on hosting**: move the (torch-free) TREM trigger engine to a free
-  always-on VM (GCP e2-micro) + push engine state to a cloud relay so the
-  public console shows live detection.
+  + notifications → AI early magnitude → TREM real-time + automated audit →
+  cloud state relay + public audit log + site-effect correction.
+- **TREM site terms**: self-calibrate MEMS station terms from accumulated
+  live trigger data so trigger-mode magnitudes get the Phase 7 treatment.
 - **Anytime magnitude (v3)**: growing-window MagNet heads (P+3/6/9 s) against
   M6+ saturation; replay-tab AI curve.
 - **Model upgrades**: 1-D Taiwan velocity model + station corrections; phase

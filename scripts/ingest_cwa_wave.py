@@ -228,7 +228,12 @@ def main() -> None:
         if len(ev_df) < 3:
             print("[audit] <3 picked stations — no location possible")
             return
-        payload = simulate(ev_df, tr, max_stations=40, bootstrap=40)
+        from edgequake.location.site import load_site_terms
+        site_terms = load_site_terms(ROOT / "outputs" / "site_terms.json")
+        if site_terms:
+            print(f"[audit] site terms: {len(site_terms)} stations")
+        payload = simulate(ev_df, tr, max_stations=40, bootstrap=40,
+                           site_terms=site_terms)
         t_first = min(x["tp"] for x in payload["stations"])
         o_rel = payload["origin_rel"] or 0.0
         first_loc = first_mag = first_alert = first_eew = None

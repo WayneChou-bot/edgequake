@@ -49,7 +49,8 @@ def pws_alert(mag: float, intensity: float) -> bool:
     return (mag >= 5.0 and intensity >= 4) or (mag >= 6.5 and intensity >= 3)
 
 
-def simulate(ev, truth, vp=6.2, dt=0.25, max_stations=60, bootstrap=60):
+def simulate(ev, truth, vp=6.2, dt=0.25, max_stations=60, bootstrap=60,
+             site_terms=None):
     """ev: DataFrame from load_replay_json/load_event; returns dict payload."""
     n_max = min(max_stations, len(ev))
     t_ref = float(ev.t_p.values.min())
@@ -58,6 +59,14 @@ def simulate(ev, truth, vp=6.2, dt=0.25, max_stations=60, bootstrap=60):
     lats = ev.station_latitude_deg.values[:n_max]
     lons = ev.station_longitude_deg.values[:n_max]
     pga = ev.station_pga.values[:n_max]
+    # Phase 7: site-corrected PGA for MAGNITUDE inversion only (raw PGA
+    # still drives intensity display / EEW-gate shaking checks)
+    if site_terms:
+        corr = np.array([10.0 ** site_terms.get(str(c), 0.0)
+                         for c in ev.station_code.values[:n_max]])
+        pga_m = pga / corr
+    else:
+        pga_m = pga
     t_end = float(t_p[-1]) + 3.0
 
     locator = PickLocator(vp_km_s=vp)
@@ -81,7 +90,7 @@ def simulate(ev, truth, vp=6.2, dt=0.25, max_stations=60, bootstrap=60):
             if m_ok.any():
                 d = np.array([haversine_km(est.lat, est.lon, la, lo)
                               for la, lo in zip(lats[:k][m_ok], lons[:k][m_ok])])
-                mag = magest.estimate(pga[:k][m_ok], d, est.depth_km)
+                mag = magest.estimate(pga_m[:k][m_ok], d, est.depth_km)
             frame.update({
                 "lat": round(est.lat, 4), "lon": round(est.lon, 4),
                 "depth": round(est.depth_km, 1),

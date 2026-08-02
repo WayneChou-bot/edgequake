@@ -52,7 +52,8 @@ class LiveEngine:
     def __init__(self, picker, stations_meta, buf_s=120.0, stride_s=1.0,
                  threshold=0.3, assoc_n=3, assoc_win_s=15.0,
                  event_timeout_s=60.0, mode_label="replay", notifier=None,
-                 trigger_mode=False, trig_pga=8.0, alert_min_pga=25.0):
+                 trigger_mode=False, trig_pga=8.0, alert_min_pga=25.0,
+                 site_terms=None):
         # trigger_mode: sources that deliver per-station PGA values instead
         # of waveforms (e.g. TREM RTS). No PhaseNet, no S picks — a PGA
         # jump IS the arrival; magnitude waits a fixed dwell after trigger.
@@ -86,6 +87,10 @@ class LiveEngine:
                                                60, 80],
                                    max_depth_km=80.0)
         self.magest = PgaMagnitude()
+        # Phase 7 site terms: {code: dS}. PGA is divided by 10**dS BEFORE
+        # magnitude inversion (unknown codes -> no correction). The alert
+        # gates keep using RAW observed PGA — real shaking is real.
+        self.site_terms = site_terms or {}
         self.now = None
         self._last_infer = None
         self.event = None            # dict while active
@@ -361,7 +366,7 @@ class LiveEngine:
                 continue
             pga = s.pga_since(s.tp - 1.0)
             if pga:
-                m_pga.append(pga)
+                m_pga.append(pga / 10.0 ** self.site_terms.get(s.code, 0.0))
                 m_d.append(haversine_km(est.lat, est.lon, s.lat, s.lon))
         if m_pga:
             mag = self.magest.estimate(np.array(m_pga), np.array(m_d),
