@@ -50,7 +50,7 @@ def pws_alert(mag: float, intensity: float) -> bool:
 
 
 def simulate(ev, truth, vp=6.2, dt=0.25, max_stations=60, bootstrap=60,
-             site_terms=None, exposure_model=None):
+             site_terms=None, exposure_model=None, similar_db=None):
     """ev: DataFrame from load_replay_json/load_event; returns dict payload."""
     n_max = min(max_stations, len(ev))
     t_ref = float(ev.t_p.values.min())
@@ -152,9 +152,21 @@ def simulate(ev, truth, vp=6.2, dt=0.25, max_stations=60, bootstrap=60,
                     and obs >= 10.0)
         frames.append(frame)
 
+    # Phase 10: similar historical events from the FINAL estimate (the
+    # event's own catalog row is excluded by origin date)
+    similar = None
+    if similar_db is not None and est is not None:
+        last = [f for f in frames if f.get("mag") is not None]
+        if last:
+            similar = similar_db.find(
+                last[-1]["lat"], last[-1]["lon"], last[-1]["depth"],
+                last[-1]["mag"], k=3,
+                exclude_date=str(truth.get("origin_time", ""))[:10] or None)
+
     return {
         "truth": {k: truth[k] for k in ("lat", "lon", "depth_km", "mag",
                                         "origin_time") if k in truth},
+        "similar": similar,
         "origin_rel": (round(truth["origin_epoch"] - t_ref, 2)
                        if truth.get("origin_epoch") else None),
         "source": truth.get("source", "catalog picks"),

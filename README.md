@@ -340,13 +340,33 @@ data never silently rewrites historical audits. Stated limits: point
 source, average site, static residential population — order-of-magnitude
 numbers by design.
 
+## Phase 10 — Similar-event retrieval & bulletin exposure
+
+"M6.1 at 23.9N" means little; "like the 2016 Meinong earthquake" means a
+lot. A 53-year USGS catalog of the Taiwan region (865 events M≥5 since
+1973, `fetch_quake_catalog.py`, no key needed) is searched on every live
+magnitude update with a joint (epicenter distance, magnitude, depth)
+metric; famous events carry curated zh-TW names that only attach when the
+row's magnitude matches the mainshock (±0.4) — testing caught a 921-day
+M6.4 aftershock wearing the "921 集集大地震" label. A replayed/audited
+event excludes its own ±3-day catalog window so it can never "match
+itself". Results flow to the intel card, audit log, and LLM reports
+(stated caveat: USGS Mw-class vs CWA ML). Validation: a Dapu-like M6.4
+retrieves Meinong 2016 and Jiaxian 2010 — its real seismotectonic
+neighbors.
+
+The console's CWA bulletin popups also gained instant exposure estimates:
+a 5 km aggregate of the population grid (~1.2k cells, ~30 KB) is baked
+into the page and evaluated client-side on click, within 0.5% of the 1 km
+Python result for large events (labeled 粗估/coarse).
+
 ## Roadmap
 
-- ~~Phases 0–9~~ **done**: replay engine → cross-domain benchmark → Taiwan
+- ~~Phases 0–10~~ **done**: replay engine → cross-domain benchmark → Taiwan
   fine-tune → locator/magnitude → full-chain replays + console → live engine
   + notifications → AI early magnitude → TREM real-time + automated audit →
   cloud state relay + public audit log + site-effect correction → LLM event
-  reports → PAGER-style population exposure.
+  reports → PAGER-style population exposure → similar-event retrieval.
 - **TREM site terms**: self-calibrate MEMS station terms from accumulated
   live trigger data so trigger-mode magnitudes get the Phase 7 treatment.
 - **Anytime magnitude (v3)**: growing-window MagNet heads (P+3/6/9 s) against
@@ -363,6 +383,8 @@ numbers by design.
 
 ## Data & acknowledgements
 
+- **USGS FDSN event service** (earthquake.usgs.gov): 1973–present Taiwan
+  regional catalog used for similar-event retrieval.
 - **WorldPop** (www.worldpop.org): Taiwan 1 km population grid, Global2
   release R2025A (2015–2030, constrained UN-adjusted; we use the 2026
   estimate), School of Geography and Environmental Science, University of

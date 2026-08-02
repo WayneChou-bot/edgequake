@@ -321,6 +321,30 @@ function fmtExp(e){
   return ['i3','i4','i5'].filter(k => e[k] !== undefined)
     .map((k,idx) => `I${k[1]}+ <b>${fmtPop(e[k])}</b>`).join(' · ');
 }
+function fmtSim(s){
+  // similar-event entry -> '2022-09-18 池上地震 M6.9（相距 12 km）'
+  const name = LANG === 'zh' ? (s.zh || s.place || s.t.slice(0,10))
+                             : (s.place || s.zh || s.t.slice(0,10));
+  return `${s.t.slice(0,10)} <b>${name}</b> M${s.mag.toFixed(1)}` +
+    (LANG === 'zh' ? `（相距 ${Math.round(s.d_km)} km）`
+                   : ` (${Math.round(s.d_km)} km away)`);
+}
+function popExposure(lat, lon, depth, mag){
+  // coarse client-side exposure on the baked 5-km grid (bulletin popups)
+  if(!DATA.popgrid || !DATA.gmpe || mag == null) return null;
+  const {a, b, c} = DATA.gmpe, KM = 111.19;
+  const cos = Math.cos(lat * Math.PI / 180), d2 = depth * depth;
+  let i3 = 0, i4 = 0;
+  const t3 = (Math.log10(8.0) - a * mag - c) / b;   // log10 r at I3/I4
+  const t4 = (Math.log10(25.0) - a * mag - c) / b;
+  const r3 = Math.pow(10, t3), r4 = Math.pow(10, t4);
+  for(const [la, lo, p] of DATA.popgrid){
+    const dx = (lo - lon) * KM * cos, dy = (la - lat) * KM;
+    const r = Math.sqrt(dx * dx + dy * dy + d2);
+    if(r <= r3){ i3 += p; if(r <= r4) i4 += p; }
+  }
+  return {i3, i4};
+}
 function applyLangGlobal(){
   document.getElementById('ttl').textContent = GTXT.ttl[LANG];
   document.getElementById('nav-live').textContent = GTXT.nav_live[LANG];
@@ -660,12 +684,12 @@ function intelHTML(o){
   const L = Z ?
     {firstP: '首個P波', stations: '觸發測站', physM: '物理規模',
      aiM: 'AI 規模', epi: '震央信心', eew: 'EEW判定', exp: '曝險人口',
-     lead: '預警餘裕'} :
+     lead: '預警餘裕', sim: '相似歷史'} :
     {firstP: 'First P', stations: 'Stations', physM: 'Physics M',
      aiM: 'AI M', epi: 'Epi conf', eew: 'EEW', exp: 'Exposure',
-     lead: 'Lead time'};
+     lead: 'Lead time', sim: 'Similar'};
   for(const k of ['firstP', 'stations', 'physM', 'aiM', 'epi', 'eew',
-                  'exp', 'lead'])
+                  'exp', 'lead', 'sim'])
     if(o[k]) rows.push(`<span class="dim">${pad(L[k], Z ? 6 : 10)}</span>` +
                        o[k]);
   return `<div class="ih">AI SIGNAL INTELLIGENCE</div>` + rows.join('\n');
@@ -717,6 +741,8 @@ function renderIntel(E, F){
   const ld = bestLead(BIG3, F.cty ? F.cty.map((c, i) =>
     ({name: E.counties[i].name, eta: c.eta})) : null, Z);
   if(ld) o.lead = ld + ` <span class="dim">${Z ? 'S 波抵達前' : 'to S'}</span>`;
+  if(E.similar && E.similar.length && F.mag !== undefined)
+    o.sim = fmtSim(E.similar[0]);
   el2.innerHTML = intelHTML(o);
 }
 
@@ -1002,6 +1028,13 @@ function showPopup(p, lngLat){
         'max intensity (TW) ') + dispI(p.maxI) : ''}` +
       `${p.kind === 'local' ?
         (LANG === 'zh' ? ' · 小區域有感' : ' · local felt report') : ''}` +
+      `${(() => { const ex = popExposure(+p.lat, +p.lon, +p.depth, +p.mag);
+        return ex && ex.i3 > 0 ? '<br>' + (LANG === 'zh' ?
+          `預估曝險 震度3+ ${fmtPop(ex.i3)}・4+ ${fmtPop(ex.i4)}` +
+          `<span style="opacity:.7">（點震源粗估）</span>` :
+          `est. exposure I3+ ${fmtPop(ex.i3)} · I4+ ${fmtPop(ex.i4)}` +
+          `<span style="opacity:.7"> (coarse, point source)</span>`) : '';
+        })()}` +
       `</span>` +
       (p.url ? `<br><a href="${p.url}" target="_blank" ` +
                `style="color:#3987e5">` + (LANG === 'zh' ?
@@ -1243,6 +1276,8 @@ async function pollEngine(){
         `origin+${E.t_eew_rel.toFixed(1)}s` : '✓'}</b> ` +
         `<span class="dim">${Z ? 'M≥4.5·I≥3 達標' : 'M≥4.5·I≥3 met'}</span>`);
     if(E.exposure) lab(Z ? '曝險人口' : 'Exposure', fmtExp(E.exposure));
+    if(E.similar && E.similar.length)
+      lab(Z ? '相似歷史' : 'Similar', fmtSim(E.similar[0]));
     let best = null;
     for(const c of E.cty || [])
       if(['Taipei', 'Taichung', 'Kaohsiung'].includes(c.name) &&
@@ -1435,10 +1470,16 @@ function renderAudit(){
       (e.final_mag - e.cwa.mag) : null;
     const rep = e.report_md ?
       `<span class="replbl">${T.rep[LANG]}</span>` : '';
+    const sims = (e.similar || []).map(s => fmtSim(s)).join('　');
     const detail = (e.report_md && openId === e.id) ?
       `<tr class="repRow"><td colspan="11"><span class="dim" style="color:` +
       `var(--blue);font-size:10px">${T.repby[LANG]}${e.report_model || ''}` +
-      `</span>\n${reportText(e, LANG)}</td></tr>` : '';
+      `</span>\n${reportText(e, LANG)}` +
+      (sims ? `\n<span style="color:var(--ink2);font-size:11px">` +
+        (LANG === 'zh' ? '相似歷史事件（USGS 目錄，Mw 與 ML 略異）：'
+                       : 'Similar historical events (USGS catalog): ') +
+        `${sims}</span>` : '') +
+      `</td></tr>` : '';
     return `<tr${e.report_md ? ` class="hasrep" data-eid="${e.id}"` : ''}>
       <td><b>${(e.id || '').toUpperCase()}</b>${rep}</td>
       <td>${(e.origin_utc || '').replace('T', ' ').slice(0, 19)}</td>

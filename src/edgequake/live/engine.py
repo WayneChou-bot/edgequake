@@ -97,6 +97,12 @@ class LiveEngine:
             self.impact = get_model()
         except Exception:
             self.impact = None
+        # Phase 10 similar-event retrieval (None if the catalog is absent)
+        try:
+            from ..similar import get_similar
+            self.similar_db = get_similar()
+        except Exception:
+            self.similar_db = None
         self.now = None
         self._last_infer = None
         self.event = None            # dict while active
@@ -390,6 +396,9 @@ class LiveEngine:
             if self.impact is not None:   # ~0.4 ms on the 1 km grid
                 ev["exposure"] = self.impact.exposure(
                     est.lat, est.lon, est.depth_km, mag.mag)
+            if self.similar_db is not None:
+                ev["similar"] = self.similar_db.find(
+                    est.lat, est.lon, est.depth_km, mag.mag, k=3)
 
         # alert quality gate: never issue a public-alert flag from a weak
         # solution (few stations / huge uncertainty), and NEVER without
@@ -483,7 +492,7 @@ class LiveEngine:
                      if k in ("lat", "lon", "depth", "mag", "msig", "k",
                               "emaj", "emin", "eaz", "r4", "r5", "alert",
                               "cty", "n_mag", "ai_mag", "ai_sig", "n_ai",
-                              "bconf", "eew", "exposure")}
+                              "bconf", "eew", "exposure", "similar")}
             event["age"] = round(self.now - ev["t_first"], 1)
             event["t0_age"] = round(self.now - ev["t0"], 1)
             if "t_eew" in ev:   # EEW issuance instant, origin-relative

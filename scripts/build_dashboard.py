@@ -131,10 +131,12 @@ def main() -> None:
         print(f"[dash] simulating {key} ({len(ev)} stations)...")
         from edgequake.location.site import load_site_terms
         from edgequake.impact import get_model
+        from edgequake.similar import get_similar
         site_terms = load_site_terms(ROOT / "outputs" / "site_terms.json")
         payload = simulate(ev, truth, max_stations=60,
                            site_terms=site_terms,
-                           exposure_model=get_model())
+                           exposure_model=get_model(),
+                           similar_db=get_similar())
         payload["title"] = TITLES[key]
         payload["official"] = OFFICIAL.get(key, [])
         # projected coordinates baked in
@@ -155,6 +157,27 @@ def main() -> None:
 
     data = {"events": events, "map": {"w": W, "h": H, "pxPerKm": PX_PER_KM,
                                       "coast": coastline_paths()}}
+    # Phase 10: coarse (5 km) population grid baked into the page so the
+    # live view can show exposure for CWA/USGS bulletin quakes on click —
+    # order-of-magnitude only; the engine's 1 km grid stays authoritative
+    from edgequake.impact import get_model
+    from edgequake.location.magnitude import DEFAULT_COEF
+    im = get_model()
+    if im is not None:
+        blk = 5
+        p = im.pop
+        ny, nx = (p.shape[0] // blk) * blk, (p.shape[1] // blk) * blk
+        agg = p[:ny, :nx].reshape(ny // blk, blk, nx // blk, blk)\
+                         .sum(axis=(1, 3))
+        cells = []
+        for iy, ix in zip(*np.nonzero(agg > 200)):
+            cells.append([round(float(im.lats[iy * blk + blk // 2]), 3),
+                          round(float(im.lons[ix * blk + blk // 2]), 3),
+                          int(agg[iy, ix])])
+        data["popgrid"] = cells
+        data["gmpe"] = DEFAULT_COEF
+        data["pop_version"] = im.version
+        print(f"[dash] popup exposure grid: {len(cells)} 5-km cells")
     template = (ROOT / "web" / "app_template.html").read_text(
         encoding="utf-8")
     html = template.replace("/*__DATA__*/", "const DATA = " +
