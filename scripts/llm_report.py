@@ -106,15 +106,49 @@ FORBIDDEN = ["優於", "較快", "更快", "領先", "時效", "效率", "受災
              "affected"]
 
 
+# fields whose CONTENT is narrative, not data — excluded from grounding
+# so a stale report or a provenance prose note can never launder numbers
+# into a new report (round-6 review), plus any "*note*" key
+NARRATIVE_KEYS = {"report_md", "report_model"}
+
+
+def allowed_number_tokens(rec: dict) -> set[str]:
+    """Exact decimal tokens a report may quote: string forms of the
+    record's numeric leaves, plus decimal tokens inside non-narrative
+    string leaves (e.g. timestamps). Round-6 review: the previous
+    implementation was a substring test against the serialized record,
+    so an invented '1.3' was 'grounded' by longitude 121.36."""
+    toks: set[str] = set()
+
+    def walk(key: str, v) -> None:
+        if key in NARRATIVE_KEYS or "note" in key:
+            return
+        if isinstance(v, dict):
+            for kk, vv in v.items():
+                walk(kk, vv)
+        elif isinstance(v, list):
+            for vv in v:
+                walk(key, vv)
+        elif isinstance(v, bool) or v is None:
+            pass
+        elif isinstance(v, (int, float)):
+            toks.add(str(v))
+        elif isinstance(v, str):
+            toks.update(re.findall(r"\d+\.\d+", v))
+
+    walk("", rec)
+    return toks
+
+
 def validate(text: str, rec: dict) -> list[str]:
     """Return a list of violations; empty = accept.
 
-    Numeric checks are "core-number + decimal-token grounding" (round-5
-    review wording), NOT full semantic verification: they require the
-    record's core numbers to appear and every decimal number in the text
-    to exist in the record, but cannot check a number is used in the
-    right ROLE, and integers (population counts, distances, dates) are
-    not grounded — a known limitation, documented in the README.
+    Numeric checks are "core-number + decimal-token grounding", NOT full
+    semantic verification: the record's core numbers must appear, and
+    every decimal token the model wrote must EXACTLY equal one of the
+    record's number tokens (set membership — no substring matching, and
+    narrative fields are excluded as sources). Integers and semantic
+    ROLE are still not covered — a known limit, documented in README.
     """
     problems = []
     low = text.lower()
@@ -130,12 +164,10 @@ def validate(text: str, rec: dict) -> list[str]:
     for v in core:
         if v is not None and str(v) not in text:
             problems.append(f"core number missing from report: {v}")
-    # reverse grounding (round 5): every decimal number the model wrote
-    # must exist somewhere in the record — kills invented magnitudes,
-    # seconds and kilometres (integers can still slip through)
-    rec_str = json.dumps(rec, ensure_ascii=False)
+    # reverse grounding: every decimal token must be a record token
+    allowed = allowed_number_tokens(rec)
     for tok in sorted(set(re.findall(r"\d+\.\d+", text))):
-        if tok not in rec_str:
+        if tok not in allowed:
             problems.append(f"decimal number not present in the audit "
                             f"record: {tok}")
     return problems

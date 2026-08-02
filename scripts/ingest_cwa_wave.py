@@ -1,7 +1,9 @@
 """Phase 6b: CWA E-A0015-004 strong-motion waveform -> replay JSON + audit.
 
-Every significant felt earthquake, CWA publishes (~12 min after origin) a
-zip of per-station ASCII waveforms: 3-component acceleration, 100 Hz, 90 s,
+For significant felt earthquakes, CWA publishes a zip of per-station
+ASCII waveforms (~12 min after origin in our first observed case; CWA
+marks the dataset's cadence as irregular, so the delay varies):
+3-component acceleration, 100 Hz, 90 s,
 units already gal, station coordinates in the header — self-contained, no
 instrument response needed. This script turns one event zip into the same
 replay JSON the engine consumes, enabling the automated shadow-mode audit:
@@ -280,7 +282,8 @@ def main() -> None:
         print(f"[audit] PWS criteria   : {rel(first_alert)}")
         if args.sent:
             print(f"[audit] CWA report sent: {args.sent} "
-                  f"(waveform zip ~12 min after origin)")
+                  f"(waveform publication delay varies; CWA marks this "
+                  f"dataset's cadence as irregular)")
 
         # machine-readable audit record (collected into docs/audit.json by
         # scripts/build_audit_index.py — the public audit log)

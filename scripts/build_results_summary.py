@@ -13,7 +13,13 @@ manifest still reported "in sync"). The verify mode now checks:
   * that `git_commit` was recorded (generation on a git-less sandbox is
     allowed, but verification then fails until regenerated in-repo);
   * that all quoted figures appear in the README;
-  * that known-stale figures do NOT appear in the README.
+  * that known-stale figures do NOT appear in the README;
+  * (round 6) that the manifest lists EXACTLY the required hash/source
+    key sets — a manifest that silently lists less fails;
+  * (round 6) that the audit record's numbers matched a fresh CANONICAL
+    recomputation at generation time (audit_cross_check; generation
+    aborts on mismatch) — the content hash alone only proves the record
+    did not change afterwards, not that it was right.
 
 All numeric results are recomputed here from committed inputs at
 CANONICAL parameters — including the Taitung raw run (previously a
@@ -129,6 +135,23 @@ DERIVED_PATHS = ("outputs/results_summary.json",
                  "vercel/audit.json", "docs/index.html",
                  "vercel/index.html", "outputs/replay_eq")
 
+# round-6: the manifest's REQUIRED key sets are module constants shared
+# by generation AND verification — an accidentally missing entry is a
+# verification failure, not a silently smaller checklist
+REQUIRED_FILE_HASHES = (
+    "outputs/v3_verify_x83.pt",
+    "outputs/phasenet_cwa_ft.pt",
+    "outputs/site_terms.json",
+    "outputs/reproduction_report.json",
+    "outputs/audit_archive/audit_202607310058-EQ2026053-Waveform.txt",
+    *REPLAYS.values(),
+)
+
+# audit-record fields that must equal this run's CANONICAL recomputation
+CROSS_CHECK_FIELDS = ("t_first_loc_s", "first_mag", "final_mag",
+                      "final_err_km", "t_eew_s", "eew_fired",
+                      "alert_fired")
+
 
 def verify() -> None:
     out_path = ROOT / "outputs" / "results_summary.json"
@@ -194,6 +217,33 @@ def verify() -> None:
     got = audit_content_sha256(ROOT / AUDIT)
     if want != got:
         fails.append(f"audit numeric content drifted: {AUDIT}")
+
+    # round-6: required key sets — a manifest that silently LISTS less
+    # must fail, not shrink the checklist
+    have = set(s.get("file_sha256", {}))
+    missing_req = [p for p in REQUIRED_FILE_HASHES if p not in have]
+    if missing_req:
+        fails.append("manifest file_sha256 is missing required entries: "
+                     + ", ".join(missing_req))
+    extra = sorted(have - set(REQUIRED_FILE_HASHES))
+    if extra:
+        fails.append("manifest file_sha256 has unexpected entries "
+                     "(update REQUIRED_FILE_HASHES): " + ", ".join(extra))
+    if sorted(s.get("source_file_sha256", {})) != sorted(SOURCE_FILES):
+        fails.append("manifest source_file_sha256 keys != SOURCE_FILES")
+    if not s.get("readme_quotes"):
+        fails.append("manifest readme_quotes is empty/missing")
+    if not s.get("forbidden_quotes"):
+        fails.append("manifest forbidden_quotes is empty/missing")
+    acc = s.get("audit_cross_check") or {}
+    if acc.get("status") != "match":
+        fails.append("audit_cross_check missing or status != 'match' — "
+                     "regenerate the summary (generation re-derives the "
+                     "audit numbers and aborts on mismatch)")
+    elif sorted(acc.get("checked_fields", {})) != \
+            sorted(CROSS_CHECK_FIELDS):
+        fails.append("audit_cross_check did not cover the required "
+                     f"fields {sorted(CROSS_CHECK_FIELDS)}")
 
     # semantic checks on the reproduction report (round 4: verifying the
     # file's hash proves it did not change, not that its content holds)
@@ -275,6 +325,8 @@ def main() -> None:
                "truth_mag": TRUTH_MAG[key]}
         for label, st in (("raw", None), ("site_corrected", site_terms)):
             p = simulate(ev, tr, site_terms=st)   # all params = CANONICAL
+            if key == "eq2026053" and label == "site_corrected":
+                p_taitung = p   # kept for the audit cross-check below
             fs = [f for f in p["frames"] if f.get("mag") is not None]
             first, last = fs[0], fs[-1]
             orel = p["origin_rel"] or 0.0
@@ -292,6 +344,49 @@ def main() -> None:
     # record additionally carries EEW/alert decisions and exposure)
     audit_p = ROOT / AUDIT
     audit = json.loads(audit_p.read_text(encoding="utf-8"))
+
+    # round-6 cross-check: the content hash below only proves the audit
+    # record did not change AFTER this summary — here we prove its
+    # numbers equal this run's CANONICAL recomputation, and abort
+    # generation on any disagreement (a wrong-but-frozen record must
+    # never verify as OK)
+    sc = events["eq2026053"]["site_corrected"]
+    orel_t = p_taitung["origin_rel"] or 0.0
+    f_eew = next((f for f in p_taitung["frames"] if f.get("eew")), None)
+    f_alert = next((f for f in p_taitung["frames"]
+                    if any(c.get("alert") for c in f.get("cty", []))),
+                   None)
+    recomputed = {
+        "t_first_loc_s": sc["first_loc_s"],
+        "first_mag": sc["first_mag"],
+        "final_mag": sc["final_mag"],
+        "final_err_km": sc["final_err_km"],
+        "t_eew_s": (round(f_eew["t"] - orel_t, 1) if f_eew else None),
+        "eew_fired": f_eew is not None,
+        "alert_fired": f_alert is not None,
+    }
+    assert sorted(recomputed) == sorted(CROSS_CHECK_FIELDS)
+    mismatch = {k: {"audit_record": audit.get(k), "recomputed": v}
+                for k, v in recomputed.items() if audit.get(k) != v}
+    if mismatch:
+        print("[summary] FATAL: audit record disagrees with the "
+              "CANONICAL recomputation — refusing to write a summary "
+              "over inconsistent evidence:")
+        for k, v in mismatch.items():
+            print(f"  - {k}: audit={v['audit_record']!r} "
+                  f"recomputed={v['recomputed']!r}")
+        sys.exit(1)
+    audit_cross_check = {
+        "status": "match",
+        "checked_fields": recomputed,
+        "note": "each field re-derived from outputs/replay_eq2026053."
+                "json via simulate() at CANONICAL parameters during "
+                "THIS generation and compared to the audit record; "
+                "generation aborts on mismatch. Together with "
+                "audit_content_sha256 this proves the record was "
+                "consistent when frozen, not merely unchanged since.",
+    }
+
     events["eq2026053"]["audit_record"] = {
         "t_first_loc_s": audit["t_first_loc_s"],
         "t_eew_s": audit.get("t_eew_s"),
@@ -305,23 +400,11 @@ def main() -> None:
     mean_site = round(sum(events[k]["site_corrected"]["abs_dmag"]
                           for k in ks) / len(ks), 2)
 
-    ckpt_v3 = ROOT / "outputs" / "v3_verify_x83.pt"
-    ckpt_ft = ROOT / "outputs" / "phasenet_cwa_ft.pt"
-    file_hashes = {
-        "outputs/v3_verify_x83.pt": sha256(ckpt_v3),
-        "outputs/phasenet_cwa_ft.pt": sha256(ckpt_ft),
-        "outputs/site_terms.json": sha256(site_path),
-        "outputs/reproduction_report.json":
-            sha256(ROOT / "outputs" / "reproduction_report.json"),
-        # round-5: the ORIGINAL live-run log is historical evidence —
-        # pinned here so neither it nor its canonical recomputation can
-        # drift silently (their relationship is documented in the audit
-        # record's provenance block)
-        "outputs/audit_archive/audit_202607310058-EQ2026053-Waveform.txt":
-            sha256(ROOT / "outputs" / "audit_archive" /
-                   "audit_202607310058-EQ2026053-Waveform.txt"),
-        **{rel: sha256(ROOT / rel) for rel in REPLAYS.values()},
-    }
+    # round-6: built from the shared REQUIRED constant, so generation and
+    # verification cannot disagree about WHAT must be hashed (the
+    # original live-run log is pinned here as historical evidence — its
+    # relationship to the record is in the audit provenance block)
+    file_hashes = {p: sha256(ROOT / p) for p in REQUIRED_FILE_HASHES}
 
     commit = git_commit()
     dirty = git_dirty()
@@ -380,6 +463,7 @@ def main() -> None:
         "audit_content_note": "audit record hashed excluding "
             f"{list(NARRATIVE_FIELDS)} so LLM-report regeneration does "
             "not invalidate this manifest",
+        "audit_cross_check": audit_cross_check,
         "site_correction": {"file": "outputs/site_terms.json",
                             "n_stations": len(site_terms)},
         "events": events,

@@ -170,7 +170,11 @@ an ancestor whose diff to HEAD touches only derived artifacts, and no
 non-derived path may be dirty — at generation time or at verify time),
 semantically checks the
 reproduction report (verdict, full event coverage, checkpoint identity,
-artifact hashes), and
+artifact hashes), requires the manifest to list exactly the required
+hash/source key sets (a manifest that silently lists less fails),
+requires the audit record's numbers to have matched a fresh canonical
+recomputation at generation time (`audit_cross_check` — the content
+hash alone proves only that the record did not change afterwards), and
 checks each quoted figure is present in this README while known-stale
 figures are absent — any drift fails loudly. Checkpoint provenance:
 `outputs/v3_verify_x83.pt` is **byte-identical** to
@@ -188,13 +192,14 @@ Taitung audit replay came from CWA's post-event waveform zip and is
 outside it; and the checkpoint's *training run* is only partially
 traceable — three different provenance levels, each labeled.
 
-Warning-time estimate (derived from the chain's component timings, not
-an end-to-end measured latency): for a Hualien-offshore
-event the chain is estimated to issue at about origin+12–20 s, giving Taipei ~15 s
-of lead before destructive S waves — the same order as the official
-system, because both are bound by the same physics. Inland events above
-their epicenter (Dapu, Meinong) sit in the blind zone; the replay tab
-shows exactly that.
+**Warning-time characteristics.** Available warning time is primarily
+constrained by source distance and seismic-wave travel time. Offshore
+events may provide useful lead time for more distant cities, while
+communities near the epicenter of inland events (Dapu, Meinong) may lie
+within the S-wave blind zone and receive little or no warning — the
+replay tab shows exactly that. The replay results above report only the
+verified post-hoc lower-bound timings; end-to-end operational latency
+has not yet been measured.
 
 ## Limitations
 
@@ -230,6 +235,10 @@ A longer engineering log (13 entries) is kept offline.
 
 ```bash
 pip install -r requirements.txt
+
+# run the verification-guard regression tests (each encodes a hole an
+# external review actually found)
+python -m unittest discover -s tests
 
 # replay a bundled real earthquake through the streaming engine
 python scripts/demo_replay.py
@@ -381,6 +390,11 @@ motion alerts in Taiwan requires an agreement with the CWA.
 品質閘門：至少 6 站定位、誤差橢圓 ≤80 公里、且必須有測站**實測 ≥25 gal**
 ——真的 M6.5 會真的搖，幽靈事件不會。
 
+**預警時間特性。** 可用預警時間主要受震央距離與地震波傳播時間限制。
+外海事件可能為較遠城市提供一定的反應時間；內陸地震震央附近則可能位於
+S 波盲區，幾乎沒有可用預警時間——回放頁展示的正是這件事。上方重播結果
+僅呈現已有產物支撐的事後理論下界，系統端到端的實際延遲仍待量測。
+
 **即時運行。** 引擎全天候跑在免費雲端 VM 上，接 ExpTech TREM 社群測網
 （公開 API、註明出處、僅供參考），狀態快照經 Upstash Redis 中繼到公開
 主控台。真的地震發生時，任何訪客都能即時看到震央、P/S 波前、觸發測站、
@@ -393,7 +407,8 @@ motion alerts in Taiwan requires an agreement with the CWA.
 的時間是理論下界；重播走的是估計鏈而非位元級相同的 live 引擎（補齊這個
 差距已列入 roadmap）。結果寫入機器可讀紀錄、由 LLM 敘述成雙語報告，
 報告經機器驗證（禁用比較性措辭、必含下界聲明、核心數字與小數 token
-接地——驗證涵蓋數字存在性而非語意位置，整數尚未接地）、全部 commit 回
+接地——token 精確比對且排除舊敘事欄位作為來源；驗證涵蓋數字存在性
+而非語意位置，整數尚未接地）、全部 commit 回
 repo——結果照算照登、無人工篩選；輪詢制在極端連發情境可能漏收同窗口內
 的較早事件。
 
