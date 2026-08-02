@@ -1,5 +1,14 @@
 {
- "generated_at": "2026-08-02 14:38:09 UTC",
+ "generated_at": "2026-08-02 15:35:08 UTC",
+ "events_requested": [
+  "0403",
+  "dapu"
+ ],
+ "full_event_set": [
+  "0403",
+  "dapu"
+ ],
+ "scope_note": "covers the GDMS replay artifacts only; the Taitung audit replay (CWA post-event waveform zip) is outside this harness",
  "environment": {
   "python": "3.11.15",
   "numpy": "2.4.6",
