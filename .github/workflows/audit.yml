@@ -31,7 +31,16 @@ jobs:
         env:
           CWA_API_KEY: ${{ secrets.CWA_API_KEY }}
         run: |
-          curl -sf "https://opendata.cwa.gov.tw/api/v1/rest/datastore/E-A0015-004?Authorization=${CWA_API_KEY}&format=JSON" -o latest.json
+          if [ -z "$CWA_API_KEY" ]; then
+            echo "::error::CWA_API_KEY secret 未設定（Settings→Secrets→Actions）"
+            exit 1
+          fi
+          code=$(curl -s -o latest.json -w "%{http_code}" \
+            "https://opendata.cwa.gov.tw/api/v1/rest/datastore/E-A0015-004?Authorization=${CWA_API_KEY}&format=JSON")
+          echo "CWA API HTTP $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::CWA API 回應 $code（401=key 錯誤）"; exit 1
+          fi
           ID=$(python3 -c "import json; print(json.load(open('latest.json'))['cwaopendata']['identifier'])")
           echo "id=$ID" >> "$GITHUB_OUTPUT"
           if [ -f "outputs/audit_archive/done_$ID" ]; then
