@@ -100,7 +100,7 @@
                    50%{box-shadow:0 0 0 9px rgba(229,72,77,0)}}
   .layout{display:flex; gap:18px; flex-wrap:wrap}
   .mapbox{background:var(--panel); border-radius:10px; padding:10px}
-  .mapbox svg{display:block; width:min(470px, 38vw); height:auto}
+  .mapbox svg{display:block; width:min(440px, 36vw); height:auto}
   svg text{font-family:'Segoe UI',sans-serif}
   .side{flex:1; min-width:320px; display:flex;
         flex-direction:column; gap:12px}
@@ -370,8 +370,10 @@ let evKey = Object.keys(DATA.events)[0];
 let t = 0, playing = false, speed = 1, timer = null;
 
 const svg = document.getElementById('map');
-svg.setAttribute('width', M.w); svg.setAttribute('height', M.h);
-svg.setAttribute('viewBox', `0 0 ${M.w} ${M.h}`);
+// crop the empty ocean west of 119.9°E so the island sits centered
+const VCROP = 34;
+svg.setAttribute('width', M.w - VCROP); svg.setAttribute('height', M.h);
+svg.setAttribute('viewBox', `${VCROP} 0 ${M.w - VCROP} ${M.h}`);
 
 function el(tag, attrs){ const e = document.createElementNS(
   'http://www.w3.org/2000/svg', tag);
@@ -452,7 +454,7 @@ function buildStatic(){
     const [, y] = lonlat(121, lat);
     gg.appendChild(el('line', {x1:0, y1:y, x2:M.w, y2:y,
       stroke:'#ffffff', 'stroke-opacity':0.06}));
-    const ty = el('text', {x:5, y:y-4, 'font-size':9,
+    const ty = el('text', {x:VCROP+5, y:y-4, 'font-size':9,
       fill:'#7c8a99', 'fill-opacity':0.85});
     ty.textContent = lat + '°N'; gg.appendChild(ty);
   }
@@ -480,7 +482,7 @@ function buildStatic(){
   svg.appendChild(el('rect', {x:0, y:0, width:M.w, height:M.h,
     fill:'url(#vign)', 'pointer-events':'none'}));
   const sb = el('g', {});
-  const len = 50 * M.pxPerKm, x0 = 16, y0 = M.h - 16;
+  const len = 50 * M.pxPerKm, x0 = VCROP + 16, y0 = M.h - 16;
   sb.appendChild(el('line', {x1:x0, y1:y0, x2:x0+len, y2:y0,
     stroke:'#c3c2b7', 'stroke-width':1.5}));
   for(const dx of [0, len/2, len])

@@ -66,8 +66,15 @@ WF_PRE, WF_POST = 5.0, 75.0   # seconds around first trigger
 
 
 def extract_waveforms(key, payload, base_dir):
-    """Downsampled vertical-component strips for the earliest N stations."""
+    """Downsampled vertical-component strips for the earliest N stations.
+
+    Window length follows the replay: the simulation ends ~3 s after the
+    last trigger, so an 80 s strip would stay mostly blank — trim to
+    t_end + 8 s of margin instead.
+    """
     import obspy
+
+    post = min(WF_POST, float(payload["t_end"]) + 8.0)
 
     dirname, files = WF_FILES[key]
     st = obspy.Stream()
@@ -97,7 +104,7 @@ def extract_waveforms(key, payload, base_dir):
         origin_abs = obspy.UTCDateTime(payload["truth"]["origin_time"])
         t_ref_abs = origin_abs - origin_rel
         w0 = t_ref_abs - WF_PRE
-        tr.trim(w0, t_ref_abs + WF_POST, pad=True, fill_value=0)
+        tr.trim(w0, t_ref_abs + post, pad=True, fill_value=0)
         tr.detrend("demean")
         dec = int(round(fs0 / WF_FS))
         tr.filter("lowpass", freq=WF_FS * 0.4)
