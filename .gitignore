@@ -38,3 +38,20 @@ Thumbs.db
 # experiment tracking
 wandb/
 mlruns/
+
+# ---- portfolio hygiene: local-only, never read at runtime ----
+# untrack the already-committed copies once with:
+#   git rm -r --cached kaggle extras
+#   git rm --cached outputs/*.png outputs/*.gif outputs/magnet_cwa.pt outputs/event_catalog.csv
+# KEEP tracked (the audit workflow / VM / console read these):
+#   outputs/phasenet_cwa_ft.pt, outputs/magnet_cwa_v2/,
+#   outputs/site_terms.json, outputs/audit_archive/, outputs/replay_*.json,
+#   assets/, docs/, vercel/, scripts/, src/, web/
+kaggle/
+extras/
+outputs/*.png
+outputs/*.gif
+outputs/blind_magnet_*.json
+outputs/convergence_*.json
+outputs/magnet_cwa.pt
+outputs/event_catalog.csv
