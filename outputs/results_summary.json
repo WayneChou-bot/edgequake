@@ -1,7 +1,15 @@
 {
- "generated_at": "2026-08-02 14:15:43 UTC",
- "git_commit": "0c81ba6e5cddb94f883de2b57f91c8f420602b39",
- "git_commit_note": "repo HEAD at generation time; the summary file itself lands in the following commit",
+ "generated_at": "2026-08-02 14:51:19 UTC",
+ "git_commit": "6e2fcd1e56d853dfca695fef4db5390391232974",
+ "working_tree_dirty": false,
+ "git_commit_note": "two-phase protocol: code is committed FIRST; this summary is generated on that clean tree and lands in a second, derived-artifacts-only commit. --verify enforces that the recorded commit is HEAD or an ancestor whose diff to HEAD touches only derived paths, and that at generation time no NON-derived path was dirty (derived paths are necessarily dirty mid-protocol, so they are exempt from the dirty check — they are pinned by file_sha256 instead).",
+ "source_file_sha256": {
+  "scripts/build_results_summary.py": "3227680fc6c16d1283a5bff2a4d60c7cbc2602cbdaa1a9c09f87209105006118",
+  "src/edgequake/location/replay_sim.py": "751fbbd09bf78d233ce46e3b290c16a63e496c9b91628d5fe5479f4ad2c928d3",
+  "src/edgequake/location/locator.py": "f5ec7edb6c6032128dec9517282ebcefb630f790b056056f5247b008507a9fb6",
+  "src/edgequake/location/magnitude.py": "47bd59630b557ec496c6163c8fe1254cda7a829ece9f806c299b0c96eec642b6",
+  "src/edgequake/location/site.py": "a8c37caec1f757975aee7a7bc3b66d95deddf52a45e4ad2525a067d4d9a1a014"
+ },
  "parameters": {
   "max_stations": 60,
   "bootstrap": 60,
@@ -25,14 +33,14 @@
  },
  "checkpoint_identity": {
   "finding": "outputs/v3_verify_x83.pt and outputs/phasenet_cwa_ft.pt are byte-identical (same sha256) — the replay artifacts were produced with the committed fine-tuned weights under an alternate filename",
-  "reproduction": "outputs/reproduction_report.json — machine-generated record: raw-waveform hashes + checkpoint hash + field-by-field comparison, verdict bit_exact; regenerate with scripts/verify_replay_reproduction.py (requires the GDMS raw waveforms, which are too large for the repo)",
+  "reproduction": "outputs/reproduction_report.json — machine-generated record: raw-waveform + dataless-inventory + checkpoint hashes, environment versions, canonical whole-JSON comparison, verdict identical_canonical_json; regenerate with scripts/verify_replay_reproduction.py (requires the GDMS raw waveforms, which are too large for the repo)",
   "training_provenance": "the checkpoint's training run is only partially traceable — a different, weaker provenance level than the replay artifacts, which are fully reproducible"
  },
  "file_sha256": {
   "outputs/v3_verify_x83.pt": "26da59c137c878890f631f7f76e8e37388f5e1247e1f7366e8ddbafc3b1e7669",
   "outputs/phasenet_cwa_ft.pt": "26da59c137c878890f631f7f76e8e37388f5e1247e1f7366e8ddbafc3b1e7669",
   "outputs/site_terms.json": "8574ae88124a44894af9d4e569bd4efab558d9508c309769575365933ac1f2aa",
-  "outputs/reproduction_report.json": "f81b1c972d11fbf809dd0c060d053ef6378316e4d352811bcf7fccda6569a6a8",
+  "outputs/reproduction_report.json": "f43716764126f1adec5545bfd50b068b9c4c205b1e022ee4710cb421984ba30e",
   "outputs/replay_0403.json": "513dc26599b4a759095d8c656ac98c6eda89823767daa7f7f2e79aa195dd34f1",
   "outputs/replay_dapu.json": "15c6aa797b70bc5252caf2e839a37afb41d19393f70c7159e1a5ccf20787a907",
   "outputs/replay_eq2026053.json": "e42208abadf6fa140ef4d7ace77e280d2f9ac54cf79af878cf728988126328cb"

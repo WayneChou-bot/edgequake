@@ -1,8 +1,19 @@
 {
- "generated_at": "2026-08-02 13:59:01 UTC",
+ "generated_at": "2026-08-02 14:38:09 UTC",
+ "environment": {
+  "python": "3.11.15",
+  "numpy": "2.4.6",
+  "obspy": "1.5.0",
+  "torch": "2.13.0+cpu",
+  "seisbench": "0.12.3"
+ },
  "checkpoint": {
   "path": "outputs/v3_verify_x83.pt",
   "sha256": "26da59c137c878890f631f7f76e8e37388f5e1247e1f7366e8ddbafc3b1e7669"
+ },
+ "dataless_inventory": {
+  "path": "raw_resp/Dataless_CWASN.dataless",
+  "sha256": "97ca944e3435d0b533973b854ec86667df2e98fcaf602cffe2a6681a6c3e979e"
  },
  "procedure": "scripts/ingest_gdms.py --event <e> --weights none --state-dict outputs/v3_verify_x83.pt (defaults, threshold from CANONICAL), compared field-by-field against tracked outputs/replay_<e>.json (tolerance 1e-3 s / 1e-3)",
  "events": {
@@ -42,7 +53,10 @@
      "presence_mismatch": 0
     }
    },
-   "bit_exact": true,
+   "canonical_sha256_ref": "bad9ee4caae1510b4925e14202fe75f449e7045e3d6dda7ef0183328034e87f9",
+   "canonical_sha256_new": "bad9ee4caae1510b4925e14202fe75f449e7045e3d6dda7ef0183328034e87f9",
+   "new_artifact_sha256": "84abf67e7374a947718ac50bdb3e7a0f637c6dae27cf1ff745fce527ab08de14",
+   "verdict": "identical_canonical_json",
    "inputs_sha256": {
     "raw_0403/hualien0403_HH.mseed": "45e6b5de151166ec911be6eea8012f42aa6756585f56fb8e68003ffa59f3d4b2",
     "raw_0403/hualien0403_EH.mseed": "e5dc7be9bb4f1854e8878e02bc8bbb457089ceed9a0009795b1d01752355a690",
@@ -87,7 +101,10 @@
      "presence_mismatch": 0
     }
    },
-   "bit_exact": true,
+   "canonical_sha256_ref": "0bc1323db55fdd5c52654d781abfbd731d843775128c878406df1f66c4426362",
+   "canonical_sha256_new": "0bc1323db55fdd5c52654d781abfbd731d843775128c878406df1f66c4426362",
+   "new_artifact_sha256": "a524bd20afa65a5f4d952cd33f584a9a6eb74c0f6ee8798d7b6a98dee090dc87",
+   "verdict": "identical_canonical_json",
    "inputs_sha256": {
     "raw_dapu/dapu0121_HH.mseed": "f8032a46b5e7bfa1adb4444e203a4706555559dd50de7e17681f35c16379541f",
     "raw_dapu/dapu0121_HL.mseed": "03f932c6264c0a22d87c2f99499719153b0a6ab2860d75f9668c015a83c6dd22"
@@ -96,5 +113,5 @@
    "tracked_artifact_sha256": "15c6aa797b70bc5252caf2e839a37afb41d19393f70c7159e1a5ccf20787a907"
   }
  },
- "verdict": "bit_exact"
+ "verdict": "identical_canonical_json"
 }
