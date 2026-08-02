@@ -130,8 +130,7 @@
          cursor:pointer; font-size:13px}
   button:hover{border-color:var(--blue)}
   input[type=range]{flex:1; accent-color:var(--blue)}
-  .wfbox{background:var(--panel); border-radius:10px; padding:12px 14px;
-        margin-top:14px}
+  .wfbox{background:var(--panel); border-radius:10px; padding:12px 14px}
   .wfhead{font-size:11px; color:var(--ink2); margin-bottom:6px;
           display:flex; justify-content:space-between}
   .legend{font-size:10.5px; color:var(--ink2); margin-top:6px;
@@ -271,12 +270,12 @@
           <input type="range" id="slider" min="0" max="100" value="0" step="1">
         </div>
       </div>
+      <div class="wfbox">
+        <div class="wfhead"><span id="wfhd"></span>
+          <span id="wfnote"></span></div>
+        <canvas id="wf" width="1280" height="340"></canvas>
+      </div>
     </div>
-  </div>
-  <div class="wfbox">
-    <div class="wfhead"><span id="wfhd"></span>
-      <span id="wfnote"></span></div>
-    <canvas id="wf" width="1280" height="340"></canvas>
   </div>
 </div>
 
@@ -783,7 +782,7 @@ function cssv(n){ return getComputedStyle(document.documentElement)
   .getPropertyValue(n).trim(); }
 function sizeWf(){
   const box = document.querySelector('#view-replay .wfbox');
-  wfc.width = Math.max(700, box.clientWidth - 28);
+  wfc.width = Math.max(360, box.clientWidth - 28);
   wfc.height = 340;
 }
 window.addEventListener('resize', () => { sizeWf(); renderWf(); });
