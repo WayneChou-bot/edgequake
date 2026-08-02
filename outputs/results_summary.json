@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-02 18:28:43 UTC",
- "git_commit": "12dd59324a506bd84f98f0ffea3822fa85d8c14f",
+ "generated_at": "2026-08-02 18:58:46 UTC",
+ "git_commit": "839697a4599b98f0402902b9e6c44716c0897411",
  "working_tree_dirty": false,
  "environment": {
   "python": "3.11.15",
@@ -12,9 +12,9 @@
  },
  "git_commit_note": "two-phase protocol: code is committed FIRST; this summary is generated on that clean tree and lands in a second, derived-artifacts-only commit. --verify enforces that the recorded commit is HEAD or an ancestor whose diff to HEAD touches only derived paths, and that at generation time no NON-derived path was dirty (derived paths are necessarily dirty mid-protocol, so they are exempt from the dirty check — they are pinned by file_sha256 instead).",
  "source_file_sha256": {
-  "scripts/build_results_summary.py": "98c404ba75771f9d1e7106ab5fa33b375f1b3019e67bbee6f5bebdaf2e9426dc",
+  "scripts/build_results_summary.py": "cff4cc3a90e4841b77fe12d7a34a7ff082a8895b484e31360df4ed7cbbb7d2fe",
   "scripts/demo_convergence.py": "f5798d742b4cf4d6dea9b1345c1546d7a6b58464309faa544263cc87cb7021ee",
-  "src/edgequake/location/replay_sim.py": "4d1668368b8ee93c50b934dfdbba2f59ee7b2df1b042772730ef6f632fb51776",
+  "src/edgequake/location/replay_sim.py": "e94a3e8b66aed9958adaf4d121a163cea899ad25cde96742356c37b00d10b40b",
   "src/edgequake/location/locator.py": "f5ec7edb6c6032128dec9517282ebcefb630f790b056056f5247b008507a9fb6",
   "src/edgequake/location/magnitude.py": "47bd59630b557ec496c6163c8fe1254cda7a829ece9f806c299b0c96eec642b6",
   "src/edgequake/location/site.py": "a8c37caec1f757975aee7a7bc3b66d95deddf52a45e4ad2525a067d4d9a1a014"
@@ -50,17 +50,17 @@
   "outputs/phasenet_cwa_ft.pt": "26da59c137c878890f631f7f76e8e37388f5e1247e1f7366e8ddbafc3b1e7669",
   "outputs/site_terms.json": "8574ae88124a44894af9d4e569bd4efab558d9508c309769575365933ac1f2aa",
   "outputs/reproduction_report.json": "1210f7bf9022e846d014535af7ed09818972a373e43b4af73b8bf27d7ee2ba78",
-  "docs/audit.json": "4fd9c46bf8ffc3ced3e83737fd5580e8b14119ae29cd33adae9d136af878750d",
-  "vercel/audit.json": "4fd9c46bf8ffc3ced3e83737fd5580e8b14119ae29cd33adae9d136af878750d",
-  "docs/index.html": "faefa2de1b08438e5a4230271d16952c6763d74b9677368b7dbe2849118e3bf5",
-  "vercel/index.html": "faefa2de1b08438e5a4230271d16952c6763d74b9677368b7dbe2849118e3bf5",
+  "docs/audit.json": "f3ba4989be192da3a64e1e0bbac37718c8ef5e2080662f089087b3c6f2391343",
+  "vercel/audit.json": "f3ba4989be192da3a64e1e0bbac37718c8ef5e2080662f089087b3c6f2391343",
+  "docs/index.html": "e64179251773585953ec431936ccd3f1e6ffbbf161b25b156e6d6667b10205f4",
+  "vercel/index.html": "e64179251773585953ec431936ccd3f1e6ffbbf161b25b156e6d6667b10205f4",
   "outputs/replay_0403.json": "513dc26599b4a759095d8c656ac98c6eda89823767daa7f7f2e79aa195dd34f1",
   "outputs/replay_dapu.json": "15c6aa797b70bc5252caf2e839a37afb41d19393f70c7159e1a5ccf20787a907",
   "outputs/replay_eq2026053.json": "e42208abadf6fa140ef4d7ace77e280d2f9ac54cf79af878cf728988126328cb",
   "outputs/audit_archive/audit_202607310058-EQ2026053-Waveform.txt": "0c70635cb6befecd0c07d31a14152735f5f3331352072cac09d6977fbecaffa4",
-  "outputs/audit_archive/audit_eq2026053.json": "4ed65130cd98f00a23a92d7aee3d97ba30a44e8ade47cfc7db4971249976ede6",
+  "outputs/audit_archive/audit_eq2026053.json": "70577357ce985651fa0f8bc10d0b771bd57aa9094a36ceeb5b630537216ac14f",
   "outputs/audit_archive/done_202607310058-EQ2026053-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "outputs/audit_archive/report_eq2026053.md": "d925e0e2e794997fd83a571222b51545b2df60f1e482b4e99f1a90a5ea1e6289"
+  "outputs/audit_archive/report_eq2026053.md": "cc580d1055199f85bfbd718cde5230b612ccdd8e34998dca038de07d54ba2132"
  },
  "audit_content_sha256": {
   "eq2026053": "169db588aedd020c2069217f70eae6ba3234469a15551f4aa38a449bf53a7d82"
@@ -76,7 +76,26 @@
     "final_err_km": 17.4,
     "t_eew_s": 9.2,
     "eew_fired": true,
-    "alert_fired": false
+    "alert_fired": false,
+    "pws_evidence": {
+     "fired": false,
+     "thresholds": {
+      "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+      "quality_gates": {
+       "min_stations": 6,
+       "max_ellipse_km": 80.0,
+       "eew_min_obs_gal": 10.0,
+       "pws_min_obs_gal": 25.0
+      }
+     },
+     "max_mag": 5.94,
+     "max_predicted_county_intensity": 3,
+     "max_observed_pga_gal": 37.3,
+     "n_frames_rule_met": 0,
+     "blockers": [
+      "magnitude_intensity_rule_never_met"
+     ]
+    }
    }
   },
   "note": "for EVERY audit record in the archive, each field is re-derived from its replay artifact via simulate() at CANONICAL parameters during THIS generation and compared to the record; generation aborts on mismatch. Together with the content hashes this proves records were consistent when frozen, not merely unchanged since."
