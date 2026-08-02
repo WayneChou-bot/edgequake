@@ -260,15 +260,20 @@ def date_problems(text: str, rec: dict) -> list[str]:
         return []
     local = utc + _dt.timedelta(hours=8)
     out = []
+
+    # tolerate spacing variants: 7月31日 / 7 月 31 日 / 7月 31日 ...
+    def pat(month: int, day: int) -> str:
+        return rf"{month}\s*月\s*{day}\s*日"
+
     want = f"{local.month}月{local.day}日"
-    if want not in text:
+    if not re.search(pat(local.month, local.day), text):
         out.append(f"Chinese version must contain the Taiwan-local "
                    f"date {want!r} (origin_utc {raw} + 8h)")
     if (utc.month, utc.day) != (local.month, local.day):
-        bad = f"{utc.month}月{utc.day}日"
-        if bad in text:
-            out.append(f"UTC date {bad!r} presented as if local — the "
-                       f"Taiwan-local date is {want!r}")
+        if re.search(pat(utc.month, utc.day), text):
+            out.append(f"UTC date {utc.month}月{utc.day}日 presented "
+                       f"as if local — the Taiwan-local date is "
+                       f"{want!r}")
     return out
 
 

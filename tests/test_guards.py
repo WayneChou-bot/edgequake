@@ -153,6 +153,19 @@ class LocalDateGrounding(unittest.TestCase):
             lr.date_problems("台灣時間 7月31日凌晨 0 時 58 分", self.REC),
             [])
 
+    def test_spaced_local_date_accepted(self):
+        # round-9 field bug: Gemini writes "7 月 31 日" with spaces —
+        # three correct drafts were rejected by an exact-string match
+        self.assertEqual(
+            lr.date_problems("2026 年 7 月 31 日凌晨 0 時 58 分",
+                             self.REC), [])
+
+    def test_spaced_utc_date_still_rejected(self):
+        problems = lr.date_problems(
+            "2026 年 7 月 30 日深夜，另於 7 月 31 日回顧", self.REC)
+        self.assertTrue(any("presented" in p for p in problems),
+                        problems)
+
     def test_same_day_no_false_positive(self):
         rec = {"origin_utc": "2026-07-30T02:00:00Z"}   # local 30th too
         self.assertEqual(
