@@ -59,12 +59,14 @@
  "provenance": {
   "original_live_log": "outputs/audit_archive/audit_202607310058-EQ2026053-Waveform.txt",
   "original_live_log_sha256": "0c70635cb6befecd0c07d31a14152735f5f3331352072cac09d6977fbecaffa4",
-  "original_run_commit": "unknown — the original workflow did not record its commit (fixed since: records now carry generated_by_commit)",
+  "original_results_commit": "2092add92b706161ce8cdaf808f69c948657339d",
+  "original_run_commit": "f677ebbab1f252f3246bf206693b074acc8affaf",
   "original_run_note": "the original live Actions run (2026-07-31) used the then-deployed pre-CANONICAL code — before run-parameter single-sourcing and site corrections — and its log reports first magnitude M6.2 / 43 km. The log is retained verbatim as historical evidence and is superseded by this record.",
-  "canonical_recompute_commit": "6fefeb9a9b0b3984d0b936b51d73053d9a8df75b",
+  "record_numbers_written_in_commit": "757e8e3c00377466e4fd60b9991d0774294cb8cb",
+  "provenance_backfilled_by_commit": "f9546a9b1a153469ec3e00dfd152c510112f044f",
   "recompute_input_sha256": {
    "outputs/replay_eq2026053.json": "e42208abadf6fa140ef4d7ace77e280d2f9ac54cf79af878cf728988126328cb"
   },
-  "recompute_note": "this record's numbers are a post-hoc recomputation of the SAME replay artifact under CANONICAL parameters (replay_sim.CANONICAL) with site corrections; see results_summary.json for the parameter set and source-file hashes."
+  "recompute_verification": "the numeric fields of this record are re-derived from the replay artifact at every results_summary generation and cross-checked field by field (audit_cross_check in results_summary.json); generation aborts on any mismatch, and --verify fails unless the cross-check status is 'match' and the record hash is unchanged since."
  }
 }

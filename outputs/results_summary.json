@@ -1,10 +1,10 @@
 {
- "generated_at": "2026-08-02 15:42:29 UTC",
- "git_commit": "6fefeb9a9b0b3984d0b936b51d73053d9a8df75b",
+ "generated_at": "2026-08-02 16:46:04 UTC",
+ "git_commit": "f9546a9b1a153469ec3e00dfd152c510112f044f",
  "working_tree_dirty": false,
  "git_commit_note": "two-phase protocol: code is committed FIRST; this summary is generated on that clean tree and lands in a second, derived-artifacts-only commit. --verify enforces that the recorded commit is HEAD or an ancestor whose diff to HEAD touches only derived paths, and that at generation time no NON-derived path was dirty (derived paths are necessarily dirty mid-protocol, so they are exempt from the dirty check — they are pinned by file_sha256 instead).",
  "source_file_sha256": {
-  "scripts/build_results_summary.py": "ec7386616a3a78bfc2857b9b978c82e936647e554eaada88766486ee8efaff3c",
+  "scripts/build_results_summary.py": "9accbebea7a5a8192c2a39fb4f4c556ab9759b3549ea0b910c5f4cce2b957e2f",
   "scripts/demo_convergence.py": "f5798d742b4cf4d6dea9b1345c1546d7a6b58464309faa544263cc87cb7021ee",
   "src/edgequake/location/replay_sim.py": "88fffc19b76385d75dc123afbb3e55681fb93fd3b948a8e41f696279a0e33cd1",
   "src/edgequake/location/locator.py": "f5ec7edb6c6032128dec9517282ebcefb630f790b056056f5247b008507a9fb6",
@@ -47,8 +47,21 @@
   "outputs/replay_dapu.json": "15c6aa797b70bc5252caf2e839a37afb41d19393f70c7159e1a5ccf20787a907",
   "outputs/replay_eq2026053.json": "e42208abadf6fa140ef4d7ace77e280d2f9ac54cf79af878cf728988126328cb"
  },
- "audit_content_sha256": "f20bc18c0e2187ca2ab9701670fe62715a92a58abe4a26d344f558c6d4df1244",
+ "audit_content_sha256": "f2739e08be1115db0c646dcf99fe24e291c61adb25792d6c5b0e1f559df92e6d",
  "audit_content_note": "audit record hashed excluding ['report_md', 'report_model'] so LLM-report regeneration does not invalidate this manifest",
+ "audit_cross_check": {
+  "status": "match",
+  "checked_fields": {
+   "t_first_loc_s": 4.9,
+   "first_mag": 5.88,
+   "final_mag": 4.81,
+   "final_err_km": 17.4,
+   "t_eew_s": 9.2,
+   "eew_fired": true,
+   "alert_fired": false
+  },
+  "note": "each field re-derived from outputs/replay_eq2026053.json via simulate() at CANONICAL parameters during THIS generation and compared to the audit record; generation aborts on mismatch. Together with audit_content_sha256 this proves the record was consistent when frozen, not merely unchanged since."
+ },
  "site_correction": {
   "file": "outputs/site_terms.json",
   "n_stations": 737
