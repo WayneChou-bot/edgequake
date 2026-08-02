@@ -234,8 +234,11 @@ def main() -> None:
             print(f"[audit] site terms: {len(site_terms)} stations")
         from edgequake.impact import get_model
         from edgequake.similar import get_similar
+        from edgequake.location.replay_sim import CANONICAL
         impact = get_model()
-        payload = simulate(ev_df, tr, max_stations=40, bootstrap=40,
+        payload = simulate(ev_df, tr,
+                           max_stations=CANONICAL["max_stations"],
+                           bootstrap=CANONICAL["bootstrap"],
                            site_terms=site_terms, exposure_model=impact,
                            similar_db=get_similar())
         t_first = min(x["tp"] for x in payload["stations"])

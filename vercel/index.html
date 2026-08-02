@@ -306,8 +306,8 @@ const GTXT = {
   nav_live: {zh: '即時監測', en: 'Live Monitor'},
   nav_replay: {zh: '歷史事件回放', en: 'Event Replay'},
   nav_audit: {zh: '稽核紀錄', en: 'Audit Log'},
-  sub: {zh: '即時：CWA 地震報告（約 1–2 分鐘延遲，速報非預警）＋ USGS 全球地震＋雲端 live 引擎（TREM 真即時偵測） · 回放：歷史事件以真實時間軸重演完整偵測鏈 · 研究原型，非官方警報服務',
-        en: 'Live: CWA earthquake reports (~1–2 min delay, bulletins not warnings) + USGS worldwide + cloud live engine (TREM real-time detection) · Replay: historical events re-run through the full detection chain on the true timeline · research prototype, not an official warning service'},
+  sub: {zh: '即時：CWA 地震報告（約 1–2 分鐘延遲，速報非預警）＋ USGS 全球地震＋雲端 live 引擎（TREM 真即時偵測） · 回放：歷史事件之事後到時重播（樣本外驗證） · 研究原型，非官方警報服務',
+        en: 'Live: CWA earthquake reports (~1–2 min delay, bulletins not warnings) + USGS worldwide + cloud live engine (TREM real-time detection) · Replay: post-hoc arrival-time replays of out-of-sample historical events · research prototype, not an official warning service'},
   foot: {zh: '資料：中央氣象署開放資料平臺（速報）、CWA GDMS 歷史波形 (doi:10.7914/SN/T5)、USGS Earthquake Hazards Program、底圖 © CARTO/OpenStreetMap、內政部國土測繪中心 WMTS、ExpTech TREM（社群觀測網，僅供參考）、人口網格 WorldPop (CC BY 4.0) · 震央真值為 CWA 報告近似值 · EdgeQuake 研究原型，非官方警報服務 · github.com/WayneChou-bot/edgequake',
         en: 'Data: CWA Open Data (bulletins), CWA GDMS historical waveforms (doi:10.7914/SN/T5), USGS Earthquake Hazards Program, basemap © CARTO/OpenStreetMap, NLSC WMTS, ExpTech TREM (community network, reference only), population grid WorldPop (CC BY 4.0) · truth epicenters are approximate CWA-report values · EdgeQuake research prototype, not an official warning service · github.com/WayneChou-bot/edgequake'},
 };
@@ -891,9 +891,9 @@ function applyStaticR(){
     (Z ? '自首站觸發起（' : 'since first station trigger (') +
     '<span id="torigin"></span>' + (Z ? '）' : ')');
   document.getElementById('tsub2').textContent = Z ?
-    '縣市預測震度（CWA 級距）與 PWS 警報判定 — 規則：M≥5.0 且震度≥4，或 M≥6.5 且震度≥3' :
-    'county predicted intensity (CWA scale) & PWS alert decision — ' +
-    'rule: M≥5.0 & I≥4, or M≥6.5 & I≥3';
+    '縣市預測震度（CWA 級距之 PGA 近似）與 PWS 警報判定 — 規則：M≥5.0 且震度≥4，或 M≥6.5 且震度≥3' :
+    'county predicted intensity (PGA approximation of the CWA scale) & ' +
+    'PWS alert decision — rule: M≥5.0 & I≥4, or M≥6.5 & I≥3';
   document.getElementById('legendtx').textContent = Z ?
     '○ 測站 · ● 已觸發（S 波通過後按實測震度著色） · ◎ 估計震央＋1σ 誤差橢圓 · ' +
     '★ 目錄震央 · 虛線圓：P／S 波前 · 虛線環：預測震度 I≥4／I≥5 · ' +
@@ -1390,16 +1390,19 @@ window.__applyLangLive = function(){
 let aud = null, tried = false;
 
 const T = {
-  note: {zh: '影子稽核（shadow audit）：每當中央氣象署發布顯著有感地震報告' +
-    '並釋出強震波形，GitHub Actions 便自動下載該事件波形、離線重跑完整偵測鏈' +
-    '（觸發 → 定位 → 規模 → 警報判定），檢驗「若當時引擎在線」的表現，' +
-    '並與 CWA 目錄比對。全程自動、逐事件留存，無人工挑選。',
-   en: 'Shadow audit: whenever CWA publishes a significant-earthquake ' +
-    'report with strong-motion waveforms, GitHub Actions automatically ' +
-    'downloads them and re-runs the full detection chain offline ' +
-    '(trigger → locate → magnitude → alert decision) to measure how the ' +
-    'engine would have performed, compared against the CWA catalog. ' +
-    'Fully automated, every event kept — no cherry-picking.'},
+  note: {zh: '影子稽核（shadow audit）：中央氣象署釋出顯著地震強震波形後，' +
+    'GitHub Actions 自動下載並執行「事後到時重播」——picks 依其到時因果地' +
+    '進入估計鏈（定位 → 規模 → 警報判定），與 CWA 目錄比對。拾取與運算' +
+    '延遲尚未計入，表列時間為理論下界。結果照算照登、無人工篩選（採 15 分' +
+    '鐘輪詢，極端連發情境可能漏收）。',
+   en: 'Shadow audit: when CWA releases strong-motion waveforms for a ' +
+    'significant quake, GitHub Actions performs a post-hoc arrival-time ' +
+    'replay — picks enter the estimation chain causally at their arrival ' +
+    'times (locate → magnitude → alert decision), compared against the ' +
+    'CWA catalog. Picker/compute latency is not modeled, so listed times ' +
+    'are lower bounds. Results are committed as computed, no manual ' +
+    'curation (15-min polling; back-to-back events in one window could ' +
+    'be missed).'},
   cols: {zh: ['事件', '發震時刻（台灣時間）', 'CWA M', 'EdgeQuake M', 'ΔM',
               '定位誤差', '首次定位', 'EEW 判定', '首報規模', 'I≥4 曝險',
               'PWS 警報'],

@@ -1,0 +1,117 @@
+{
+ "generated_at": "2026-08-02 13:32:48 UTC",
+ "git_commit": null,
+ "parameters": {
+  "max_stations": 60,
+  "bootstrap": 60,
+  "seed": 0,
+  "vp_km_s": 6.2,
+  "dt_s": 0.25,
+  "pick_threshold": 0.3,
+  "velocity_model": "homogeneous half-space, vp=6.2 km/s, vs=vp/1.73",
+  "depth_grid_km": [
+   5.0,
+   10.0,
+   20.0,
+   30.0,
+   50.0,
+   75.0,
+   100.0,
+   130.0,
+   170.0
+  ],
+  "note": "bootstrap-count invariance of point estimates verified for N in {20,30,60,100,200} (identical to 3 decimals)"
+ },
+ "checkpoints": {
+  "outputs/v3_verify_x83.pt": {
+   "sha256": "26da59c137c878890f631f7f76e8e37388f5e1247e1f7366e8ddbafc3b1e7669",
+   "provenance": "restored from a 2026-07-31 workspace snapshot; verified by bit-exact reproduction of both tracked replay artifacts (0403: 110 P/81 S picks; dapu: 116 P/107 S picks — all arrival times, probabilities and PGA identical). The checkpoint's training run is only partially traceable; the replay ARTIFACTS are fully reproducible, the training is not — these are different provenance levels."
+  },
+  "outputs/phasenet_cwa_ft.pt": {
+   "sha256": "db3c250cd4a4876660c70e2c49b23ab01c07fd750e3ddb12ae674276318aa629"
+  }
+ },
+ "site_correction": {
+  "file": "outputs/site_terms.json",
+  "sha256": "8574ae88124a44894af9d4e569bd4efab558d9508c309769575365933ac1f2aa",
+  "n_stations": 737
+ },
+ "events": {
+  "0403": {
+   "input": "outputs/replay_0403.json",
+   "input_sha256": "513dc26599b4a759095d8c656ac98c6eda89823767daa7f7f2e79aa195dd34f1",
+   "picker_in_artifact": "seisbench-phasenet-ft-v3_verify_x83",
+   "truth_mag": 7.2,
+   "raw": {
+    "final_mag": 7.41,
+    "final_err_km": 20.9,
+    "abs_dmag": 0.21,
+    "first_loc_s": 3.8,
+    "first_mag_s": 6.0,
+    "first_mag": 5.54,
+    "bconf": 100
+   },
+   "site_corrected": {
+    "final_mag": 7.08,
+    "final_err_km": 20.9,
+    "abs_dmag": 0.12,
+    "first_loc_s": 3.8,
+    "first_mag_s": 6.0,
+    "first_mag": 5.43,
+    "bconf": 100
+   }
+  },
+  "dapu": {
+   "input": "outputs/replay_dapu.json",
+   "input_sha256": "15c6aa797b70bc5252caf2e839a37afb41d19393f70c7159e1a5ccf20787a907",
+   "picker_in_artifact": "seisbench-phasenet-ft-v3_verify_x83",
+   "truth_mag": 6.4,
+   "raw": {
+    "final_mag": 6.65,
+    "final_err_km": 8.6,
+    "abs_dmag": 0.25,
+    "first_loc_s": 5.2,
+    "first_mag_s": 8.4,
+    "first_mag": 6.91,
+    "bconf": 100
+   },
+   "site_corrected": {
+    "final_mag": 6.38,
+    "final_err_km": 8.6,
+    "abs_dmag": 0.02,
+    "first_loc_s": 5.2,
+    "first_mag_s": 8.4,
+    "first_mag": 6.95,
+    "bconf": 100
+   }
+  },
+  "eq2026053": {
+   "input": "outputs/audit_archive/audit_eq2026053.json",
+   "input_sha256": "e2e9e78219fe6b1e4bcec3f9cbc00e96143ca5c392a2cb4fc1a2d120c70131f6",
+   "truth_mag": 4.7,
+   "site_corrected": {
+    "final_mag": 4.81,
+    "final_err_km": 17.4,
+    "abs_dmag": 0.11,
+    "first_loc_s": 4.9,
+    "first_mag_s": 9.2,
+    "first_mag": 5.88,
+    "t_eew_s": 9.2
+   },
+   "note": "post-hoc arrival-time replay; times are lower bounds"
+  }
+ },
+ "mean_abs_dmag": {
+  "raw": 0.17,
+  "site_corrected": 0.08
+ },
+ "readme_quotes": [
+  "M7.08",
+  "M6.38",
+  "M4.81",
+  "4.9",
+  "9.2",
+  "0.702",
+  "0.635"
+ ]
+}

@@ -1,6 +1,6 @@
 # Shadow-mode audit: every 15 min, check CWA E-A0015-004 for a new
-# significant-earthquake waveform package; if new, download it, run the
-# EdgeQuake engine replay blind, and commit the audit record back to the
+# significant-earthquake waveform package; if new, download it, run a
+# post-hoc arrival-time replay (times are lower bounds), and commit the audit record back to the
 # repo — a public, self-accumulating verification log.
 #
 # Setup (one-time):
@@ -14,7 +14,7 @@ name: shadow-audit
 
 on:
   schedule:
-    - cron: "*/15 * * * *"   # UTC; CWA waveform arrives ~12 min after origin
+    - cron: "*/15 * * * *"   # UTC; CWA waveform release cadence is irregular (observed ~12 min once)
   workflow_dispatch: {}       # manual run button for testing
 
 permissions:

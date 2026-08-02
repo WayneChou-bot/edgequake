@@ -1,5 +1,8 @@
 # data — never commit waveforms (GB-scale); they are reproducible via scripts
-data/
+# ANCHORED to repo root: the unanchored form `data/` silently swallowed
+# src/edgequake/data/ — the whole loader package was missing from the
+# public repo until an external reviewer noticed the broken import
+/data/
 *.hdf5
 *.mseed
 

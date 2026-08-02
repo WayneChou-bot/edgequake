@@ -1,13 +1,13 @@
 # EdgeQuake
 
-**An earthquake early-warning system prototype for Taiwan — blind-tested on
-real historical events, running live on community sensor data, and audited
+**An earthquake early-warning system prototype for Taiwan — validated on
+temporally out-of-sample historical events, running live on community sensor data, and audited
 automatically after every significant earthquake.**
 
 > **What this is, in three precise statements.**
 > The **system** is an EEW prototype: the full chain (waveforms → AI phase
 > picking → association → location → magnitude → county alert decision →
-> notification) exists and runs, validated by blind tests on events the
+> notification) exists and runs, validated on out-of-sample events the
 > models never saw. The **website** is an earthquake console: live CWA/USGS
 > bulletins, a real-time detection layer on the ExpTech community network,
 > and auditable replays of historical events. It is **not** a warning
@@ -18,8 +18,9 @@ automatically after every significant earthquake.**
 **Live console:** <https://edgequake-three.vercel.app> — real-time monitor
 (CWA + USGS + live engine state relayed from a 24/7 cloud VM), full replays
 of the 2024 Hualien M7.2 and 2025 Dapu ML6.4 earthquakes, and a public
-**audit log** where every significant Taiwan earthquake is automatically
-re-run through the engine and compared against the official catalog.
+**audit log**: after each significant Taiwan earthquake the workflow
+replays the official waveforms through the estimation chain and commits
+the result — timings are reported as lower bounds (see the audit notes).
 
 [中文版說明在下方](#中文說明) | English first, Chinese below.
 
@@ -28,20 +29,24 @@ re-run through the engine and compared against the official catalog.
 ## At a glance
 
 - **First real-event audit** (2026-07-31 00:58 Taiwan time, Taitung M4.7,
-  fully automated):
+  fully automated post-hoc arrival-time replay — picker/compute latency
+  not modeled, so times are lower bounds):
   first location **origin+4.9 s**, EEW issuance criteria met at
   **origin+9.2 s** (CWA's official performance: 10–20 s), final magnitude
   **M4.81 vs CWA M4.7** with 17 km epicenter error — and the public-alert
-  gate **correctly stayed silent**. True negatives are part of the record.
-- **Blind full-chain replays**: 2024-04-03 Hualien M7.2 located to ~18 km
-  within 4 s of origin (110/112 stations picked); 2025 Dapu ML6.4 located
-  to **1.3 km at origin+8 s**.
+  gate **did not trigger — the correct outcome under the PWS criteria
+  for an event this size**. True negatives are part of the record.
+- **Out-of-sample replays** (post-hoc arrival-time, same caveat):
+  2024-04-03 Hualien M7.2 first located at origin+3.8 s, final epicenter
+  error ~21 km (110/112 stations picked); 2025 Dapu ML6.4 first located
+  at origin+5.2 s, final error ~9 km, final magnitude **M6.38 vs ML6.4**.
 - **Taiwan fine-tune** of PhaseNet: P F1 **0.660 → 0.702**, S F1
-  **0.557 → 0.680** — after quantifying a 0.24 P-F1 cross-domain drop that
-  makes the case for local training.
-- **Site-effect correction** from 327k catalog records (737 station terms)
-  halves the mean final-magnitude error across the blind-test suite
-  (0.17 → 0.09).
+  **0.557 → 0.635** (same protocol, threshold 0.3) — after measuring,
+  under one identical protocol, a **0.21 P-F1 cross-domain drop** for the
+  off-the-shelf weights (Chile 0.873 → Taiwan 0.660).
+- **Per-station empirical residual corrections** (from 327k raw catalog
+  rows → 67,216 QC'd station-event records, 737 stations) halve the mean
+  final-magnitude error across the replay suite (0.17 → 0.08).
 - **Impact, not just magnitude**: every estimate carries a PAGER-style
   population-exposure figure (WorldPop 1 km grid, ~0.4 ms per evaluation)
   and the most similar historical earthquakes from a 53-year catalog.
@@ -52,18 +57,31 @@ re-run through the engine and compared against the official catalog.
 
 ## How it works
 
-**Detection chain.** Per-station ring buffers on a shared time grid; the
-fine-tuned PhaseNet picks P/S every second (waveform sources) or PGA-jump
-triggers stand in for arrivals (MEMS sources). Picks pass **incremental
-association** (a new pick must match the current solution's predicted P
-within ±3.5 s — the defense against runaway-deep solutions absorbing
-mispicks), then a vectorized grid-search locator with bootstrap error
-ellipses and a hard 80 km crustal depth ceiling. Magnitude inverts a
-PGA-attenuation relation fitted on the 2019 training year only, with
-per-station **empirical site terms** removing ground-condition bias; a
-distance-conditioned CNN gives a fast second opinion from the first 3 s
-of P (honestly documented as saturating for M6.5+ — an information limit,
-not a model bug).
+**Two distinct pipelines** — keep them apart when reading anything below:
+
+1. **Offline research pipeline**: official post-event / historical
+   waveforms → fine-tuned PhaseNet P/S picking → location → magnitude.
+   This is where the AI picker lives, and where blind tests and audits
+   run.
+2. **Live experimental PGA pipeline**: the community network delivers
+   1 Hz PGA/PGV per station — not waveforms — so the live path uses
+   PGA-jump triggers in place of phase picks and reuses the same
+   location/magnitude chain. **No waveform AI runs in the live path
+   today.**
+
+**Detection chain.** Per-station ring buffers on a shared time grid;
+picks (or triggers) pass **incremental association** (a new pick must
+match the current solution's predicted P within ±3.5 s — the defense
+against runaway-deep solutions absorbing mispicks), then a vectorized
+grid-search locator with bootstrap error ellipses and a hard 80 km
+crustal depth ceiling. Magnitude inverts a PGA-attenuation relation
+fitted on the 2019 training year only, with **per-station empirical
+residual corrections** (dominated by site effects, and absorbing a small
+aggregation-convention offset — both documented); a distance-conditioned
+CNN gives a fast second opinion from the first 3 s of P (documented as
+saturating for M6.5+ — an information limit, not a model bug). Intensity
+is a **PGA-only approximation** of the CWA scale; the official scale
+uses PGV at intensity 5− and above.
 
 **Two-tier alerting.** An **EEW tier** mirrors the CWA issuance rule
 (M≥4.5 and predicted intensity ≥3) for timestamping and audit comparison;
@@ -81,14 +99,22 @@ earthquake any visitor sees the epicenter, P/S wavefronts, triggered
 stations, magnitude convergence, population exposure, and the closest
 historical analogs — live.
 
-**Self-auditing loop.** ~12 minutes after every significant quake, CWA
-publishes the official strong-motion waveforms. A GitHub Actions workflow
-downloads them, replays the engine blind, writes a machine-readable audit
-record (timing, magnitudes, errors, alert decisions, exposure,
-`pop_version`), has an LLM narrate it bilingually (restricted to numbers
-the pipeline computed — nothing invented), and commits everything back to
-this repo. The console's audit tab renders the accumulating log. No
-cherry-picking is possible: every event that qualifies gets audited.
+**Self-auditing loop.** After each significant quake, CWA publishes the
+official strong-motion waveforms (observed ~12 min in our first case;
+CWA marks the dataset's cadence as irregular). A GitHub Actions workflow
+polls every 15 minutes, downloads new packages, and performs a
+**post-hoc arrival-time replay**: picks are extracted offline from the
+full waveforms, then fed causally — each appearing only at its arrival
+time — through the estimation chain. Picker window, compute, and
+transport latency are *not* modeled, so reported detection times are
+**lower bounds**, and the replay uses the estimation chain rather than
+the byte-identical live engine (closing that gap is on the roadmap). The
+workflow writes a machine-readable record (timing, magnitudes, errors,
+alert decisions, exposure, `pop_version`), has an LLM narrate it
+bilingually (restricted to numbers the pipeline computed), and commits
+everything back. Results are committed as computed, with no manual
+curation; the poll-based design can miss back-to-back events inside one
+15-minute window.
 
 ## Verified results
 
@@ -100,41 +126,64 @@ Phase picking (time-split test sets, ±0.5 s tolerance):
 | original | Iquique (Chile) | 0.873 | 0.771 |
 | original | **CWA (Taiwan)** | **0.660** | **0.557** |
 | stead (STEAD, global) | CWA (Taiwan) | 0.228 | 0.220 |
-| **cwa-ft (this repo)** | **CWA (Taiwan)** | **0.702** | **0.680** |
+| **cwa-ft (this repo)** | **CWA (Taiwan)** | **0.702** | **0.635** |
+
+The NCEDC row is **paper-reported under a different matching protocol**
+and is shown for orientation only; every other row was computed by this
+repo's harness under one identical protocol (±0.5 s tolerance, threshold
+0.3, matching `outputs/eval_*.json`) — the cross-domain conclusion rests
+on the same-protocol Chile→Taiwan comparison.
 
 ![Full-chain replay of the 2024-04-03 Hualien M7.2 earthquake](outputs/convergence_0403.gif)
 
-Blind replays against the official record:
+Out-of-sample replays against the official record (post-hoc
+arrival-time; times are lower bounds):
 
 | Event | Location | Magnitude vs official |
 |---|---|---|
-| 2024-04-03 Hualien M7.2 (offshore) | ~18 km @ origin+4 s | M6.0 vs CWA M6.2 at their 9-s first report — an independent chain reproducing the operational system's early M7+ underestimation (PGA saturation is physics) |
-| 2025-01-21 Dapu ML6.4 (inland) | 1.3 km @ origin+8 s | site-corrected final M6.34 (Δ0.06) |
-| 2026-07-31 Taitung M4.7 (audit; local date) | 17 km, origin+4.9 s | final M4.81 (Δ0.11); EEW at origin+9.2 s; alert correctly silent |
+| 2024-04-03 Hualien M7.2 (offshore) | origin+3.8 s, final err 20.9 km | climbs M5.4 (origin+6 s) → **M7.08** final — reproducing the early M7+ underestimation seen operationally, consistent with PGA saturation |
+| 2025-01-21 Dapu ML6.4 (inland) | origin+5.2 s, final err 8.6 km | site-corrected final **M6.38** (Δ0.02) |
+| 2026-07-31 Taitung M4.7 (audit; local date) | 17 km, origin+4.9 s (lower bound) | final M4.81 (Δ0.11); EEW at origin+9.2 s (lower bound); alert correctly silent |
 
 Site-effect correction, final magnitude vs catalog:
 
 | Event | raw | site-corrected |
 |---|---|---|
 | Taitung M4.7 | Δ0.06 | Δ0.11 |
-| Hualien M7.2 | Δ0.19 | **Δ0.09** |
-| Dapu M6.4 | Δ0.25 | **Δ0.06** |
+| Hualien M7.2 | Δ0.21 | **Δ0.12** |
+| Dapu M6.4 | Δ0.25 | **Δ0.02** |
 
-Warning-time reality (measured, not promised): for a Hualien-offshore
-event the full chain issues at about origin+12–20 s, giving Taipei ~15 s
+Every figure above is transcribed from
+[`outputs/results_summary.json`](outputs/results_summary.json) — a
+machine-readable run manifest (canonical parameters, checkpoint and input
+hashes, git commit); `scripts/build_results_summary.py --check-readme`
+fails if this section drifts from it. `outputs/v3_verify_x83.pt` was
+restored from a 2026-07-31 workspace snapshot and verified by bit-exact
+reproduction of both tracked replay artifacts; the replay *artifacts*
+are fully reproducible while the checkpoint's *training run* is only
+partially traceable — two different provenance levels, stated as such.
+
+Warning-time estimate (derived from the chain's component timings, not
+an end-to-end measured latency): for a Hualien-offshore
+event the chain is estimated to issue at about origin+12–20 s, giving Taipei ~15 s
 of lead before destructive S waves — the same order as the official
 system, because both are bound by the same physics. Inland events above
 their epicenter (Dapu, Meinong) sit in the blind zone; the replay tab
 shows exactly that.
 
-## Honest limits
+## Limitations
 
-Point-source GMPE with average-site county predictions; magnitude
-saturation for M6.5+ from 3 s of P; homogeneous velocity model
-(~10–15 km location floor); community MEMS data is reference-only and
-its station codes carry no site terms yet; population exposure assumes
-static residential distribution; and this is a research prototype — not,
-and never presented as, an operational warning service.
+Point-source GMPE with average-site county predictions; intensity is a
+PGA-only approximation (official CWA intensity uses PGV at 5− and
+above); magnitude saturation for M6.5+ from 3 s of P; homogeneous
+velocity model (~10–15 km location floor); audit timings are post-hoc
+lower bounds (picker/compute/transport latency not yet modeled);
+picker evaluation so far covers 1,000 event windows — a continuous-noise
+false-alarm rate is still to be measured; community MEMS data is
+reference-only and its station codes carry no residual corrections yet;
+population exposure assumes static residential distribution; and this is
+a research prototype — not, and never presented as, an operational
+warning service.
 
 ## Pitfalls (the ones worth telling)
 
@@ -168,9 +217,9 @@ python scripts/run_live.py --source trem-sim --event 0403 --speed 4
 python scripts/run_live.py --source trem --notify
 ```
 
-Model training/evaluation pipelines (SeisBench + Kaggle recipes) are in
-`scripts/` and run against the public CWA Benchmark dataset; dataset
-download guards prevent accidental 100 GB pulls.
+Evaluation scripts are included (SeisBench harness, dataset download
+guards against accidental 100 GB pulls). The full training
+recipe/artifacts are **not** included in this repository.
 
 ## Repository layout
 
@@ -192,10 +241,15 @@ outputs/            # model weights, site terms, replay data, audit archive
 
 ## Roadmap
 
-Self-calibrating site terms for TREM MEMS stations from accumulated live
-data; growing-window "anytime" AI magnitude against M6+ saturation; a 1-D
-Taiwan velocity model; phase association (GaMMA); a Raspberry Shake as a
-true on-site sensor node.
+Causal audit parity (route audits through the live engine via a
+simulated feed, modeling picker/compute latency, so audited times stop
+being lower bounds); a validation matrix for warning reliability:
+continuous no-event data (per-hour false-alarm rate), station dropout,
+packet delay, clock skew, large teleseisms, typhoon/construction noise,
+and concurrent events; self-calibrating residual corrections for TREM
+MEMS stations; growing-window "anytime" AI magnitude against M6+
+saturation; a 1-D Taiwan velocity model; phase association (GaMMA); a
+Raspberry Shake as a true on-site sensor node.
 
 ## Data & acknowledgements
 
@@ -253,17 +307,21 @@ motion alerts in Taiwan requires an agreement with the CWA.
 
 ## 一眼看懂的數字
 
-- **首筆全自動稽核**（2026-07-31 台灣時間 00:58，台東 M4.7）：發震後
-  **4.9 秒**完成首次定位、**9.2 秒**達到強震即時警報發布條件（官方效能為
+- **首筆全自動稽核**（2026-07-31 台灣時間 00:58，台東 M4.7；採事後到時
+  重播，未計入拾取與運算延遲，**時間為理論下界**）：發震後 **4.9 秒**
+  完成首次定位、**9.2 秒**達到強震即時警報發布條件（官方效能為
   10–20 秒）；最終規模 **M4.81** 對官方目錄 M4.7，震央誤差 17 公里。
-  國家級警報門檻未達，系統**正確地保持沉默**——「沒發警報」也是成績的
-  一部分。
-- **盲測回放**：0403 花蓮 M7.2 在發震後 4 秒內定位到 18 公里內
-  （110/112 站成功辨識）；大埔 ML6.4 在發震後 8 秒定位到 **1.3 公里**。
-- **台灣在地微調**：先量化了 PhaseNet 跨區域搬移會掉 0.24 的 P 波 F1，
-  再用在地資料把 P 從 0.660 拉到 **0.702**、S 從 0.557 拉到 **0.680**。
-- **場址效應修正**：從 32.7 萬筆目錄紀錄算出 737 個測站的場址項，
-  盲測最終規模的平均誤差**減半**（0.17 → 0.09）。
+  未達國家級警報門檻，系統**未發布警報——依判定規則屬正確結果**；
+  「沒發警報」也是紀錄的一部分。
+- **樣本外事後重播**（同為到時重播，時間為下界）：0403 花蓮 M7.2 於發震後
+  3.8 秒首次定位、最終誤差約 21 公里（110/112 站成功辨識）；大埔 ML6.4 於
+  發震後 5.2 秒首次定位、最終誤差約 9 公里，最終規模 **M6.38 對 ML6.4**。
+- **台灣在地微調**：先在同一套評估協定下量化跨域差距（原始權重在智利
+  P F1 0.873、搬到台灣掉到 0.660，**同條件下降 0.21**），再用在地資料把
+  P 拉到 **0.702**、S 從 0.557 拉到 **0.635**（同門檻 0.3）。
+- **測站經驗殘差修正**：從 32.7 萬筆原始目錄紀錄，經品管後得 67,216 筆
+  站-事件紀錄、737 個測站的修正項，讓盲測最終規模的平均誤差**減半**
+  （0.17 → 0.08）。
 - **不只報規模，還報影響**：每次估計同步算出曝險人口（WorldPop 1 公里
   人口網格，單次僅 0.4 毫秒），並從 53 年的地震目錄找出最相似的歷史事件。
 - **整套跑在免費資源上**：GCP 免費 VM 全天候監測 137 個社群測站、
@@ -272,14 +330,21 @@ motion alerts in Taiwan requires an agreement with the CWA.
 
 ## 系統怎麼運作
 
-**偵測鏈。** 每個測站有自己的環形緩衝，掛在同一條時間軸上；波形源由微調
-後的 PhaseNet 每秒辨識 P/S 波，社群 MEMS 源則以 PGA 跳升代替相位。新的
-pick 必須吻合當前解所預測的 P 波到時（±3.5 秒）才能加入事件——這道
-「增量關聯」是防止錯誤 pick 把解拖向深部的關鍵防線。定位採向量化網格搜尋
-加 bootstrap 誤差橢圓，深度設 80 公里硬上限；規模反演使用只以 2019 訓練年
-擬合的衰減式，並用每站的經驗場址項消除地盤放大偏差；AI 模型另外從 P 波前
-3 秒給出快速的第二意見（M6.5 以上會飽和，這點如實記載——那是資訊極限，
-不是模型的錯）。
+**先分清楚兩條性質不同的管線**：一是**離線研究管線**——官方事後波形與
+歷史波形 → 微調 PhaseNet 辨識 P/S → 定位 → 規模，AI 拾取器只活在這裡，
+盲測與稽核也在這裡跑；二是**即時實驗性 PGA 管線**——社群測網給的是每秒
+的 PGA/PGV 數值而非連續波形，所以線上路徑以 PGA 跳升代替相位、沿用同一套
+定位與規模鏈，**目前線上路徑沒有任何波形 AI 在跑**。
+
+**偵測鏈。** 每個測站有自己的環形緩衝，掛在同一條時間軸上。pick（或觸發）
+必須吻合當前解所預測的 P 波到時（±3.5 秒）才能加入事件——這道「增量關聯」
+是防止錯誤 pick 把解拖向深部的關鍵防線。定位採向量化網格搜尋加 bootstrap
+誤差橢圓，深度設 80 公里硬上限；規模反演使用只以 2019 訓練年擬合的
+衰減式，並用每站的**經驗殘差修正項**消除偏差（以場址效應為主，也吸收了
+少量統計慣例偏移，兩者都有記載）；AI 模型另外從 P 波前 3 秒給出快速的
+第二意見（M6.5 以上會飽和，這點如實記載——那是資訊極限，不是模型的錯）。
+震度為 **PGA 近似值**：中央氣象署新制震度在 5 弱以上採 PGV 判定，本系統
+數值不等同官方震度。
 
 **兩級警報。** EEW 級對齊中央氣象署強震即時警報的發布條件（M≥4.5 且預估
 震度 ≥3），負責記錄時間戳、供稽核對比；PWS 級對齊國家級警報門檻，實際
@@ -292,15 +357,22 @@ pick 必須吻合當前解所預測的 P 波到時（±3.5 秒）才能加入事
 主控台。真的地震發生時，任何訪客都能即時看到震央、P/S 波前、觸發測站、
 規模收斂、曝險人口與相似歷史事件。
 
-**自我稽核。** 每次顯著地震後約 12 分鐘，官方強震波形一釋出，GitHub
-Actions 便自動下載、讓引擎盲測重演、寫入機器可讀的稽核紀錄，再由 LLM
-敘述成雙語報告（只准敘述管線算出的數字），全部 commit 回這個 repo。
-主控台的稽核分頁呈現不斷累積的紀錄——無法挑選，每一筆都留。
+**自我稽核。** 顯著地震後官方會釋出強震波形（首例觀察約 12 分鐘；CWA
+標示此資料集為不定期更新）。GitHub Actions 每 15 分鐘輪詢，抓到新事件就
+執行**事後到時重播**：先離線從完整波形取得 picks，再讓每個 pick 只在其
+到時後才進入估計鏈。拾取視窗、運算與傳輸延遲**尚未**計入，所以稽核報出
+的時間是理論下界；重播走的是估計鏈而非位元級相同的 live 引擎（補齊這個
+差距已列入 roadmap）。結果寫入機器可讀紀錄、由 LLM 敘述成雙語報告
+（只准敘述管線算出的數字）、全部 commit 回 repo——結果照算照登、無人工
+篩選；輪詢制在極端連發情境可能漏收同窗口內的較早事件。
 
-## 誠實的限制
+## 已知限制
 
 這個系統有明確的邊界：點震源假設、均勻速度模型（定位誤差地板約 10–15
-公里）、M6.5 以上的規模飽和；社群測站資料僅供參考，其測站代碼尚無場址項；
-曝險人口以常住人口靜態估計，不分日夜。最重要的一條：本專案是研究原型，
-不得作為或宣稱為即時地震警報服務——台灣即時強震警報的再散布需與中央
-氣象署簽約。ExpTech TREM 為社群觀測資料，僅供參考。授權：MIT。
+公里）、M6.5 以上的規模飽和；震度為 PGA 近似值，不等同採 PGV 判定高震度
+的官方新制；稽核時間為事後重播的理論下界；拾取器評估目前止於 1,000 個
+事件窗，連續無震資料的每小時誤報率尚待量測；社群測站資料僅供參考，其
+測站代碼尚無殘差修正項；曝險人口以常住人口靜態估計，不分日夜。最重要的
+一條：本專案是研究原型，不得作為或宣稱為即時地震警報服務——台灣即時
+強震警報的再散布需與中央氣象署簽約。ExpTech TREM 為社群觀測資料，僅供
+參考。授權：MIT。

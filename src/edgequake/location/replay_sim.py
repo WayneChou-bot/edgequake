@@ -11,6 +11,15 @@ import numpy as np
 from .locator import PickLocator, haversine_km
 from .magnitude import DEFAULT_COEF, PgaMagnitude
 
+# Single source of truth for replay/audit run parameters. Dashboard,
+# results summary and the CWA-waveform audit all import this — external
+# review found result figures drifting because different call sites used
+# different max_stations/bootstrap. Point estimates are bootstrap-count
+# invariant (verified for N in 20..200); N=60 keeps the Monte-Carlo std
+# of the bootstrap confidence fraction under ~6% (binomial, p~0.2).
+CANONICAL = {"max_stations": 60, "bootstrap": 60, "seed": 0,
+             "vp_km_s": 6.2, "dt_s": 0.25, "pick_threshold": 0.3}
+
 # approximate county reference points (city halls / centroids)
 COUNTIES = [
     ("Taipei", 25.04, 121.56), ("New Taipei", 25.01, 121.46),

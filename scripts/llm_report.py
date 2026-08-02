@@ -37,9 +37,11 @@ API = "https://generativelanguage.googleapis.com/v1beta"
 PROMPT = """You are the reporting module of EdgeQuake, a research-prototype
 earthquake early-warning system in Taiwan (NOT an official warning service).
 Below is one machine-generated shadow-audit record: the CWA (Central Weather
-Administration) published post-event strong-motion waveforms, and the
-EdgeQuake engine re-ran them blind to measure how it WOULD have performed
-had it been live.
+Administration) published post-event strong-motion waveforms, and EdgeQuake
+performed a POST-HOC ARRIVAL-TIME REPLAY — picks extracted offline enter the
+estimation chain causally at their arrival times. Picker windowing, compute
+and data-transport latency are NOT modeled, so every reported time is a
+lower-bound estimate, not measured live performance.
 
 Write a concise event report, first in Traditional Chinese (Taiwan usage),
 then an English version, separated by a line containing only '---'.
@@ -63,9 +65,12 @@ Taiwan local time (UTC+8; e.g. origin_utc 07-30T16:58 is 台灣時間 7月31日
 it were the local date.
 
 Hard rules: use ONLY numbers present in the record — never invent data.
-State times as 發震後 X 秒 / origin+Xs. If alert_fired is false for a
-moderate event, frame the silence as correct restraint, not failure. End
-each language version with one sentence noting this is an automated
+State times as 發震後 X 秒 / origin+Xs. This audit is a POST-HOC
+arrival-time replay: picker/compute latency is not modeled, so describe
+detection/EEW times as lower-bound estimates (理論下界), never as
+measured real-time performance. If alert_fired is false for a moderate
+event, frame the silence as correct restraint, not failure. End each
+language version with one sentence noting this is an automated
 research-prototype report, not official information. Do not exaggerate.
 
 Audit record JSON:

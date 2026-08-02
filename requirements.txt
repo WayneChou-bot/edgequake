@@ -1,6 +1,13 @@
 numpy
+scipy
+pandas
 obspy>=1.4
 seisbench>=0.9
 torch
 matplotlib
+pillow
 huggingface_hub
+# NOTE: rebuilding the population-grid asset additionally needs
+# `pip install tifffile imagecodecs` — see scripts/fetch_pop_grid.py.
+# Deliberately not listed here: `pip install -r` treats every line as
+# mandatory, and these are only needed for that one script.
