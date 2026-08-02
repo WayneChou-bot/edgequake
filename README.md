@@ -2,7 +2,8 @@
 
 **An earthquake early-warning system prototype for Taiwan — validated on
 temporally out-of-sample historical events, running live on community sensor data, and audited
-automatically after every significant earthquake.**
+automatically on significant earthquakes surfaced by CWA's post-event
+waveform feed (polling-based, so back-to-back events can be missed).**
 
 > **What this is, in three precise statements.**
 > The **system** is an EEW prototype: the full chain (waveforms → AI phase
@@ -32,7 +33,8 @@ the result — timings are reported as lower bounds (see the audit notes).
   fully automated post-hoc arrival-time replay — picker/compute latency
   not modeled, so times are lower bounds):
   first location **origin+4.9 s**, EEW issuance criteria met at
-  **origin+9.2 s** (CWA's official performance: 10–20 s), final magnitude
+  **origin+9.2 s** (a lower bound — not comparable with official
+  issuance times, which include the latencies not modeled here), final magnitude
   **M4.81 vs CWA M4.7** with 17 km epicenter error — and the public-alert
   gate **did not trigger** (event below the PWS thresholds: M≥5.0 with
   a county at predicted intensity ≥4). True negatives are part of the
@@ -113,7 +115,10 @@ transport latency are *not* modeled, so reported detection times are
 the byte-identical live engine (closing that gap is on the roadmap). The
 workflow writes a machine-readable record (timing, magnitudes, errors,
 alert decisions, exposure, `pop_version`), has an LLM narrate it
-bilingually (restricted to numbers the pipeline computed), and commits
+bilingually — machine-validated: comparative wording is forbidden, the
+lower-bound statement is mandatory, and numbers are checked by
+core-number + decimal-token grounding (presence, not semantic role;
+integers are not yet grounded) — and commits
 everything back. Results are committed as computed, with no manual
 curation; the poll-based design can miss back-to-back events inside one
 15-minute window.
@@ -161,9 +166,11 @@ manifest carrying the canonical parameters, file hashes, and the git
 commit it was computed from. `scripts/build_results_summary.py --verify`
 recomputes every recorded hash (results, sources, checkpoints), enforces
 the two-phase provenance protocol (the recorded commit must be HEAD or
-an ancestor whose diff to HEAD touches only derived artifacts, and the
-tree must have been clean at generation), semantically checks the
-reproduction report (verdict, checkpoint identity, artifact hashes), and
+an ancestor whose diff to HEAD touches only derived artifacts, and no
+non-derived path may be dirty — at generation time or at verify time),
+semantically checks the
+reproduction report (verdict, full event coverage, checkpoint identity,
+artifact hashes), and
 checks each quoted figure is present in this README while known-stale
 figures are absent — any drift fails loudly. Checkpoint provenance:
 `outputs/v3_verify_x83.pt` is **byte-identical** to
@@ -175,9 +182,11 @@ is a machine-generated reproduction record — raw-waveform hashes,
 checkpoint hash, environment versions, full canonical-JSON comparison,
 verdict `identical_canonical_json` —
 regenerable with `scripts/verify_replay_reproduction.py` (needs the GDMS
-raw waveforms, which exceed repo size limits). The replay *artifacts*
-are fully reproducible; the checkpoint's *training run* is only
-partially traceable — two different provenance levels.
+raw waveforms, which exceed repo size limits). The two GDMS replay
+*artifacts* (0403, Dapu) are fully reproducible by that harness; the
+Taitung audit replay came from CWA's post-event waveform zip and is
+outside it; and the checkpoint's *training run* is only partially
+traceable — three different provenance levels, each labeled.
 
 Warning-time estimate (derived from the chain's component timings, not
 an end-to-end measured latency): for a Hualien-offshore
@@ -194,6 +203,9 @@ PGA-only approximation (official CWA intensity uses PGV at 5− and
 above); magnitude saturation for M6.5+ from 3 s of P; homogeneous
 velocity model (~10–15 km location floor); audit timings are post-hoc
 lower bounds (picker/compute/transport latency not yet modeled);
+replayed alert decisions share the live engine's numeric quality gates
+but approximate observed-PGA timing (a station's record peak counts once
+its S-window has passed; the live engine uses causally-observed PGA);
 picker evaluation so far covers 1,000 event windows — a continuous-noise
 false-alarm rate is still to be measured; community MEMS data is
 reference-only and its station codes carry no residual corrections yet;
@@ -306,12 +318,13 @@ motion alerts in Taiwan requires an agreement with the CWA.
 
 # 中文說明
 
-**台灣地震早期預警系統原型——以真實歷史事件盲測驗證、在社群測網上即時運行、
-每次顯著地震後自動接受稽核。**
+**台灣地震早期預警系統原型——以樣本外真實歷史事件重放驗證、在社群測網上
+即時運行、並對 CWA 事後波形源公布的顯著地震自動稽核（輪詢制，連續事件
+可能漏收）。**
 
 > **定位，三句話講清楚。** 這個**系統**是 EEW 原型：完整偵測鏈（波形 → AI
 > 相位辨識 → 事件關聯 → 定位 → 規模 → 縣市警報判定 → 通知）全部存在且在
-> 運行，並以模型從未見過的事件盲測驗證。這個**網站**是地震主控台：CWA/USGS
+> 運行，並以模型從未見過的樣本外事件重放驗證。這個**網站**是地震主控台：CWA/USGS
 > 即時速報、ExpTech 社群測網上的即時偵測層、與可稽核的歷史事件回放。它
 > **不是**警報「服務」：那需要國家測網的即時介接、24 小時運維與法定權責——
 > 這些屬於中央氣象署。本專案所有介面均如實標示。
@@ -324,8 +337,9 @@ motion alerts in Taiwan requires an agreement with the CWA.
 
 - **首筆全自動稽核**（2026-07-31 台灣時間 00:58，台東 M4.7；採事後到時
   重播，未計入拾取與運算延遲，**時間為理論下界**）：發震後 **4.9 秒**
-  完成首次定位、**9.2 秒**達到強震即時警報發布條件（官方效能為
-  10–20 秒）；最終規模 **M4.81** 對官方目錄 M4.7，震央誤差 17 公里。
+  完成首次定位、**9.2 秒**達到強震即時警報發布條件（此為理論下界，
+  不可與包含各項延遲的官方發布時間直接比較）；最終規模 **M4.81**
+  對官方目錄 M4.7，震央誤差 17 公里。
   未達國家級警報門檻（M≥5.0 且有縣市預估震度≥4），系統**未發布警報**；
   「沒發警報」也是紀錄的一部分。
 - **樣本外事後重播**（同為到時重播，時間為下界）：0403 花蓮 M7.2 於發震後
@@ -335,7 +349,7 @@ motion alerts in Taiwan requires an agreement with the CWA.
   P F1 0.873、搬到台灣掉到 0.660，**同條件下降 0.21**），再用在地資料把
   P 拉到 **0.702**、S 從 0.557 拉到 **0.635**（同門檻 0.3）。
 - **測站經驗殘差修正**：從 32.7 萬筆原始目錄紀錄，經品管後得 67,216 筆
-  站-事件紀錄、737 個測站的修正項，讓盲測最終規模的平均誤差**減半**
+  站-事件紀錄、737 個測站的修正項，讓樣本外重放最終規模的平均誤差**減半**
   （0.17 → 0.08）。
 - **不只報規模，還報影響**：每次估計同步算出曝險人口（WorldPop 1 公里
   人口網格，單次僅 0.4 毫秒），並從 53 年的地震目錄找出最相似的歷史事件。
@@ -347,7 +361,7 @@ motion alerts in Taiwan requires an agreement with the CWA.
 
 **先分清楚兩條性質不同的管線**：一是**離線研究管線**——官方事後波形與
 歷史波形 → 微調 PhaseNet 辨識 P/S → 定位 → 規模，AI 拾取器只活在這裡，
-盲測與稽核也在這裡跑；二是**即時實驗性 PGA 管線**——社群測網給的是每秒
+樣本外重放與稽核也在這裡跑；二是**即時實驗性 PGA 管線**——社群測網給的是每秒
 的 PGA/PGV 數值而非連續波形，所以線上路徑以 PGA 跳升代替相位、沿用同一套
 定位與規模鏈，**目前線上路徑沒有任何波形 AI 在跑**。
 
@@ -377,15 +391,19 @@ motion alerts in Taiwan requires an agreement with the CWA.
 執行**事後到時重播**：先離線從完整波形取得 picks，再讓每個 pick 只在其
 到時後才進入估計鏈。拾取視窗、運算與傳輸延遲**尚未**計入，所以稽核報出
 的時間是理論下界；重播走的是估計鏈而非位元級相同的 live 引擎（補齊這個
-差距已列入 roadmap）。結果寫入機器可讀紀錄、由 LLM 敘述成雙語報告
-（只准敘述管線算出的數字）、全部 commit 回 repo——結果照算照登、無人工
-篩選；輪詢制在極端連發情境可能漏收同窗口內的較早事件。
+差距已列入 roadmap）。結果寫入機器可讀紀錄、由 LLM 敘述成雙語報告，
+報告經機器驗證（禁用比較性措辭、必含下界聲明、核心數字與小數 token
+接地——驗證涵蓋數字存在性而非語意位置，整數尚未接地）、全部 commit 回
+repo——結果照算照登、無人工篩選；輪詢制在極端連發情境可能漏收同窗口內
+的較早事件。
 
 ## 已知限制
 
 這個系統有明確的邊界：點震源假設、均勻速度模型（定位誤差地板約 10–15
 公里）、M6.5 以上的規模飽和；震度為 PGA 近似值，不等同採 PGV 判定高震度
-的官方新制；稽核時間為事後重播的理論下界；拾取器評估目前止於 1,000 個
+的官方新制；稽核時間為事後重播的理論下界；重播的警報判定與線上引擎共用
+同一組數值品質閘門，但「已觀測 PGA」的時序為近似（測站峰值於 S 波窗過後
+即列入計算，線上引擎則使用截至當下實際觀測值）；拾取器評估目前止於 1,000 個
 事件窗，連續無震資料的每小時誤報率尚待量測；社群測站資料僅供參考，其
 測站代碼尚無殘差修正項；曝險人口以常住人口靜態估計，不分日夜。最重要的
 一條：本專案是研究原型，不得作為或宣稱為即時地震警報服務——台灣即時

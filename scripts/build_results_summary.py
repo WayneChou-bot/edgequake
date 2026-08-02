@@ -109,6 +109,8 @@ def git_dirty() -> bool | None:
 # manifest so provenance holds even if the commit bookkeeping is imperfect
 SOURCE_FILES = [
     "scripts/build_results_summary.py",
+    "scripts/demo_convergence.py",   # round-5: load_replay_json() lives
+                                     # here and feeds every computation
     "src/edgequake/location/replay_sim.py",
     "src/edgequake/location/locator.py",
     "src/edgequake/location/magnitude.py",
@@ -117,11 +119,15 @@ SOURCE_FILES = [
 
 # the ONLY paths allowed to differ between the recorded commit and HEAD
 # (two-phase protocol: commit code first, generate on the clean tree,
-# commit derived artifacts second)
+# commit derived artifacts second). Keep entries as exact files where
+# possible; "outputs/audit_archive/" (per-event records/reports/logs) and
+# "outputs/replay_eq" (per-event CWA replay artifacts) are deliberate
+# prefixes because the audit workflow creates new per-event files.
 DERIVED_PATHS = ("outputs/results_summary.json",
                  "outputs/reproduction_report.json",
                  "outputs/audit_archive/", "docs/audit.json",
-                 "vercel/audit.json", "outputs/replay_eq")
+                 "vercel/audit.json", "docs/index.html",
+                 "vercel/index.html", "outputs/replay_eq")
 
 
 def verify() -> None:
@@ -137,6 +143,14 @@ def verify() -> None:
         fails.append("summary was generated on a dirty (or unknown) "
                      "working tree — commit code first, then regenerate "
                      "on the clean tree (two-phase protocol)")
+    # round-5: the recorded flag only proves the tree was clean at
+    # GENERATION time — also re-check the tree NOW, so uncommitted edits
+    # to any non-derived file fail verification even if that file is not
+    # individually hashed below
+    if git_dirty() is not False:
+        fails.append("working tree is dirty in a non-derived path RIGHT "
+                     "NOW (or git is unavailable) — commit or revert "
+                     "before verifying")
     rec_commit = s.get("git_commit")
     if rec_commit:
         try:
@@ -170,7 +184,10 @@ def verify() -> None:
             fails.append(f"source file drifted since generation: {path}")
     for path, want in s.get("file_sha256", {}).items():
         got = sha256(ROOT / path)
-        if got != want:
+        if want is None or got is None:
+            # a missing file must never verify as "unchanged"
+            fails.append(f"file absent (manifest or working tree): {path}")
+        elif got != want:
             fails.append(f"hash drift: {path}\n    manifest {want}\n"
                          f"    actual   {got}")
     want = s.get("audit_content_sha256")
@@ -189,6 +206,18 @@ def verify() -> None:
             fails.append("reproduction report verdict is "
                          f"{rep.get('verdict')!r}, not "
                          "'identical_canonical_json'")
+        # round-5: require the report to cover EXACTLY the full event
+        # set — a subset or superset (stray/unknown events) must fail,
+        # not just a missing one
+        want_ev = ["0403", "dapu"]
+        if sorted(rep.get("events_requested") or []) != want_ev:
+            fails.append("reproduction report events_requested is "
+                         f"{rep.get('events_requested')!r}, expected "
+                         f"{want_ev}")
+        if sorted(rep.get("events", {})) != want_ev:
+            fails.append("reproduction report events are "
+                         f"{sorted(rep.get('events', {}))}, expected "
+                         f"exactly {want_ev}")
         v3 = sha256(ROOT / "outputs" / "v3_verify_x83.pt")
         ft = sha256(ROOT / "outputs" / "phasenet_cwa_ft.pt")
         if rep.get("checkpoint", {}).get("sha256") != v3:
@@ -284,6 +313,13 @@ def main() -> None:
         "outputs/site_terms.json": sha256(site_path),
         "outputs/reproduction_report.json":
             sha256(ROOT / "outputs" / "reproduction_report.json"),
+        # round-5: the ORIGINAL live-run log is historical evidence —
+        # pinned here so neither it nor its canonical recomputation can
+        # drift silently (their relationship is documented in the audit
+        # record's provenance block)
+        "outputs/audit_archive/audit_202607310058-EQ2026053-Waveform.txt":
+            sha256(ROOT / "outputs" / "audit_archive" /
+                   "audit_202607310058-EQ2026053-Waveform.txt"),
         **{rel: sha256(ROOT / rel) for rel in REPLAYS.values()},
     }
 

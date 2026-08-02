@@ -7,7 +7,8 @@ instrument response needed. This script turns one event zip into the same
 replay JSON the engine consumes, enabling the automated shadow-mode audit:
 
     CWA report -> download waveform zip -> AI picks -> engine replay
-    -> "had EdgeQuake been running, it would have alerted at +X s"
+    -> post-hoc arrival-time timeline (lower bounds: picker windowing,
+       compute and transport latency are NOT modeled)
 
 Usage:
     python scripts/ingest_cwa_wave.py --zip path/to/E-A0015-004.zip
@@ -264,7 +265,8 @@ def main() -> None:
         last_mag = last_mag[-1] if last_mag else None
         err_final = (haversine_km(last_mag["lat"], last_mag["lon"],
                                   tr["lat"], tr["lon"]) if last_mag else None)
-        print("[audit] ---- had EdgeQuake been running ----")
+        print("[audit] ---- post-hoc arrival-time replay "
+              "(lower bounds; latency not modeled) ----")
         print(f"[audit] first location : {rel(first_loc)}")
         print(f"[audit] first magnitude: {rel(first_mag)}"
               + (f"  M{first_mag['mag']:.1f} (CWA M{tr['mag']}) "
@@ -273,7 +275,8 @@ def main() -> None:
             print(f"[audit] final estimate : M{last_mag['mag']:.2f} "
                   f"err {err_final:.0f} km @ {last_mag['k']} stations")
         print(f"[audit] EEW criteria   : {rel(first_eew)}"
-              "  (CWA rule: M>=4.5 & I>=3, ~origin+10-20s official)")
+              "  (CWA issuance rule: M>=4.5 & predicted I>=3; not "
+              "comparable with official issuance times)")
         print(f"[audit] PWS criteria   : {rel(first_alert)}")
         if args.sent:
             print(f"[audit] CWA report sent: {args.sent} "
@@ -281,7 +284,19 @@ def main() -> None:
 
         # machine-readable audit record (collected into docs/audit.json by
         # scripts/build_audit_index.py — the public audit log)
+        import subprocess as _sp
         import time as _time
+
+        def _generating_commit() -> str | None:
+            sha = (os.environ.get("GITHUB_SHA") or "").strip()
+            if sha:
+                return sha
+            try:
+                return _sp.check_output(
+                    ["git", "rev-parse", "HEAD"], cwd=ROOT,
+                    stderr=_sp.DEVNULL).decode().strip()
+            except Exception:
+                return None
 
         arch = ROOT / "outputs" / "audit_archive"
         arch.mkdir(parents=True, exist_ok=True)
@@ -306,9 +321,17 @@ def main() -> None:
             "similar": payload.get("similar"),
             "eew_fired": first_eew is not None,
             "alert_fired": first_alert is not None,
+            "gate_note": "eew/alert use the live engine's numeric "
+                "quality gates (GATES), but replayed observed-PGA "
+                "timing is approximate: a station's record-peak counts "
+                "once its S-window has passed — not the causally-"
+                "observed running PGA the live engine uses",
             "report_sent": args.sent,
             "audited_at": _time.strftime("%Y-%m-%d %H:%M:%S UTC",
                                          _time.gmtime()),
+            # round-5: record WHICH code produced this record, at record
+            # time — $GITHUB_SHA in Actions, git HEAD locally
+            "generated_by_commit": _generating_commit(),
         }
         (arch / f"audit_eq{ev_id}.json").write_text(
             json.dumps(rec, indent=1))

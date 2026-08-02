@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -74,6 +75,8 @@ Taiwan local time (UTC+8; e.g. origin_utc 07-30T16:58 is 台灣時間 7月31日
 it were the local date.
 
 Hard rules: use ONLY numbers present in the record — never invent data.
+Every decimal number you write must appear VERBATIM in the record (a
+validator rejects the report otherwise — do not re-round or convert).
 State times as 發震後 X 秒 / origin+Xs. This audit is a POST-HOC
 arrival-time replay: picker/compute latency is not modeled, so describe
 detection/EEW times as lower-bound estimates (理論下界), never as
@@ -104,7 +107,15 @@ FORBIDDEN = ["優於", "較快", "更快", "領先", "時效", "效率", "受災
 
 
 def validate(text: str, rec: dict) -> list[str]:
-    """Return a list of violations; empty = accept."""
+    """Return a list of violations; empty = accept.
+
+    Numeric checks are "core-number + decimal-token grounding" (round-5
+    review wording), NOT full semantic verification: they require the
+    record's core numbers to appear and every decimal number in the text
+    to exist in the record, but cannot check a number is used in the
+    right ROLE, and integers (population counts, distances, dates) are
+    not grounded — a known limitation, documented in the README.
+    """
     problems = []
     low = text.lower()
     for w in FORBIDDEN:
@@ -113,13 +124,20 @@ def validate(text: str, rec: dict) -> list[str]:
     for s in mandatory_sentences(rec):
         if s not in text:
             problems.append(f"mandatory sentence missing: {s!r}")
-    # numeric grounding: the report must actually quote the record's core
-    # numbers (round-4 review: validator did not check number content)
+    # forward grounding: the record's core numbers must be quoted
     core = [rec.get("t_first_loc_s"), rec.get("t_eew_s"),
             rec.get("final_mag"), (rec.get("cwa") or {}).get("mag")]
     for v in core:
         if v is not None and str(v) not in text:
             problems.append(f"core number missing from report: {v}")
+    # reverse grounding (round 5): every decimal number the model wrote
+    # must exist somewhere in the record — kills invented magnitudes,
+    # seconds and kilometres (integers can still slip through)
+    rec_str = json.dumps(rec, ensure_ascii=False)
+    for tok in sorted(set(re.findall(r"\d+\.\d+", text))):
+        if tok not in rec_str:
+            problems.append(f"decimal number not present in the audit "
+                            f"record: {tok}")
     return problems
 
 

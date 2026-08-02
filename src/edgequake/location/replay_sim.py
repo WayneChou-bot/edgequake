@@ -24,6 +24,14 @@ CANONICAL = {"max_stations": 60, "bootstrap": 60, "seed": 0,
              "depth_grid_km": [5, 10, 15, 20, 30, 40, 60, 80],
              "max_depth_km": 80.0}
 
+# Alert quality gates, single-sourced (round-5 review: the replay's PWS
+# decision used only the magnitude/intensity thresholds while the live
+# engine additionally required station count, ellipse size and observed
+# shaking). The live engine imports THESE values; the replay applies the
+# same numbers — but see the PGA-timing approximation note in simulate().
+GATES = {"min_stations": 6, "max_ellipse_km": 80.0,
+         "eew_min_obs_gal": 10.0, "pws_min_obs_gal": 25.0}
+
 # approximate county reference points (city halls / centroids)
 COUNTIES = [
     ("Taipei", 25.04, 121.56), ("New Taipei", 25.01, 121.46),
@@ -149,7 +157,20 @@ def simulate(ev, truth, vp=None, dt=None, max_stations=None, bootstrap=None,
                     r_ep2 = r_hyp ** 2 - est.depth_km ** 2
                     if r_ep2 > 0:
                         frame[key_r] = round(float(np.sqrt(r_ep2)), 1)
-            # counties: predicted intensity + PWS decision + S-wave ETA
+            # counties: predicted intensity + PWS decision + S-wave ETA.
+            # Both alert tiers apply the SAME numeric quality gates as
+            # the live engine (GATES). APPROXIMATION (round-5 review):
+            # the replay artifact stores each station's record-peak PGA
+            # without its timing, so "observed shaking" counts a
+            # station's peak once its S-window has passed (t_s+2s <=
+            # now); the live engine uses causally-observed PGA up to
+            # `now`, and a peak can arrive after S+2s. Gate NUMBERS are
+            # shared; gate TIMING is approximate — full causal parity is
+            # the LiveEngine-feed audit on the roadmap.
+            obs = (float(np.nanmax(pga[:k][m_ok])) if m_ok.any() else 0.0)
+            gate_ok = (k >= GATES["min_stations"]
+                       and (est.ellipse_major_km or 999)
+                       <= GATES["max_ellipse_km"])
             cty = []
             for name, cla, clo in COUNTIES:
                 d_ep = haversine_km(est.lat, est.lon, cla, clo)
@@ -163,19 +184,18 @@ def simulate(ev, truth, vp=None, dt=None, max_stations=None, bootstrap=None,
                 if mag:
                     p = predict_pga(mag.mag, d_ep, est.depth_km)
                     i = pga_to_intensity(p)
-                    entry.update({"i": i, "alert": pws_alert(mag.mag, i)})
+                    entry.update({"i": i, "alert": bool(
+                        pws_alert(mag.mag, i) and gate_ok
+                        and obs >= GATES["pws_min_obs_gal"])})
                 cty.append(entry)
             frame["cty"] = cty
             # EEW tier (CWA 強震即時警報 issuance rule): M>=4.5 and
-            # predicted intensity >=3 somewhere — same quality gate as
-            # the live engine (k>=6, ellipse<=80 km, >=10 gal observed)
+            # predicted intensity >=3 somewhere, plus the shared gates
             if mag:
                 max_i = max((c.get("i", 0) for c in cty), default=0)
-                obs = float(np.nanmax(pga[:k][m_ok]))  # S-passed stations
                 frame["eew"] = bool(
-                    mag.mag >= 4.5 and max_i >= 3 and k >= 6
-                    and (est.ellipse_major_km or 999) <= 80
-                    and obs >= 10.0)
+                    mag.mag >= 4.5 and max_i >= 3 and gate_ok
+                    and obs >= GATES["eew_min_obs_gal"])
         frames.append(frame)
 
     # Phase 10: similar historical events from the FINAL estimate (the

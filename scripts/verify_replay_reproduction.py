@@ -17,6 +17,15 @@ Verdict vocabulary (round-4 review: say exactly what is guaranteed):
   identical_canonical_json  — full JSON equal after canonical serialization
   selected_fields_match_within_1e-3 — only the field-level comparison holds
   MISMATCH                  — anything else
+  SUBSET_RUN                — fewer than all known events were requested;
+                              never written to the official report path
+                              and always exits non-zero (round-5 review:
+                              an empty/partial --events run used to
+                              report success)
+
+Scope (round-5 review): this harness covers exactly the two GDMS replay
+artifacts (0403, dapu). The Taitung audit replay came from CWA's
+published post-event waveform zip and is NOT covered here.
 
 The raw GDMS waveforms are too large for the repo (see .gitignore), so a
 third party needs to fetch them (GDMS, doi:10.7914/SN/T5) to re-run this;
@@ -107,9 +116,35 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--base-dir", default=str(ROOT.parent),
                     help="folder containing raw_0403/raw_dapu/raw_resp")
-    ap.add_argument("--events", nargs="*", default=["0403", "dapu"])
+    ap.add_argument("--events", nargs="*", default=sorted(RAW))
+    ap.add_argument("--out", default=None,
+                    help="output path; REQUIRED for subset runs (the "
+                         "official outputs/reproduction_report.json may "
+                         "only be written by a full-set run)")
     args = ap.parse_args()
     base = Path(args.base_dir)
+
+    events = sorted(set(args.events))
+    unknown = [e for e in events if e not in RAW]
+    if unknown:
+        raise SystemExit(f"[repro] unknown event(s): {unknown} — known: "
+                         f"{sorted(RAW)}")
+    if not events:
+        raise SystemExit("[repro] refusing to run with an empty event "
+                         "list — a no-op must not look like a pass")
+    full_set = events == sorted(RAW)
+    official = ROOT / "outputs" / "reproduction_report.json"
+    if args.out:
+        outp = Path(args.out)
+        if not full_set and outp.resolve() == official.resolve():
+            raise SystemExit("[repro] a subset run may not overwrite the "
+                             "official report — choose another --out")
+    elif full_set:
+        outp = official
+    else:
+        raise SystemExit("[repro] subset run (--events "
+                         + " ".join(events) + ") requires an explicit "
+                         "--out; the official report is full-set only")
 
     import platform
 
@@ -122,6 +157,11 @@ def main() -> None:
     report = {
         "generated_at": time.strftime("%Y-%m-%d %H:%M:%S UTC",
                                       time.gmtime()),
+        "events_requested": events,
+        "full_event_set": sorted(RAW),
+        "scope_note": "covers the GDMS replay artifacts only; the "
+                      "Taitung audit replay (CWA post-event waveform "
+                      "zip) is outside this harness",
         "environment": {
             "python": platform.python_version(),
             "numpy": numpy.__version__, "obspy": _obspy.__version__,
@@ -142,7 +182,7 @@ def main() -> None:
     }
     all_ok = True
     with tempfile.TemporaryDirectory() as td:
-        for e in args.events:
+        for e in events:
             dirname, files = RAW[e]
             inputs = {}
             for f in files:
@@ -170,12 +210,15 @@ def main() -> None:
             print(f"[repro] {e}: {cmp['verdict']} "
                   + json.dumps(cmp["fields"]))
 
-    report["verdict"] = ("identical_canonical_json" if all_ok
-                         else "MISMATCH")
-    outp = ROOT / "outputs" / "reproduction_report.json"
+    if not full_set:
+        report["verdict"] = "SUBSET_RUN"
+    else:
+        report["verdict"] = ("identical_canonical_json" if all_ok
+                             else "MISMATCH")
+    outp.parent.mkdir(parents=True, exist_ok=True)
     outp.write_text(json.dumps(report, indent=1), encoding="utf-8")
     print(f"[repro] wrote {outp} — verdict: {report['verdict']}")
-    sys.exit(0 if all_ok else 1)
+    sys.exit(0 if (all_ok and full_set) else 1)
 
 
 if __name__ == "__main__":

@@ -20,8 +20,8 @@ import numpy as np
 
 from ..location.locator import PickLocator, haversine_km
 from ..location.magnitude import DEFAULT_COEF, PgaMagnitude
-from ..location.replay_sim import (COUNTIES, pga_to_intensity, predict_pga,
-                                   pws_alert)
+from ..location.replay_sim import (COUNTIES, GATES, pga_to_intensity,
+                                   predict_pga, pws_alert)
 
 WIN = 3001
 FS = 100.0
@@ -52,7 +52,8 @@ class LiveEngine:
     def __init__(self, picker, stations_meta, buf_s=120.0, stride_s=1.0,
                  threshold=0.3, assoc_n=3, assoc_win_s=15.0,
                  event_timeout_s=60.0, mode_label="replay", notifier=None,
-                 trigger_mode=False, trig_pga=8.0, alert_min_pga=25.0,
+                 trigger_mode=False, trig_pga=8.0,
+                 alert_min_pga=GATES["pws_min_obs_gal"],
                  site_terms=None):
         # trigger_mode: sources that deliver per-station PGA values instead
         # of waveforms (e.g. TREM RTS). No PhaseNet, no S picks — a PGA
@@ -406,7 +407,9 @@ class LiveEngine:
         # strong shaking actually observed somewhere — a real M6.5+ puts
         # >=25 gal on near stations; phantom events never do
         obs_pga = max((s.pga_since(s.tp - 1.0) or 0.0) for s in members)
-        q_ok = (len(members) >= 6 and (est.ellipse_major_km or 999) <= 80
+        q_ok = (len(members) >= GATES["min_stations"]
+                and (est.ellipse_major_km or 999)
+                <= GATES["max_ellipse_km"]
                 and obs_pga >= self.alert_min_pga)
 
         vs = self.locator.vp / 1.73
@@ -433,9 +436,10 @@ class LiveEngine:
         # notification. Lighter shaking gate than PWS (a real M4.5 puts
         # ~10 gal on near stations; MEMS noise never sustains that).
         eew_now = (mag is not None and mag.mag >= 4.5 and max_i >= 3
-                   and len(members) >= 6
-                   and (est.ellipse_major_km or 999) <= 80
-                   and obs_pga >= 10.0)
+                   and len(members) >= GATES["min_stations"]
+                   and (est.ellipse_major_km or 999)
+                   <= GATES["max_ellipse_km"]
+                   and obs_pga >= GATES["eew_min_obs_gal"])
         if eew_now and "t_eew" not in ev:
             ev["t_eew"] = round(self.now, 2)
             self._log("EEW criteria met (M>=4.5, I>=3 — CWA issuance rule)")
