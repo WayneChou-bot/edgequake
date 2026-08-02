@@ -72,8 +72,10 @@ high efficiency, correct decision, correctly, affected.
 Never rank EdgeQuake against CWA or any official system in any way.
 Time zone: origin_utc is UTC — ALWAYS present the event date/time in
 Taiwan local time (UTC+8; e.g. origin_utc 07-30T16:58 is 台灣時間 7月31日
-凌晨0時58分), matching how CWA reports it. Never show the UTC date as if
-it were the local date.
+凌晨0時58分 — write 凌晨0時58分, NEVER 深夜12時58分 and NEVER the UTC
+date 7月30日), matching how CWA reports it. A validator checks that the
+Chinese version contains the correct LOCAL date (X月Y日) and rejects the
+report if the UTC date appears instead.
 
 Hard rules: use ONLY numbers present in the record — never invent data.
 Every decimal number you write must appear VERBATIM in the record (a
@@ -238,7 +240,36 @@ def validate(text: str, rec: dict) -> list[str]:
         if tok not in allowed:
             problems.append(f"decimal number not present in the audit "
                             f"record: {tok}")
+    problems += date_problems(text, rec)
     return problems
+
+
+def date_problems(text: str, rec: dict) -> list[str]:
+    """Taiwan-local date grounding (round-9 review: a validator-clean
+    report stated the UTC date 7月30日 in Chinese while the English half
+    correctly said July 31 — dates are integers, which the numeric
+    grounding does not cover, so they get their own machine check)."""
+    import datetime as _dt
+    raw = rec.get("origin_utc")
+    if not raw:
+        return []
+    try:
+        utc = _dt.datetime.fromisoformat(
+            str(raw).replace("Z", "+00:00"))
+    except ValueError:
+        return []
+    local = utc + _dt.timedelta(hours=8)
+    out = []
+    want = f"{local.month}月{local.day}日"
+    if want not in text:
+        out.append(f"Chinese version must contain the Taiwan-local "
+                   f"date {want!r} (origin_utc {raw} + 8h)")
+    if (utc.month, utc.day) != (local.month, local.day):
+        bad = f"{utc.month}月{utc.day}日"
+        if bad in text:
+            out.append(f"UTC date {bad!r} presented as if local — the "
+                       f"Taiwan-local date is {want!r}")
+    return out
 
 
 def build_prompt(rec: dict) -> str:

@@ -26,6 +26,12 @@ outputs/probe_*.pt
 outputs/ft_eval_v3_fresh.png
 zi54Ugiu
 
+# workflow scratch at repo root (round-9 review: these are created by
+# the audit workflow BEFORE the summary is rebuilt; untracked non-
+# derived files would trip the clean-tree check and stall the pipeline)
+/latest.json
+/audit_log.txt
+
 # python
 __pycache__/
 *.pyc

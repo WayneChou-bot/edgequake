@@ -37,8 +37,8 @@ the result — timings are reported as lower bounds (see the audit notes).
   issuance times, which include the latencies not modeled here), final magnitude
   **M4.81 vs CWA M4.7** with 17 km epicenter error — and the public-alert
   gate **did not trigger** (event below the PWS thresholds: M≥5.0 with
-  a county at predicted intensity ≥4). True negatives are part of the
-  record.
+  a county at predicted intensity ≥4, or M≥6.5 with intensity ≥3).
+  True negatives are part of the record.
 - **Out-of-sample replays** (post-hoc arrival-time, same caveat):
   2024-04-03 Hualien M7.2 first located at origin+3.8 s, final epicenter
   error ~21 km (110/112 stations picked); 2025 Dapu ML6.4 first located
@@ -373,7 +373,8 @@ motion alerts in Taiwan requires an agreement with the CWA.
   完成首次定位、**9.2 秒**達到強震即時警報發布條件（此為理論下界，
   不可與包含各項延遲的官方發布時間直接比較）；最終規模 **M4.81**
   對官方目錄 M4.7，震央誤差 17 公里。
-  未達國家級警報門檻（M≥5.0 且有縣市預估震度≥4），系統**未發布警報**；
+  未達國家級警報門檻（M≥5.0 且有縣市預估震度≥4，或 M≥6.5 且≥3），
+  系統**未發布警報**；
   「沒發警報」也是紀錄的一部分。
 - **樣本外事後重播**（同為到時重播，時間為下界）：0403 花蓮 M7.2 於發震後
   3.8 秒首次定位、最終誤差約 21 公里（110/112 站成功辨識）；大埔 ML6.4 於

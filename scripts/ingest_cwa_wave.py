@@ -292,6 +292,14 @@ def main() -> None:
         import subprocess as _sp
         import time as _time
 
+        def _sha256_file(p: Path) -> str:
+            import hashlib as _hl
+            h = _hl.sha256()
+            with open(p, "rb") as fh:
+                for chunk in iter(lambda: fh.read(1 << 20), b""):
+                    h.update(chunk)
+            return h.hexdigest()
+
         def _generating_commit() -> str | None:
             sha = (os.environ.get("GITHUB_SHA") or "").strip()
             if sha:
@@ -335,6 +343,14 @@ def main() -> None:
                 "once its S-window has passed — not the causally-"
                 "observed running PGA the live engine uses",
             "report_sent": args.sent,
+            # round-9: the downloaded waveform zip is git-ignored (GB-
+            # scale raw data does not belong in the repo), so its hash
+            # is preserved HERE as input provenance instead of being
+            # pinned by the manifest (which pins only committed files)
+            "source_zip": ({"file": Path(args.zip).name,
+                            "sha256": _sha256_file(Path(args.zip))}
+                           if args.zip and Path(args.zip).exists()
+                           else None),
             "audited_at": _time.strftime("%Y-%m-%d %H:%M:%S UTC",
                                          _time.gmtime()),
             # round-5: record WHICH code produced this record, at record

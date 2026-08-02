@@ -108,6 +108,11 @@ jobs:
             docs/audit.json vercel/audit.json outputs/results_summary.json
           git commit -m "shadow audit: ${{ steps.check.outputs.id }}" || exit 0
           git pull --rebase origin main
+          # round-9: re-verify ON the rebased tree — if new code was
+          # pushed mid-run, the ancestor check fails here and nothing is
+          # pushed; the unpushed done-marker means the next scheduled
+          # run redoes the audit cleanly on the new base
+          python scripts/build_results_summary.py --verify
           git push
 
       - name: Notify audit result

@@ -189,7 +189,31 @@ def required_file_hashes() -> list[str]:
                  if p.is_file())
     dyn += sorted(p.relative_to(ROOT).as_posix()
                   for p in (ROOT / "outputs").glob("replay_eq*.json"))
+    # round-9: only pin files that will actually BE in the repo — the
+    # downloaded waveform zip lands in the archive but is git-ignored,
+    # so pinning it made CI verify pass while every clean clone failed
+    # (its sha256 is preserved as provenance INSIDE the audit record
+    # instead). Filter through git check-ignore; without git, fall back
+    # to the known ignored pattern.
+    dyn = [p for p in dyn if p not in _git_ignored(dyn)]
     return list(dict.fromkeys([*STATIC_FILE_HASHES, *dyn]))
+
+
+def _git_ignored(paths: list[str]) -> set[str]:
+    if not paths:
+        return set()
+    try:
+        r = subprocess.run(
+            ["git", "check-ignore", "--stdin"], cwd=ROOT,
+            input="\n".join(paths).encode(),
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        # exit 0: some ignored; 1: none ignored; 128: not a git repo
+        if r.returncode in (0, 1):
+            return {ln.strip().replace("\\", "/")
+                    for ln in r.stdout.decode().splitlines() if ln.strip()}
+    except Exception:
+        pass
+    return {p for p in paths if p.endswith(".zip")}
 
 
 def audit_ids() -> list[str]:

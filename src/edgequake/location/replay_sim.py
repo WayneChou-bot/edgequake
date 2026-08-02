@@ -90,6 +90,13 @@ def pws_evidence(payload: dict) -> dict:
 
     Round-8 P2: fired time is reported ORIGIN-relative (frame t minus
     origin_rel), matching every other reported time.
+
+    Round-9: the per-frame predicate is taken from frame["pws"] — three
+    booleans computed at decision time from the RAW (un-rounded) values
+    the alert code itself used — so evidence and cty[].alert cannot
+    disagree at threshold boundaries (M4.996 vs displayed 5.0, PGA
+    24.96 vs displayed 25.0). Displayed numbers are used only for the
+    human-readable maxima.
     """
     frames = [f for f in payload.get("frames", [])
               if f.get("mag") is not None]
@@ -100,12 +107,23 @@ def pws_evidence(payload: dict) -> dict:
     for f in frames:
         max_i = max((c.get("i", 0) for c in f.get("cty", [])), default=0)
         obs = float(f.get("obs", 0.0))
-        gate = bool(f.get("gate_ok", False))
-        rule = pws_alert(f["mag"], max_i)
+        pws = f.get("pws")
+        if pws is not None:
+            # round-9: use the decision components computed from RAW
+            # values at decision time — bit-equivalent to cty[].alert
+            # by construction (frame values are rounded for display and
+            # disagree with the raw predicate exactly at thresholds)
+            rule = bool(pws.get("rule"))
+            gate = bool(pws.get("gate"))
+            obs_ok = bool(pws.get("obs_ok"))
+        else:   # legacy payloads without frame["pws"]: rounded approx.
+            rule = pws_alert(f["mag"], max_i)
+            gate = bool(f.get("gate_ok", False))
+            obs_ok = obs >= GATES["pws_min_obs_gal"]
         rows.append({"t": f["t"], "mag": f["mag"], "max_i": max_i,
                      "obs": obs, "gate": gate, "rule": rule,
-                     "all": rule and gate
-                     and obs >= GATES["pws_min_obs_gal"]})
+                     "obs_ok": obs_ok,
+                     "all": rule and gate and obs_ok})
     fired_row = next((r for r in rows if r["all"]), None)
     ev = {
         "fired": fired_row is not None,
@@ -130,7 +148,9 @@ def pws_evidence(payload: dict) -> dict:
          "quality_gate_ok_any": any(r["gate"] for r in rule_rows)}
     ev["while_rule_met"] = w
     blockers = []
-    if w["max_observed_pga_gal"] < GATES["pws_min_obs_gal"]:
+    # round-9: blocker determination uses the RAW obs_ok/gate booleans,
+    # not the displayed maxima (a displayed 25.0 can be a raw 24.96)
+    if not any(r["obs_ok"] for r in rule_rows):
         blockers.append("observed_pga_ge_%g_never_met_while_rule_met"
                         % GATES["pws_min_obs_gal"])
     if not w["quality_gate_ok_any"]:
@@ -272,6 +292,16 @@ def simulate(ev, truth, vp=None, dt=None, max_stations=None, bootstrap=None,
                 # explainable from data (see pws_evidence())
                 frame["obs"] = round(obs, 1)
                 frame["gate_ok"] = gate_ok
+                # round-9: decision COMPONENTS computed here, from the
+                # SAME raw (un-rounded) values the alert code just used
+                # — review showed M4.996 displayed as 5.0 and PGA 24.96
+                # as 25.0 made evidence re-derived from displayed values
+                # disagree with the actual cty[].alert at thresholds
+                frame["pws"] = {
+                    "rule": bool(pws_alert(mag.mag, max_i)),
+                    "obs_ok": bool(obs >= GATES["pws_min_obs_gal"]),
+                    "gate": bool(gate_ok),
+                }
         frames.append(frame)
 
     # Phase 10: similar historical events from the FINAL estimate (the
