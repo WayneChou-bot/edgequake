@@ -136,6 +136,101 @@ class DecimalGrounding(unittest.TestCase):
         self.assertTrue(any("優於" in p for p in problems), problems)
 
 
+def _frame(t, mag, i, obs, gate_ok=True, alert=False):
+    return {"t": t, "mag": mag, "obs": obs, "gate_ok": gate_ok,
+            "cty": [{"i": i, "alert": alert}]}
+
+
+class PwsEvidence(unittest.TestCase):
+    """round 7: the PWS 'reason' must be computed, not narrated (the
+    report had claimed 'magnitude stayed below M5.0' beside a quoted
+    first magnitude of 5.88)."""
+
+    @classmethod
+    def setUpClass(cls):
+        sys.path.insert(0, str(ROOT / "src"))
+        from edgequake.location.replay_sim import pws_evidence
+        cls.pws_evidence = staticmethod(pws_evidence)
+
+    def test_intensity_blocker_detected(self):
+        # magnitude crossed 5.0, shaking observed, gates fine — the ONLY
+        # blocker is county intensity < 4 (the real Taitung situation)
+        ev = self.pws_evidence({"frames": [
+            _frame(1.0, 5.88, 3, 30.0), _frame(2.0, 4.81, 3, 37.3)]})
+        self.assertFalse(ev["fired"])
+        self.assertEqual(ev["blockers_while_mag_ge_5"],
+                         ["county_intensity_ge_4_never_met"])
+
+    def test_magnitude_never_reached(self):
+        ev = self.pws_evidence({"frames": [_frame(1.0, 4.2, 2, 5.0)]})
+        self.assertEqual(ev["blockers_while_mag_ge_5"],
+                         ["magnitude_ge_5_never_met"])
+
+    def test_fired_records_time(self):
+        ev = self.pws_evidence({"frames": [
+            _frame(3.0, 6.1, 4, 40.0, alert=True)]})
+        self.assertTrue(ev["fired"])
+        self.assertEqual(ev["first_fired_t"], 3.0)
+
+    def test_obs_blocker_detected(self):
+        ev = self.pws_evidence({"frames": [_frame(1.0, 5.5, 3, 8.0)]})
+        self.assertIn("county_intensity_ge_4_never_met",
+                      ev["blockers_while_mag_ge_5"])
+        self.assertTrue(any(b.startswith("observed_pga_ge_")
+                            for b in ev["blockers_while_mag_ge_5"]))
+
+
+class PwsMandatorySentences(unittest.TestCase):
+    """The report's PWS wording is machine-built from evidence."""
+
+    REC = {"pws_evidence": {
+        "fired": False, "max_mag": 5.94,
+        "while_mag_ge_5": {"max_predicted_county_intensity": 3,
+                           "max_observed_pga_gal": 37.3,
+                           "gate_ok_any": True},
+        "blockers_while_mag_ge_5": ["county_intensity_ge_4_never_met"],
+    }}
+
+    def test_sentences_state_computed_reason(self):
+        s = lr.pws_sentences(self.REC)
+        self.assertEqual(len(s), 2)
+        self.assertIn("M5.94", s[0])
+        self.assertIn("3 級", s[0])
+        self.assertNotIn("未達 M5.0", s[0])  # the invented wrong reason
+
+    def test_sentences_are_mandatory(self):
+        s = lr.pws_sentences(self.REC)
+        problems = lr.validate("報告沒有提到 PWS。" + "x" * 600
+                               + "---" + "y" * 300, self.REC)
+        self.assertTrue(any(s[0] in p for p in problems), problems)
+
+
+class SummaryQuoteSelfConsistency(unittest.TestCase):
+    """round 7: the summary cannot hash itself — verify rebuilds the
+    quote list from the summary's own values instead."""
+
+    def mini(self):
+        def evrow(m):
+            return {"site_corrected": {"final_mag": m},
+                    "audit_record": {"t_first_loc_s": 4.9,
+                                     "t_eew_s": 9.2}}
+        return {"events": {"0403": evrow(7.08), "dapu": evrow(6.38),
+                           "eq2026053": evrow(4.81)},
+                "mean_abs_dmag": {"raw": 0.17, "site_corrected": 0.08}}
+
+    def test_quotes_match_own_values(self):
+        s = self.mini()
+        q = brs.quotes_from(s)
+        self.assertIn("M7.08", q)
+        self.assertIn("origin+9.2", q)
+
+    def test_tampered_event_value_changes_quotes(self):
+        s = self.mini()
+        q1 = brs.quotes_from(s)
+        s["events"]["0403"]["site_corrected"]["final_mag"] = 7.20
+        self.assertNotEqual(brs.quotes_from(s), q1)
+
+
 class ManifestRequiredKeys(unittest.TestCase):
     """The required-key constants must stay coherent (round 6)."""
 
@@ -148,6 +243,20 @@ class ManifestRequiredKeys(unittest.TestCase):
             "outputs/audit_archive/"
             "audit_202607310058-EQ2026053-Waveform.txt",
             brs.REQUIRED_FILE_HASHES)
+
+    def test_public_derived_artifacts_pinned(self):
+        # round 7: every ancestor-diff-exempt public artifact must be
+        # pinned by hash instead
+        for p in ("outputs/audit_archive/audit_eq2026053.json",
+                  "outputs/audit_archive/report_eq2026053.md",
+                  "docs/audit.json", "vercel/audit.json",
+                  "docs/index.html", "vercel/index.html"):
+            self.assertIn(p, brs.REQUIRED_FILE_HASHES)
+
+    def test_environment_keys_defined(self):
+        self.assertEqual(sorted(brs.ENV_KEYS),
+                         sorted(("python", "platform", "numpy", "scipy",
+                                 "pandas", "obspy")))
 
     def test_cross_check_fields(self):
         self.assertEqual(

@@ -75,6 +75,18 @@ def audit_content_sha256(p: Path) -> str | None:
     ).hexdigest()
 
 
+def _environment() -> dict:
+    import platform as _pf
+
+    import numpy as _np
+    import obspy as _ob
+    import pandas as _pd
+    import scipy as _sp
+    return {"python": _pf.python_version(), "platform": _pf.platform(),
+            "numpy": _np.__version__, "scipy": _sp.__version__,
+            "pandas": _pd.__version__, "obspy": _ob.__version__}
+
+
 def git_commit() -> str | None:
     try:
         return subprocess.check_output(
@@ -144,8 +156,47 @@ REQUIRED_FILE_HASHES = (
     "outputs/site_terms.json",
     "outputs/reproduction_report.json",
     "outputs/audit_archive/audit_202607310058-EQ2026053-Waveform.txt",
+    # round-7: EVERY public derived artifact that the two-phase protocol
+    # exempts from the ancestor-diff check is pinned here instead — a
+    # "derived-only" commit that tampers with any of them breaks the
+    # manifest. (Consequence: regenerating the LLM report or the
+    # dashboards requires regenerating the summary afterwards — the
+    # summary is always the LAST derived artifact.) Newly audited events
+    # enter this protection when the summary is next regenerated.
+    "outputs/audit_archive/audit_eq2026053.json",
+    "outputs/audit_archive/report_eq2026053.md",
+    "docs/audit.json",
+    "vercel/audit.json",
+    "docs/index.html",
+    "vercel/index.html",
     *REPLAYS.values(),
 )
+
+# environment keys the manifest must record (round 7: same commit + same
+# hashes on a different NumPy/SciPy can still change results subtly)
+ENV_KEYS = ("python", "platform", "numpy", "scipy", "pandas", "obspy")
+
+
+def quotes_from(s: dict) -> list[str]:
+    """Rebuild the README-quote list from the summary's OWN recorded
+    values (round 7: the summary cannot hash itself, so verify checks
+    it is internally consistent — editing the event numbers without
+    editing the quotes fails here; editing both requires editing the
+    README too, which is not a derived path and therefore breaks the
+    ancestor-diff check)."""
+    e0 = s["events"]["0403"]
+    ed = s["events"]["dapu"]
+    et = s["events"]["eq2026053"]
+    m = s["mean_abs_dmag"]
+    return [
+        f"M{e0['site_corrected']['final_mag']:.2f}",
+        f"M{ed['site_corrected']['final_mag']:.2f}",
+        f"M{et['site_corrected']['final_mag']:.2f}",
+        f"origin+{et['audit_record']['t_first_loc_s']}",
+        f"origin+{et['audit_record']['t_eew_s']}",
+        f"{m['raw']} → {m['site_corrected']}",
+        "0.702", "0.635",
+    ]
 
 # audit-record fields that must equal this run's CANONICAL recomputation
 CROSS_CHECK_FIELDS = ("t_first_loc_s", "first_mag", "final_mag",
@@ -235,6 +286,22 @@ def verify() -> None:
         fails.append("manifest readme_quotes is empty/missing")
     if not s.get("forbidden_quotes"):
         fails.append("manifest forbidden_quotes is empty/missing")
+    env = s.get("environment") or {}
+    missing_env = [k for k in ENV_KEYS if k not in env]
+    if missing_env:
+        fails.append("manifest environment block missing keys: "
+                     + ", ".join(missing_env))
+    # round-7: the summary cannot hash itself — instead prove it is
+    # internally consistent: its quote list must equal what its OWN
+    # event values produce
+    try:
+        expect_q = quotes_from(s)
+    except Exception as e:
+        fails.append(f"cannot rebuild quotes from summary values: {e}")
+        expect_q = None
+    if expect_q is not None and s.get("readme_quotes") != expect_q:
+        fails.append("readme_quotes are not self-consistent with the "
+                     "summary's own event values (tampered or stale)")
     acc = s.get("audit_cross_check") or {}
     if acc.get("status") != "match":
         fails.append("audit_cross_check missing or status != 'match' — "
@@ -422,6 +489,11 @@ def main() -> None:
                                       time.gmtime()),
         "git_commit": commit,
         "working_tree_dirty": dirty,
+        # round-7: same commit + same hashes on different library
+        # versions can still change numerics — record the environment
+        # these canonical numbers were computed under (pin with
+        # scripts/write_lockfile.py -> requirements-lock.txt)
+        "environment": _environment(),
         "git_commit_note": "two-phase protocol: code is committed FIRST; "
             "this summary is generated on that clean tree and lands in a "
             "second, derived-artifacts-only commit. --verify enforces "
@@ -461,25 +533,23 @@ def main() -> None:
         "file_sha256": file_hashes,
         "audit_content_sha256": audit_content_sha256(audit_p),
         "audit_content_note": "audit record hashed excluding "
-            f"{list(NARRATIVE_FIELDS)} so LLM-report regeneration does "
-            "not invalidate this manifest",
+            f"{list(NARRATIVE_FIELDS)} — since round 7 the FULL record "
+            "file is also pinned in file_sha256, so this narrower hash "
+            "is a diagnostic that distinguishes numeric drift from "
+            "narrative-only change (any change now requires "
+            "regenerating the summary; summary is the last derived "
+            "artifact)",
         "audit_cross_check": audit_cross_check,
         "site_correction": {"file": "outputs/site_terms.json",
                             "n_stations": len(site_terms)},
         "events": events,
         "mean_abs_dmag": {"raw": mean_raw, "site_corrected": mean_site},
-        "readme_quotes": [
-            f"M{e0['site_corrected']['final_mag']:.2f}",
-            f"M{ed['site_corrected']['final_mag']:.2f}",
-            f"M{et['site_corrected']['final_mag']:.2f}",
-            f"origin+{et['audit_record']['t_first_loc_s']}",
-            f"origin+{et['audit_record']['t_eew_s']}",
-            f"{mean_raw} → {mean_site}",
-            "0.702", "0.635",
-        ],
         "forbidden_quotes": ["M7.11", "M6.34", "0.680", "1.3 km",
                              "0.17 → 0.09", "M7.39", "M6.65 (Δ"],
     }
+    # quotes derived from the summary's own values via the SAME helper
+    # verify uses — so verify can prove internal consistency (round 7)
+    summary["readme_quotes"] = quotes_from(summary)
 
     out_path = ROOT / "outputs" / "results_summary.json"
     out_path.write_text(json.dumps(summary, ensure_ascii=False, indent=1),

@@ -70,6 +70,66 @@ def pws_alert(mag: float, intensity: float) -> bool:
     return (mag >= 5.0 and intensity >= 4) or (mag >= 6.5 and intensity >= 3)
 
 
+def pws_evidence(payload: dict) -> dict:
+    """Machine-derived record of WHY the PWS tier did or did not fire.
+
+    Round-7 review: the Taitung report narrated 'PWS did not fire
+    because the magnitude stayed below M5.0' while the same report
+    quoted a first magnitude of 5.88 — the LLM had invented a causal
+    claim no data supported. The reason must be computed, not narrated:
+    this walks the replay frames and reports, for the frames where the
+    magnitude DID reach each threshold, which other criteria were never
+    simultaneously met. The report generator turns this into mandatory
+    verbatim sentences.
+    """
+    frames = [f for f in payload.get("frames", [])
+              if f.get("mag") is not None]
+    if not frames:
+        return {"fired": False, "note": "no magnitude frames"}
+    fired_f = next((f for f in frames
+                    if any(c.get("alert") for c in f.get("cty", []))),
+                   None)
+    max_i_of = (lambda f: max((c.get("i", 0) for c in f.get("cty", [])),
+                              default=0))
+    ev = {
+        "fired": fired_f is not None,
+        "thresholds": {
+            "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+            "quality_gates": dict(GATES),
+        },
+        "max_mag": max(f["mag"] for f in frames),
+        "max_predicted_county_intensity":
+            max(max_i_of(f) for f in frames),
+        "max_observed_pga_gal":
+            max(f.get("obs", 0.0) for f in frames),
+    }
+    if fired_f is not None:
+        ev["first_fired_t"] = fired_f["t"]
+        return ev
+    m5 = [f for f in frames if f["mag"] >= 5.0]
+    ev["n_frames_mag_ge_5"] = len(m5)
+    if m5:
+        w = {
+            "max_predicted_county_intensity":
+                max(max_i_of(f) for f in m5),
+            "max_observed_pga_gal": max(f.get("obs", 0.0) for f in m5),
+            "gate_ok_any": any(f.get("gate_ok") for f in m5),
+        }
+        ev["while_mag_ge_5"] = w
+        blockers = []
+        if w["max_predicted_county_intensity"] < 4:
+            blockers.append("county_intensity_ge_4_never_met")
+        if w["max_observed_pga_gal"] < GATES["pws_min_obs_gal"]:
+            blockers.append("observed_pga_ge_%g_never_met"
+                            % GATES["pws_min_obs_gal"])
+        if not w["gate_ok_any"]:
+            blockers.append("solution_quality_gate_never_met")
+        ev["blockers_while_mag_ge_5"] = blockers
+    else:
+        ev["blockers_while_mag_ge_5"] = ["magnitude_ge_5_never_met"]
+    return ev
+
+
 def simulate(ev, truth, vp=None, dt=None, max_stations=None, bootstrap=None,
              site_terms=None, exposure_model=None, similar_db=None):
     """ev: DataFrame from load_replay_json/load_event; returns dict payload.
@@ -196,6 +256,10 @@ def simulate(ev, truth, vp=None, dt=None, max_stations=None, bootstrap=None,
                 frame["eew"] = bool(
                     mag.mag >= 4.5 and max_i >= 3 and gate_ok
                     and obs >= GATES["eew_min_obs_gal"])
+                # round-7: record the gate inputs so alert decisions are
+                # explainable from data (see pws_evidence())
+                frame["obs"] = round(obs, 1)
+                frame["gate_ok"] = gate_ok
         frames.append(frame)
 
     # Phase 10: similar historical events from the FINAL estimate (the

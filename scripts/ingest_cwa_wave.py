@@ -241,6 +241,8 @@ def main() -> None:
         from edgequake.impact import get_model
         from edgequake.similar import get_similar
         from edgequake.location.replay_sim import CANONICAL
+        from edgequake.location.replay_sim import pws_evidence as \
+            _pws_evidence
         impact = get_model()
         payload = simulate(ev_df, tr,   # params: CANONICAL defaults
                            site_terms=site_terms, exposure_model=impact,
@@ -324,6 +326,9 @@ def main() -> None:
             "similar": payload.get("similar"),
             "eew_fired": first_eew is not None,
             "alert_fired": first_alert is not None,
+            # round-7: machine-derived gate evidence — the LLM report's
+            # PWS wording is built from THIS, never invented
+            "pws_evidence": _pws_evidence(payload),
             "gate_note": "eew/alert use the live engine's numeric "
                 "quality gates (GATES), but replayed observed-PGA "
                 "timing is approximate: a station's record-peak counts "

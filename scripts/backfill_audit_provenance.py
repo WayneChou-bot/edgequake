@@ -81,10 +81,13 @@ def first_commit_touching(rel: str) -> str | None:
     return out.splitlines()[0] if out else None
 
 
-def pickaxe_first(rel: str, needle: str) -> str | None:
-    """Oldest commit whose diff of `rel` changed occurrences of needle —
-    i.e. the commit that WROTE the current value."""
-    out = _git("log", "--reverse", "--format=%H", "-S", needle, "--", rel)
+def pickaxe_latest(rel: str, needle: str) -> str | None:
+    """MOST RECENT commit whose diff of `rel` changed occurrences of
+    needle. Round-7 review: the first version took the OLDEST such
+    commit, which is wrong if a value appeared, was changed away, and
+    later restored — the writer of the CURRENT value is the latest
+    commit that changed its occurrence count."""
+    out = _git("log", "-1", "--format=%H", "-S", needle, "--", rel)
     return out.splitlines()[0] if out else None
 
 
@@ -110,7 +113,7 @@ def main() -> None:
     orig_run = (_git("rev-parse", f"{orig_results}^")
                 if orig_results else None)
     numbers = args.numbers_commit or (
-        pickaxe_first(args.audit, f'"final_mag": {rec.get("final_mag")}')
+        pickaxe_latest(args.audit, f'"final_mag": {rec.get("final_mag")}')
         if rec.get("final_mag") is not None else None)
     rec["provenance"] = {
         "original_live_log": args.log,

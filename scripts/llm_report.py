@@ -53,9 +53,10 @@ how the engine did on the replayed timeline (first location, first
 magnitude and how it evolved to the final value vs the CWA catalog value,
 epicenter error); the instant the EEW issuance criteria were met — stated
 ONLY via the mandatory sentences given below, NEVER compared with official
-issuance times; whether the public-alert (PWS) gate fired, described ONLY
-by stating which numeric criterion was or was not met (e.g. 規模未達
-M≥5.0 門檻、無縣市預估震度達 4 級) — no evaluative wording. If an
+issuance times; the public-alert (PWS) outcome, stated ONLY via the
+mandatory PWS sentences given below — NEVER invent, restate or
+paraphrase a cause for the PWS decision (the sentences carry the
+machine-derived reason; round-7 lesson: a narrated cause was wrong). If an
 "exposure" field exists, phrase it strictly as an estimate: 「預估約 N 人
 可能感受到震度3以上搖晃」 / "an estimated ~N people may have felt
 intensity-3+ shaking"; NEVER 受災/波及/affected, never as a definite
@@ -86,17 +87,61 @@ official information. Do not exaggerate.
 """
 
 
+def pws_sentences(rec: dict) -> list[str]:
+    """Machine-built verbatim sentences describing the PWS outcome.
+
+    Round-7 review: the report claimed 'PWS did not fire because the
+    magnitude stayed below M5.0' while quoting first magnitude 5.88 —
+    an invented causal claim. The reason now comes from the machine-
+    derived pws_evidence block, and the report must carry it verbatim.
+    """
+    evd = rec.get("pws_evidence")
+    if not evd:
+        return []
+    if evd.get("fired"):
+        t = evd.get("first_fired_t")
+        return [
+            f"重播時間軸上，PWS 國家級警報條件於第 {t} 秒達成。",
+            f"On the replayed timeline the PWS criteria were met at "
+            f"{t} s.",
+        ]
+    mm = evd.get("max_mag")
+    blockers = evd.get("blockers_while_mag_ge_5") or []
+    if "magnitude_ge_5_never_met" in blockers:
+        return [
+            f"PWS 國家級警報未觸發：重播期間規模估計最高為 M{mm}，"
+            "未達 M5.0 發布門檻。",
+            f"The PWS public alert did not trigger: the magnitude "
+            f"estimate peaked at M{mm}, below the M5.0 threshold.",
+        ]
+    w = evd.get("while_mag_ge_5") or {}
+    wi = w.get("max_predicted_county_intensity")
+    wo = w.get("max_observed_pga_gal")
+    return [
+        f"PWS 國家級警報未觸發：重播期間規模估計最高達 M{mm}，"
+        f"但在規模達 M5.0 以上的時段內，預估縣市震度最高為 {wi} 級"
+        f"（發布門檻 4 級）、實測 PGA 最高 {wo} gal。",
+        f"The PWS public alert did not trigger: the magnitude estimate "
+        f"peaked at M{mm}, but while it was at or above M5.0 the "
+        f"highest predicted county intensity was {wi} (threshold: 4) "
+        f"and the highest observed PGA was {wo} gal.",
+    ]
+
+
 def mandatory_sentences(rec: dict) -> list[str]:
     """Fixed sentences the report MUST contain verbatim (validated)."""
+    out = []
     t = rec.get("t_eew_s")
-    if t is None:
-        return []
-    return [
-        f"{t} 秒為未納入系統延遲的理論下界，不可與官方發布時間直接比較。",
-        f"The {t} s figure is a theoretical lower bound that excludes "
-        "system latency and must not be compared directly with official "
-        "issuance times.",
-    ]
+    if t is not None:
+        out += [
+            f"{t} 秒為未納入系統延遲的理論下界，不可與官方發布時間"
+            "直接比較。",
+            f"The {t} s figure is a theoretical lower bound that "
+            "excludes system latency and must not be compared directly "
+            "with official issuance times.",
+        ]
+    out += pws_sentences(rec)
+    return out
 
 
 FORBIDDEN = ["優於", "較快", "更快", "領先", "時效", "效率", "受災",

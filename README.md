@@ -96,7 +96,9 @@ gates earned from real failures: ≥6 stations, error ellipse ≤80 km, and
 ground, and phantom events never do.
 
 **Live operation.** `run_live.py --source trem` runs 24/7 on the ExpTech
-TREM community MEMS network (open API, attributed, reference-only) from a
+TREM community MEMS network (publicly reachable API, attributed,
+reference-only; written usage confirmation from ExpTech is being
+sought — a reachable API is not by itself a data license) from a
 free cloud VM, pushing state snapshots to Upstash Redis; the public
 console reads them through a serverless endpoint, so during a real
 earthquake any visitor sees the epicenter, P/S wavefronts, triggered
@@ -174,9 +176,18 @@ artifact hashes), requires the manifest to list exactly the required
 hash/source key sets (a manifest that silently lists less fails),
 requires the audit record's numbers to have matched a fresh canonical
 recomputation at generation time (`audit_cross_check` — the content
-hash alone proves only that the record did not change afterwards), and
+hash alone proves only that the record did not change afterwards), pins
+every public derived artifact (reports, audit indexes, dashboards) so a
+"derived-only" commit cannot silently alter them, proves the summary's
+own quote list is consistent with its recorded event values (the
+summary cannot hash itself), records the execution environment
+(Python/NumPy/SciPy/pandas/ObsPy versions; pin with
+`requirements-lock.txt`), and
 checks each quoted figure is present in this README while known-stale
-figures are absent — any drift fails loudly. Checkpoint provenance:
+figures are absent — any drift fails loudly. Alert decisions in audit
+records carry machine-derived gate evidence (`pws_evidence`), and the
+report's PWS wording is generated verbatim from it — the narrated
+"reason" is computed, never invented. Checkpoint provenance:
 `outputs/v3_verify_x83.pt` is **byte-identical** to
 `outputs/phasenet_cwa_ft.pt` (same SHA-256), i.e. the replay artifacts
 were produced with the committed fine-tuned weights under an alternate
@@ -240,6 +251,10 @@ pip install -r requirements.txt
 # external review actually found)
 python -m unittest discover -s tests
 
+# exact versions used for the canonical results (requirements.txt is
+# deliberately loose; use the lockfile to reproduce numerics)
+pip install -r requirements-lock.txt
+
 # replay a bundled real earthquake through the streaming engine
 python scripts/demo_replay.py
 
@@ -302,7 +317,8 @@ Raspberry Shake as a true on-site sensor node.
 - **CWA Open Data** (opendata.cwa.gov.tw): earthquake bulletins
   (E-A0015/16) and post-event strong-motion waveforms (E-A0015-004).
 - **ExpTech TREM** (exptech.dev): community MEMS real-time network, used
-  read-only via their open API with attribution — community data, reference
+  read-only via their publicly reachable API with attribution (written
+  usage confirmation being sought) — community data, reference
   only, not an official source.
 - **WorldPop** (www.worldpop.org): Taiwan 1 km population grid, Global2
   release R2025A (constrained UN-adjusted, 2026 estimate), University of
@@ -396,7 +412,8 @@ S 波盲區，幾乎沒有可用預警時間——回放頁展示的正是這件
 僅呈現已有產物支撐的事後理論下界，系統端到端的實際延遲仍待量測。
 
 **即時運行。** 引擎全天候跑在免費雲端 VM 上，接 ExpTech TREM 社群測網
-（公開 API、註明出處、僅供參考），狀態快照經 Upstash Redis 中繼到公開
+（可公開連線的 API、註明出處、僅供參考；書面使用確認洽詢中——API 可連線
+不等同資料授權），狀態快照經 Upstash Redis 中繼到公開
 主控台。真的地震發生時，任何訪客都能即時看到震央、P/S 波前、觸發測站、
 規模收斂、曝險人口與相似歷史事件。
 
@@ -408,9 +425,10 @@ S 波盲區，幾乎沒有可用預警時間——回放頁展示的正是這件
 差距已列入 roadmap）。結果寫入機器可讀紀錄、由 LLM 敘述成雙語報告，
 報告經機器驗證（禁用比較性措辭、必含下界聲明、核心數字與小數 token
 接地——token 精確比對且排除舊敘事欄位作為來源；驗證涵蓋數字存在性
-而非語意位置，整數尚未接地）、全部 commit 回
-repo——結果照算照登、無人工篩選；輪詢制在極端連發情境可能漏收同窗口內
-的較早事件。
+而非語意位置，整數尚未接地）；警報判定附**機器推導的閘門證據**
+（`pws_evidence`），報告中的 PWS 敘述由證據逐字組句——「原因」是算
+出來的，不是 LLM 寫出來的。全部 commit 回 repo——結果照算照登、
+無人工篩選；輪詢制在極端連發情境可能漏收同窗口內的較早事件。
 
 ## 已知限制
 
