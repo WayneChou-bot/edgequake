@@ -343,6 +343,11 @@ class LiveEngine:
                   t0=est.origin_time_s + t_ref, k=len(members),
                   emaj=est.ellipse_major_km, emin=est.ellipse_minor_km,
                   eaz=est.ellipse_azimuth_deg)
+        if getattr(est, "bootstrap_lats", None) is not None:
+            bd = np.array([haversine_km(bl, bo, est.lat, est.lon)
+                           for bl, bo in zip(est.bootstrap_lats,
+                                             est.bootstrap_lons)])
+            ev["bconf"] = int(round(float((bd <= 20.0).mean()) * 100))
 
         mag = None
         m_pga, m_d = [], []
@@ -450,7 +455,8 @@ class LiveEngine:
                      for k, v in ev.items()
                      if k in ("lat", "lon", "depth", "mag", "msig", "k",
                               "emaj", "emin", "eaz", "r4", "r5", "alert",
-                              "cty", "n_mag", "ai_mag", "ai_sig", "n_ai")}
+                              "cty", "n_mag", "ai_mag", "ai_sig", "n_ai",
+                              "bconf")}
             event["age"] = round(self.now - ev["t_first"], 1)
             event["t0_age"] = round(self.now - ev["t0"], 1)
 

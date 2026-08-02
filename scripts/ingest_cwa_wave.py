@@ -244,15 +244,52 @@ def main() -> None:
             return f"origin+{f['t'] - o_rel:.1f}s" if f else "never"
         err = (haversine_km(first_mag["lat"], first_mag["lon"],
                             tr["lat"], tr["lon"]) if first_mag else None)
+        last_mag = [f for f in payload["frames"]
+                    if f.get("mag") is not None]
+        last_mag = last_mag[-1] if last_mag else None
+        err_final = (haversine_km(last_mag["lat"], last_mag["lon"],
+                                  tr["lat"], tr["lon"]) if last_mag else None)
         print("[audit] ---- had EdgeQuake been running ----")
         print(f"[audit] first location : {rel(first_loc)}")
         print(f"[audit] first magnitude: {rel(first_mag)}"
               + (f"  M{first_mag['mag']:.1f} (CWA M{tr['mag']}) "
                  f"err {err:.0f} km" if first_mag else ""))
+        if last_mag:
+            print(f"[audit] final estimate : M{last_mag['mag']:.2f} "
+                  f"err {err_final:.0f} km @ {last_mag['k']} stations")
         print(f"[audit] PWS criteria   : {rel(first_alert)}")
         if args.sent:
             print(f"[audit] CWA report sent: {args.sent} "
                   f"(waveform zip ~12 min after origin)")
+
+        # machine-readable audit record (collected into docs/audit.json by
+        # scripts/build_audit_index.py — the public audit log)
+        import time as _time
+
+        arch = ROOT / "outputs" / "audit_archive"
+        arch.mkdir(parents=True, exist_ok=True)
+        rec = {
+            "id": f"eq{ev_id}",
+            "origin_utc": str(origin),
+            "cwa": {"mag": tr["mag"], "lat": tr["lat"], "lon": tr["lon"],
+                    "depth_km": tr["depth_km"]},
+            "n_stations": len(out_stations), "n_picks": n_p,
+            "t_first_loc_s": (round(first_loc["t"] - o_rel, 1)
+                              if first_loc else None),
+            "t_first_mag_s": (round(first_mag["t"] - o_rel, 1)
+                              if first_mag else None),
+            "first_mag": (round(first_mag["mag"], 2) if first_mag else None),
+            "final_mag": (round(last_mag["mag"], 2) if last_mag else None),
+            "final_err_km": (round(err_final, 1) if err_final is not None
+                             else None),
+            "alert_fired": first_alert is not None,
+            "report_sent": args.sent,
+            "audited_at": _time.strftime("%Y-%m-%d %H:%M:%S UTC",
+                                         _time.gmtime()),
+        }
+        (arch / f"audit_eq{ev_id}.json").write_text(
+            json.dumps(rec, indent=1))
+        print(f"[audit] wrote audit_eq{ev_id}.json")
 
 
 if __name__ == "__main__":

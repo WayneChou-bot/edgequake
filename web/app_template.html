@@ -134,6 +134,35 @@
           display:flex; justify-content:space-between}
   .legend{font-size:10.5px; color:var(--ink2); margin-top:6px;
           max-width:540px}
+  /* ---------- AI signal-intelligence overlay (both maps) ---------- */
+  .mapbox{position:relative}
+  .intel{position:absolute; right:12px; bottom:16px; z-index:6;
+    background:rgba(14,19,26,.88); border:1px solid #2e4256;
+    border-radius:8px; padding:8px 12px; min-width:224px;
+    font-family:Consolas,monospace; font-size:11px; line-height:1.8;
+    color:#cfe3f5; pointer-events:none; white-space:pre}
+  .intel .ih{font-size:9.5px; letter-spacing:1.5px; color:#5f88ad;
+    font-weight:700; margin-bottom:2px}
+  #intel-l{bottom:26px}            /* clear of tile attribution */
+  #intel-r{top:14px; bottom:auto}  /* NE ocean corner of the SVG map */
+  .intel b{color:#fff; font-weight:600}
+  .intel .dim{color:#5f7183}
+  /* ---------- audit view ---------- */
+  .audnote{color:var(--ink2); font-size:11px; margin:2px 0 12px;
+    max-width:860px; line-height:1.6}
+  .audstats{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px}
+  .astat{background:var(--panel); border:1px solid var(--grid);
+    border-radius:8px; padding:8px 16px; min-width:118px}
+  .astat .v{font-family:Consolas,monospace; font-size:19px;
+    color:var(--blue)}
+  .astat .l{font-size:10px; color:var(--ink2); margin-top:2px}
+  table.aud{width:100%; border-collapse:collapse; font-size:11.5px;
+    font-family:Consolas,monospace}
+  table.aud th{color:var(--ink2); font-weight:600; text-align:left;
+    padding:6px 9px; border-bottom:1px solid var(--grid); font-size:10.5px;
+    white-space:nowrap}
+  table.aud td{padding:7px 9px; border-bottom:1px solid var(--grid);
+    white-space:nowrap}
 </style>
 </head>
 <body>
@@ -142,6 +171,7 @@
   <div class="topnav">
     <div class="tnav active" data-view="live" id="nav-live">即時監測</div>
     <div class="tnav" data-view="replay" id="nav-replay">歷史事件回放</div>
+    <div class="tnav" data-view="audit" id="nav-audit">稽核紀錄</div>
     <div class="tnav" id="langbtn" title="切換語言 / switch language">EN</div>
   </div>
 </div>
@@ -161,6 +191,7 @@
         <div class="bb" data-base="photo" id="bb-photo">NLSC 正射影像</div>
       </div>
       <div id="mapmsg" style="display:none">地圖圖磚載入失敗（需要網路連線）</div>
+      <div class="intel" id="intel-l" style="display:none"></div>
     </div>
     <div class="side2">
       <div class="ecard" id="ecard">
@@ -203,6 +234,7 @@
   <div class="layout">
     <div class="mapbox"><svg id="map"></svg>
       <div class="legend" id="legendtx"></div>
+      <div class="intel" id="intel-r"></div>
     </div>
     <div class="side">
       <div class="card">
@@ -237,6 +269,19 @@
   </div>
 </div>
 
+<!-- ================= AUDIT VIEW ================= -->
+<div id="view-audit" style="display:none">
+  <div class="audnote" id="audnote"></div>
+  <div class="audstats" id="audstats"></div>
+  <div style="overflow-x:auto">
+    <table class="aud">
+      <thead><tr id="audhead"></tr></thead>
+      <tbody id="audbody"></tbody>
+    </table>
+  </div>
+  <div class="audnote" id="audmsg" style="margin-top:10px"></div>
+</div>
+
 <div class="foot" id="foott"></div>
 
 <script>
@@ -247,6 +292,7 @@ const GTXT = {
         en: 'EdgeQuake — Taiwan Earthquake Console'},
   nav_live: {zh: '即時監測', en: 'Live Monitor'},
   nav_replay: {zh: '歷史事件回放', en: 'Event Replay'},
+  nav_audit: {zh: '稽核紀錄', en: 'Audit Log'},
   sub: {zh: '即時：CWA 地震報告（約 1–2 分鐘延遲，速報非預警）＋ USGS 全球地震＋雲端 live 引擎（TREM 真即時偵測） · 回放：歷史事件以真實時間軸重演完整偵測鏈 · 研究原型，非官方警報服務',
         en: 'Live: CWA earthquake reports (~1–2 min delay, bulletins not warnings) + USGS worldwide + cloud live engine (TREM real-time detection) · Replay: historical events re-run through the full detection chain on the true timeline · research prototype, not an official warning service'},
   foot: {zh: '資料：中央氣象署開放資料平臺（速報）、CWA GDMS 歷史波形 (doi:10.7914/SN/T5)、USGS Earthquake Hazards Program、底圖 © CARTO/OpenStreetMap、內政部國土測繪中心 WMTS、ExpTech TREM（社群觀測網，僅供參考） · 震央真值為 CWA 報告近似值 · EdgeQuake 研究原型，非官方警報服務 · github.com/WayneChou-bot/edgequake',
@@ -256,6 +302,7 @@ function applyLangGlobal(){
   document.getElementById('ttl').textContent = GTXT.ttl[LANG];
   document.getElementById('nav-live').textContent = GTXT.nav_live[LANG];
   document.getElementById('nav-replay').textContent = GTXT.nav_replay[LANG];
+  document.getElementById('nav-audit').textContent = GTXT.nav_audit[LANG];
   document.getElementById('subt').textContent = GTXT.sub[LANG];
   document.getElementById('foott').textContent = GTXT.foot[LANG];
   document.getElementById('langbtn').textContent = LANG === 'zh' ? 'EN' : '中';
@@ -577,7 +624,63 @@ function render(){
 
   document.getElementById('slider').max = Math.round(E.t_end / E.dt);
   document.getElementById('slider').value = Math.round(t / E.dt);
+  renderIntel(E, F);
   renderWf();
+}
+
+// ---- AI Signal Intelligence overlay (compact telemetry block) ----
+function pad(lbl, w){ return (lbl + ' '.repeat(w)).slice(0, w); }
+function intelHTML(o){
+  // o: {firstP, stations, physM, aiM, epi, lead}  (null lines are skipped)
+  const Z = LANG === 'zh';
+  const rows = [];
+  const L = Z ?
+    {firstP: '首個P波', stations: '觸發測站', physM: '物理規模',
+     aiM: 'AI 規模', epi: '震央信心', lead: '預警餘裕'} :
+    {firstP: 'First P', stations: 'Stations', physM: 'Physics M',
+     aiM: 'AI M', epi: 'Epi conf', lead: 'Lead time'};
+  for(const k of ['firstP', 'stations', 'physM', 'aiM', 'epi', 'lead'])
+    if(o[k]) rows.push(`<span class="dim">${pad(L[k], Z ? 6 : 10)}</span>` +
+                       o[k]);
+  return `<div class="ih">AI SIGNAL INTELLIGENCE</div>` + rows.join('\n');
+}
+function bestLead(names, ctys, Z){
+  // biggest remaining warning among the metro big-3 — honest: S minus now
+  let best = null;
+  for(const c of ctys || []){
+    if(!names.includes(c.name) || c.eta === undefined) continue;
+    if(c.eta > 0 && (!best || c.eta > best.eta)) best = c;
+  }
+  if(!best) return null;
+  const n = Z ? (C_ZH[best.name] || best.name) : best.name;
+  return `<b>${n}</b> ${Z ? '' : ''}${best.eta.toFixed(1)}s`;
+}
+const BIG3 = ['Taipei', 'Taichung', 'Kaohsiung'];
+function renderIntel(E, F){
+  const Z = LANG === 'zh';
+  const el2 = document.getElementById('intel-r');
+  const trig = E.stations.filter(s => s.tp <= t);
+  const o = {};
+  if(trig.length){
+    const f0 = trig.reduce((a, b) => a.tp <= b.tp ? a : b);
+    const orel = E.origin_rel;
+    const tt = orel !== null ? `origin+${(f0.tp - orel).toFixed(1)}s`
+                             : `t+${f0.tp.toFixed(1)}s`;
+    o.firstP = `<b>${f0.code}</b> ${tt}` +
+      (f0.pprob ? ` <span class="dim">p=${f0.pprob.toFixed(2)}</span>` : '');
+  } else o.firstP = `<span class="dim">${Z ? '等待中…' : 'waiting…'}</span>`;
+  o.stations = `<b>${trig.length}</b>/${E.stations.length} ` +
+    `<span class="dim">${Z ? '已觸發' : 'triggered'}</span>`;
+  if(F.mag !== undefined)
+    o.physM = `<b>M${F.mag.toFixed(1)}</b> ±${F.msig.toFixed(1)}`;
+  else o.physM = `<span class="dim">${Z ? '等待 S 波' : 'awaiting S'}</span>`;
+  if(F.bconf !== undefined)
+    o.epi = `<b>${F.bconf}%</b> <span class="dim">` +
+      (Z ? '(靴拔解 ≤20 km 佔比)' : '(bootstrap ≤20 km)') + `</span>`;
+  const ld = bestLead(BIG3, F.cty ? F.cty.map((c, i) =>
+    ({name: E.counties[i].name, eta: c.eta})) : null, Z);
+  if(ld) o.lead = ld + ` <span class="dim">${Z ? 'S 波抵達前' : 'to S'}</span>`;
+  el2.innerHTML = intelHTML(o);
 }
 
 function stop(){ playing = false; clearInterval(timer);
@@ -805,8 +908,17 @@ function initMap(){
             's', '#d95926', 'r4', '#d95926', 'r5', '#e5484d', '#ffffff'],
           'line-width': ['match', ['get', 'kind'], 's', 2, 1.2],
           'line-dasharray': [2, 2]}},
+        {id: 'engine-stn', type: 'circle', source: 'engine',
+         filter: ['all', ['==', ['geometry-type'], 'Point'],
+                  ['!=', ['get', 'kind'], 'epi']], paint: {
+          'circle-radius': ['match', ['get', 'kind'], 'stnf', 5, 3],
+          'circle-color': ['match', ['get', 'kind'],
+                           'stnf', '#c98500', '#8f8f5a'],
+          'circle-opacity': 0.9,
+          'circle-stroke-color': '#1a1a19', 'circle-stroke-width': 1}},
         {id: 'engine-epi', type: 'circle', source: 'engine',
-         filter: ['==', ['geometry-type'], 'Point'], paint: {
+         filter: ['all', ['==', ['geometry-type'], 'Point'],
+                  ['==', ['get', 'kind'], 'epi']], paint: {
           'circle-radius': 7, 'circle-color': '#3987e5',
           'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1.5}},
       ],
@@ -981,15 +1093,25 @@ function ringCoords(lon, lat, rkm){
   return pts;
 }
 async function pollEngine(){
-  let S = null;
+  let S = null, remote = false;
   try{
     const r = await fetch('state.json', {cache: 'no-store'});
     if(r.ok) S = await r.json();
   }catch(e){ /* offline */ }
+  if(!S){
+    // deployed page: read the snapshot the VM engine relays via Upstash
+    try{
+      const r = await fetch('/api/state', {cache: 'no-store'});
+      if(r.ok){ S = await r.json(); remote = true; }
+    }catch(e){ /* no relay */ }
+  }
   const eb = document.getElementById('ebody');
   const elog = document.getElementById('elog');
   const esrc = document.getElementById('esrc');
-  const fresh = S && (Date.now() / 1e3 - S.updated_wall) < 6;
+  // local file updates every second; the relay heartbeats every 30 s when
+  // idle (2 s during events), so allow a wider staleness window remotely
+  const fresh = S && S.updated_wall &&
+    (Date.now() / 1e3 - S.updated_wall) < (remote ? 75 : 6);
   const card = document.getElementById('ecard');
   if(!fresh){
     // deployed (non-localhost) with no engine reachable: hide the card
@@ -1002,6 +1124,7 @@ async function pollEngine(){
       '引擎離線 — 本機執行 run_live.py 後自動連上' :
       'engine offline — run run_live.py locally to connect';
     esrc.textContent = ''; elog.textContent = '';
+    document.getElementById('intel-l').style.display = 'none';
     if(mapReady) map.getSource('engine').setData(
       {type: 'FeatureCollection', features: []});
     return;
@@ -1047,6 +1170,47 @@ async function pollEngine(){
   elog.innerHTML = (S.log || []).slice(0, 3).map(x =>
     `<div>${new Date(x.t * 1e3).toISOString().slice(11, 19)} ${x.msg}</div>`
   ).join('');
+  // ---- AI Signal Intelligence overlay (only while an event is active) ----
+  const il = document.getElementById('intel-l');
+  if(E){
+    const stns = (S.stations || []).filter(
+      s => s.tp !== null && s.tp !== undefined);
+    const f0 = stns.length ?
+      stns.reduce((a, b) => a.tp <= b.tp ? a : b) : null;
+    const rows = [];
+    const lab = (l, v) => rows.push(
+      `<span class="dim">${(l + '          ').slice(0, Z ? 6 : 10)}</span>${v}`);
+    if(f0) lab(Z ? '首個P波' : 'First P',
+      `<b>${f0.code}</b>` + (f0.pprob ?
+        ` <span class="dim">p=${f0.pprob.toFixed(2)}</span>` : ''));
+    lab(Z ? '觸發測站' : 'Stations',
+      `<b>${stns.length}</b>/${S.n_stations} ` +
+      `<span class="dim">${Z ? '已觸發' : 'triggered'}</span>`);
+    lab(Z ? '物理規模' : 'Physics M',
+      E.mag !== undefined && E.mag !== null ?
+      `<b>M${E.mag.toFixed(1)}</b> ±${(E.msig || 0).toFixed(1)}` :
+      `<span class="dim">${Z ? '等待實測 PGA' : 'awaiting PGA'}</span>`);
+    if(E.ai_mag !== undefined && E.ai_mag !== null)
+      lab(Z ? 'AI 規模' : 'AI M',
+        `<b>M${E.ai_mag.toFixed(1)}</b> ±${E.ai_sig.toFixed(1)} ` +
+        `<span class="dim">(${E.n_ai})</span>`);
+    if(E.bconf !== undefined && E.bconf !== null)
+      lab(Z ? '震央信心' : 'Epi conf',
+        `<b>${E.bconf}%</b> <span class="dim">` +
+        (Z ? '(靴拔解 ≤20 km 佔比)' : '(bootstrap ≤20 km)') + `</span>`);
+    let best = null;
+    for(const c of E.cty || [])
+      if(['Taipei', 'Taichung', 'Kaohsiung'].includes(c.name) &&
+         c.eta > 0 && (!best || c.eta > best.eta)) best = c;
+    if(best) lab(Z ? '預警餘裕' : 'Lead time',
+      `<b>${Z ? ({Taipei:'台北',Taichung:'台中',Kaohsiung:'高雄'}[best.name]
+                 || best.name) : best.name}</b> ${best.eta.toFixed(1)}s ` +
+      `<span class="dim">${Z ? 'S 波抵達前' : 'to S'}</span>`);
+    il.innerHTML = `<div class="ih">AI SIGNAL INTELLIGENCE` +
+      (isReplay ? ` <span style="color:#f0a83c">· ${Z ? '演練' : 'DRILL'}` +
+       `</span>` : '') + `</div>` + rows.join('\n');
+    il.style.display = '';
+  } else il.style.display = 'none';
   if(mapReady){
     const feats = [];
     // replay overlay only when the user explicitly opts in
@@ -1064,6 +1228,14 @@ async function pollEngine(){
                      coordinates: ringCoords(E.lon, E.lat, r)}});
       }
     }
+    // triggered stations light up on the map during an event
+    if(showOverlay && E)
+      for(const st of S.stations || []){
+        if(st.tp === null || st.tp === undefined) continue;
+        feats.push({type: 'Feature',
+          properties: {kind: st.fresh ? 'stnf' : 'stn'},
+          geometry: {type: 'Point', coordinates: [st.lon, st.lat]}});
+      }
     map.getSource('engine').setData(
       {type: 'FeatureCollection', features: feats});
   }
@@ -1112,24 +1284,127 @@ window.__applyLangLive = function(){
 })();
 </script>
 <script>
+// ======================= AUDIT LOG VIEW =======================
+(function(){
+let aud = null, tried = false;
+
+const T = {
+  note: {zh: '影子稽核（shadow audit）：每當中央氣象署發布顯著有感地震報告' +
+    '並釋出強震波形，GitHub Actions 便自動下載該事件波形、離線重跑完整偵測鏈' +
+    '（觸發 → 定位 → 規模 → 警報判定），檢驗「若當時引擎在線」的表現，' +
+    '並與 CWA 目錄比對。全程自動、逐事件留存，無人工挑選。',
+   en: 'Shadow audit: whenever CWA publishes a significant-earthquake ' +
+    'report with strong-motion waveforms, GitHub Actions automatically ' +
+    'downloads them and re-runs the full detection chain offline ' +
+    '(trigger → locate → magnitude → alert decision) to measure how the ' +
+    'engine would have performed, compared against the CWA catalog. ' +
+    'Fully automated, every event kept — no cherry-picking.'},
+  cols: {zh: ['事件', '發震時刻 (UTC)', 'CWA M', 'EdgeQuake M', 'ΔM',
+              '定位誤差', '首次定位', '首報規模', '警報'],
+         en: ['Event', 'Origin (UTC)', 'CWA M', 'EdgeQuake M', 'ΔM',
+              'Loc err', 'First loc', 'First M', 'Alert']},
+  stats: {zh: ['稽核事件', '平均 |ΔM|', '平均定位誤差', '平均首次定位', '警報次數'],
+          en: ['Events audited', 'Mean |ΔM|', 'Mean loc err',
+               'Mean first loc', 'Alerts fired']},
+  empty: {zh: '尚無稽核紀錄 — 下一次 CWA 顯著有感地震報告釋出波形後自動出現。',
+          en: 'No audit records yet — the next CWA significant-earthquake ' +
+              'waveform release will appear here automatically.'},
+  fail: {zh: '無法載入 audit.json（部署版由 GitHub Actions 自動更新）。',
+         en: 'Could not load audit.json (updated automatically by GitHub ' +
+             'Actions on the deployment).'},
+  never: {zh: '未觸發', en: 'not fired'},
+  fired: {zh: '⚠ 觸發', en: '⚠ fired'},
+};
+
+async function load(){
+  if(tried) return;
+  tried = true;
+  for(const url of ['audit.json',
+      'https://raw.githubusercontent.com/WayneChou-bot/edgequake/main/' +
+      'docs/audit.json']){
+    try{
+      const r = await fetch(url, {cache: 'no-store'});
+      if(!r.ok) continue;
+      aud = await r.json();
+      break;
+    }catch(e){ /* try next */ }
+  }
+  renderAudit();
+}
+
+function renderAudit(){
+  const Z = LANG === 'zh';
+  document.getElementById('audnote').textContent = T.note[LANG];
+  const msg = document.getElementById('audmsg');
+  const head = document.getElementById('audhead');
+  const body = document.getElementById('audbody');
+  const stats = document.getElementById('audstats');
+  head.innerHTML = T.cols[LANG].map(c => `<th>${c}</th>`).join('');
+  if(!aud){
+    stats.innerHTML = ''; body.innerHTML = '';
+    msg.textContent = tried ? T.fail[LANG] : '';
+    return;
+  }
+  const s = aud.summary || {};
+  const sv = [s.n_events,
+              s.mean_abs_dmag !== null ? s.mean_abs_dmag : '–',
+              s.mean_err_km !== null ? s.mean_err_km + ' km' : '–',
+              s.mean_t_first_loc_s !== null ?
+                (Z ? `發震後 ${s.mean_t_first_loc_s} 秒`
+                   : `origin+${s.mean_t_first_loc_s}s`) : '–',
+              s.n_alert_fired];
+  stats.innerHTML = T.stats[LANG].map((l, i) =>
+    `<div class="astat"><div class="v">${sv[i]}</div>` +
+    `<div class="l">${l}</div></div>`).join('');
+  const evs = aud.events || [];
+  msg.textContent = evs.length ? '' : T.empty[LANG];
+  body.innerHTML = evs.map(e => {
+    const dm = (e.final_mag !== null && e.cwa && e.cwa.mag !== null) ?
+      (e.final_mag - e.cwa.mag) : null;
+    return `<tr>
+      <td><b>${(e.id || '').toUpperCase()}</b></td>
+      <td>${(e.origin_utc || '').replace('T', ' ').slice(0, 19)}</td>
+      <td>M${e.cwa && e.cwa.mag !== null ? e.cwa.mag.toFixed(1) : '–'}</td>
+      <td style="color:var(--blue)">M${e.final_mag !== null ?
+        e.final_mag.toFixed(2) : '–'}</td>
+      <td>${dm !== null ? (dm >= 0 ? '+' : '') + dm.toFixed(2) : '–'}</td>
+      <td>${e.final_err_km !== null ? e.final_err_km.toFixed(0) + ' km'
+                                    : '–'}</td>
+      <td>${e.t_first_loc_s !== null ? (Z ? `發震後 ${e.t_first_loc_s} 秒`
+        : `origin+${e.t_first_loc_s}s`) : '–'}</td>
+      <td>${e.t_first_mag_s !== null && e.first_mag !== null ?
+        `M${e.first_mag.toFixed(1)} @ ` + (Z ? `+${e.t_first_mag_s}s`
+        : `+${e.t_first_mag_s}s`) : '–'}</td>
+      <td style="color:${e.alert_fired ? 'var(--alert)' : 'var(--ok)'}">${
+        e.alert_fired ? T.fired[LANG] : T.never[LANG]}</td>
+    </tr>`;
+  }).join('');
+}
+
+window.__auditShow = function(){ load(); renderAudit(); };
+window.__applyLangAudit = renderAudit;
+})();
+</script>
+<script>
 // ======================= TOP-LEVEL VIEW SWITCH =======================
 document.querySelectorAll('.tnav[data-view]').forEach(b => b.onclick = () => {
   document.querySelectorAll('.tnav[data-view]')
     .forEach(x => x.classList.remove('active'));
   b.classList.add('active');
   const v = b.dataset.view;
-  document.getElementById('view-live').style.display =
-    v === 'live' ? '' : 'none';
-  document.getElementById('view-replay').style.display =
-    v === 'replay' ? '' : 'none';
+  for(const k of ['live', 'replay', 'audit'])
+    document.getElementById('view-' + k).style.display =
+      v === k ? '' : 'none';
   if(v === 'replay' && window.__replayShow) window.__replayShow();
   if(v === 'live' && window.__liveShow) window.__liveShow();
+  if(v === 'audit' && window.__auditShow) window.__auditShow();
 });
 document.getElementById('langbtn').onclick = () => {
   LANG = LANG === 'zh' ? 'en' : 'zh';
   applyLangGlobal();
   if(window.__applyLangReplay) window.__applyLangReplay();
   if(window.__applyLangLive) window.__applyLangLive();
+  if(window.__applyLangAudit) window.__applyLangAudit();
 };
 applyLangGlobal();
 </script>

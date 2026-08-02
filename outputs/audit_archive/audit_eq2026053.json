@@ -1,0 +1,20 @@
+{
+ "id": "eq2026053",
+ "origin_utc": "2026-07-30T16:58:36.000000Z",
+ "cwa": {
+  "mag": 4.7,
+  "lat": 23.1,
+  "lon": 121.36,
+  "depth_km": 20.2
+ },
+ "n_stations": 40,
+ "n_picks": 40,
+ "t_first_loc_s": 4.9,
+ "t_first_mag_s": 9.2,
+ "first_mag": 6.25,
+ "final_mag": 4.76,
+ "final_err_km": 17.4,
+ "alert_fired": false,
+ "report_sent": "2026-07-31T01:10:18+8:00",
+ "audited_at": "2026-08-02 05:57:41 UTC"
+}

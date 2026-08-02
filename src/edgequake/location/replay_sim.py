@@ -92,6 +92,13 @@ def simulate(ev, truth, vp=6.2, dt=0.25, max_stations=60, bootstrap=60):
                 "err": round(haversine_km(est.lat, est.lon,
                                           truth["lat"], truth["lon"]), 1),
             })
+            # honest epicenter-confidence %: fraction of bootstrap
+            # solutions within 20 km of the estimate
+            if getattr(est, "bootstrap_lats", None) is not None:
+                bd = np.array([haversine_km(bl, bo, est.lat, est.lon)
+                               for bl, bo in zip(est.bootstrap_lats,
+                                                 est.bootstrap_lons)])
+                frame["bconf"] = int(round(float((bd <= 20.0).mean()) * 100))
             if mag:
                 frame["mag"] = round(mag.mag, 2)
                 frame["msig"] = round(mag.sigma, 2)

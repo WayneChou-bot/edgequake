@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import http.server
+import os
 import shutil
 import sys
 import threading
@@ -152,12 +153,27 @@ def main() -> None:
     serve(webroot, args.port)
     print(f"[live] console: http://localhost:{args.port}")
 
+    # optional cloud state relay (public console shows live detection)
+    pusher = None
+    if os.environ.get("EQ_REDIS_URL") and os.environ.get("EQ_REDIS_TOKEN"):
+        from edgequake.live.relay import UpstashPusher
+
+        pusher = UpstashPusher(os.environ["EQ_REDIS_URL"],
+                               os.environ["EQ_REDIS_TOKEN"])
+        print("[live] state relay: Upstash enabled")
+
     t_wall0 = time.monotonic()
     n_ticks = 0
+    last_push = 0.0
     try:
         for tick in src.ticks():
             engine.on_tick(tick)
             engine.write_state(webroot / "state.json")
+            if pusher is not None:
+                itv = 2.0 if engine.event is not None else 30.0
+                if time.monotonic() - last_push >= itv:
+                    pusher.push(engine.state())
+                    last_push = time.monotonic()
             n_ticks += 1
             if n_ticks % 30 == 0:
                 s = engine.state()
