@@ -100,8 +100,9 @@
                    50%{box-shadow:0 0 0 9px rgba(229,72,77,0)}}
   .layout{display:flex; gap:18px; flex-wrap:wrap}
   .mapbox{background:var(--panel); border-radius:10px; padding:10px}
+  .mapbox svg{display:block; width:min(470px, 38vw); height:auto}
   svg text{font-family:'Segoe UI',sans-serif}
-  .side{flex:1; min-width:320px; max-width:460px; display:flex;
+  .side{flex:1; min-width:320px; display:flex;
         flex-direction:column; gap:12px}
   .card{background:var(--panel); border-radius:10px; padding:14px 16px}
   .tbig{font-family:Consolas,monospace; font-size:26px}
@@ -114,7 +115,8 @@
         vertical-align:1px; letter-spacing:.3px}
   .off{color:var(--flash); font-size:11.5px; margin-top:6px;
        font-family:Consolas,monospace}
-  .cgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:5px}
+  .cgrid{display:grid; gap:5px;
+         grid-template-columns:repeat(auto-fill, minmax(108px, 1fr))}
   .chip{font-size:10.5px; padding:4px 6px; border-radius:5px;
         background:var(--surface); border:1px solid var(--grid);
         color:var(--ink2); text-align:center}
@@ -144,7 +146,9 @@
   .intel .ih{font-size:9.5px; letter-spacing:1.5px; color:#5f88ad;
     font-weight:700; margin-bottom:2px}
   #intel-l{bottom:26px}            /* clear of tile attribution */
-  #intel-r{top:14px; bottom:auto}  /* NE ocean corner of the SVG map */
+  /* replay map is small — the intel block sits UNDER it, not on it */
+  #intel-r{position:static; margin-top:8px; width:100%;
+           border-color:var(--grid); background:var(--surface)}
   .intel b{color:#fff; font-weight:600}
   .intel .dim{color:#5f7183}
   /* ---------- audit view ---------- */
@@ -240,8 +244,8 @@
   </div>
   <div class="layout">
     <div class="mapbox"><svg id="map"></svg>
-      <div class="legend" id="legendtx"></div>
       <div class="intel" id="intel-r"></div>
+      <div class="legend" id="legendtx"></div>
     </div>
     <div class="side">
       <div class="card">
@@ -317,14 +321,18 @@ function fmtPop(n){
   return String(n);
 }
 function fmtExp(e){
-  // {i3,i4,i5} -> 'I3+ 1108萬 · I4+ 511萬 · I5+ 218萬'
+  // {i3,i4,i5} -> '震度3+ 1108萬人 · 4+ 511萬人 · 5+ 218萬人'
+  const u = LANG === 'zh' ? '人' : '';
+  const pre = LANG === 'zh' ? '震度' : 'I';
   return ['i3','i4','i5'].filter(k => e[k] !== undefined)
-    .map((k,idx) => `I${k[1]}+ <b>${fmtPop(e[k])}</b>`).join(' · ');
+    .map((k,i) => `${i === 0 ? pre : ''}${k[1]}+ ` +
+                  `<b>${fmtPop(e[k])}${u}</b>`).join(' · ');
 }
-function fmtSim(s){
+function fmtSim(s, short){
   // similar-event entry -> '2022-09-18 池上地震 M6.9（相距 12 km）'
-  const name = LANG === 'zh' ? (s.zh || s.place || s.t.slice(0,10))
-                             : (s.place || s.zh || s.t.slice(0,10));
+  let name = LANG === 'zh' ? (s.zh || s.place || s.t.slice(0,10))
+                           : (s.place || s.zh || s.t.slice(0,10));
+  if(short && name.length > 20) name = name.slice(0, 19) + '…';
   return `${s.t.slice(0,10)} <b>${name}</b> M${s.mag.toFixed(1)}` +
     (LANG === 'zh' ? `（相距 ${Math.round(s.d_km)} km）`
                    : ` (${Math.round(s.d_km)} km away)`);
@@ -742,7 +750,7 @@ function renderIntel(E, F){
     ({name: E.counties[i].name, eta: c.eta})) : null, Z);
   if(ld) o.lead = ld + ` <span class="dim">${Z ? 'S 波抵達前' : 'to S'}</span>`;
   if(E.similar && E.similar.length && F.mag !== undefined)
-    o.sim = fmtSim(E.similar[0]);
+    o.sim = fmtSim(E.similar[0], true);
   el2.innerHTML = intelHTML(o);
 }
 
@@ -1029,11 +1037,16 @@ function showPopup(p, lngLat){
       `${p.kind === 'local' ?
         (LANG === 'zh' ? ' · 小區域有感' : ' · local felt report') : ''}` +
       `${(() => { const ex = popExposure(+p.lat, +p.lon, +p.depth, +p.mag);
-        return ex && ex.i3 > 0 ? '<br>' + (LANG === 'zh' ?
-          `預估曝險 震度3+ ${fmtPop(ex.i3)}・4+ ${fmtPop(ex.i4)}` +
-          `<span style="opacity:.7">（點震源粗估）</span>` :
-          `est. exposure I3+ ${fmtPop(ex.i3)} · I4+ ${fmtPop(ex.i4)}` +
-          `<span style="opacity:.7"> (coarse, point source)</span>`) : '';
+        if(!ex || ex.i3 <= 0) return '';
+        return '<br>' + (LANG === 'zh' ?
+          `約 <b>${fmtPop(ex.i3)}人</b> 可能有感（震度3以上）` +
+          (ex.i4 > 0 ? `，其中 <b>${fmtPop(ex.i4)}人</b> 在震度4以上區域`
+                     : `，預估無震度4以上區域`) +
+          `<span style="opacity:.7">（粗估）</span>` :
+          `~<b>${fmtPop(ex.i3)}</b> people may feel it (intensity 3+)` +
+          (ex.i4 > 0 ? `, <b>${fmtPop(ex.i4)}</b> in intensity-4+ shaking`
+                     : `, none expected at intensity 4+`) +
+          `<span style="opacity:.7"> (rough est.)</span>`);
         })()}` +
       `</span>` +
       (p.url ? `<br><a href="${p.url}" target="_blank" ` +
@@ -1277,7 +1290,7 @@ async function pollEngine(){
         `<span class="dim">${Z ? 'M≥4.5·I≥3 達標' : 'M≥4.5·I≥3 met'}</span>`);
     if(E.exposure) lab(Z ? '曝險人口' : 'Exposure', fmtExp(E.exposure));
     if(E.similar && E.similar.length)
-      lab(Z ? '相似歷史' : 'Similar', fmtSim(E.similar[0]));
+      lab(Z ? '相似歷史' : 'Similar', fmtSim(E.similar[0], true));
     let best = null;
     for(const c of E.cty || [])
       if(['Taipei', 'Taichung', 'Kaohsiung'].includes(c.name) &&
