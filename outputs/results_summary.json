@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-02 17:20:03 UTC",
- "git_commit": "6351b568789a38bc3b85445a066c8f5831e9dc0f",
+ "generated_at": "2026-08-02 17:52:57 UTC",
+ "git_commit": "54cf0be1f0eb71ed13863a36385b4a06ba7b0fba",
  "working_tree_dirty": false,
  "environment": {
   "python": "3.11.15",
@@ -12,9 +12,9 @@
  },
  "git_commit_note": "two-phase protocol: code is committed FIRST; this summary is generated on that clean tree and lands in a second, derived-artifacts-only commit. --verify enforces that the recorded commit is HEAD or an ancestor whose diff to HEAD touches only derived paths, and that at generation time no NON-derived path was dirty (derived paths are necessarily dirty mid-protocol, so they are exempt from the dirty check — they are pinned by file_sha256 instead).",
  "source_file_sha256": {
-  "scripts/build_results_summary.py": "a0093c970319acf00183383d3ec4da5338117399e43d80086cad4ea2ff2e3244",
+  "scripts/build_results_summary.py": "64f561b0974d057af1adcfb3f5d50b80e05e899a05385b55c46e37e9fc1cae48",
   "scripts/demo_convergence.py": "f5798d742b4cf4d6dea9b1345c1546d7a6b58464309faa544263cc87cb7021ee",
-  "src/edgequake/location/replay_sim.py": "bfa117c5aad1d108a1259449c056a03aea714de7debb8d02faf0e2e9095b93fb",
+  "src/edgequake/location/replay_sim.py": "9a255ef71bcc658cbc24155b8b56aa44368de05788602779b2a381704c68478b",
   "src/edgequake/location/locator.py": "f5ec7edb6c6032128dec9517282ebcefb630f790b056056f5247b008507a9fb6",
   "src/edgequake/location/magnitude.py": "47bd59630b557ec496c6163c8fe1254cda7a829ece9f806c299b0c96eec642b6",
   "src/edgequake/location/site.py": "a8c37caec1f757975aee7a7bc3b66d95deddf52a45e4ad2525a067d4d9a1a014"
@@ -50,31 +50,36 @@
   "outputs/phasenet_cwa_ft.pt": "26da59c137c878890f631f7f76e8e37388f5e1247e1f7366e8ddbafc3b1e7669",
   "outputs/site_terms.json": "8574ae88124a44894af9d4e569bd4efab558d9508c309769575365933ac1f2aa",
   "outputs/reproduction_report.json": "1210f7bf9022e846d014535af7ed09818972a373e43b4af73b8bf27d7ee2ba78",
-  "outputs/audit_archive/audit_202607310058-EQ2026053-Waveform.txt": "0c70635cb6befecd0c07d31a14152735f5f3331352072cac09d6977fbecaffa4",
-  "outputs/audit_archive/audit_eq2026053.json": "b25540fa7905f0915c873842f5f7db47bbcc5fa78cd5e4967f456571a69ca88b",
-  "outputs/audit_archive/report_eq2026053.md": "687284055e1869ebf61d6c0b206e18ca1d1fefec2c337ef8fc55c7bfc8a9c932",
-  "docs/audit.json": "f7036f1cd3bc9896efebe878cfbc3189249e8f849cbfbe52696be8b47853e24c",
-  "vercel/audit.json": "f7036f1cd3bc9896efebe878cfbc3189249e8f849cbfbe52696be8b47853e24c",
+  "docs/audit.json": "1f57efa4df9d115e2b8ccf669e9b34785bb066ee8a7833a09e42b1e551ed9e47",
+  "vercel/audit.json": "1f57efa4df9d115e2b8ccf669e9b34785bb066ee8a7833a09e42b1e551ed9e47",
   "docs/index.html": "0b1cf986c25b1e078f3495dfdca995d6c615452326fe5daa609b237554876fa4",
   "vercel/index.html": "0b1cf986c25b1e078f3495dfdca995d6c615452326fe5daa609b237554876fa4",
   "outputs/replay_0403.json": "513dc26599b4a759095d8c656ac98c6eda89823767daa7f7f2e79aa195dd34f1",
   "outputs/replay_dapu.json": "15c6aa797b70bc5252caf2e839a37afb41d19393f70c7159e1a5ccf20787a907",
-  "outputs/replay_eq2026053.json": "e42208abadf6fa140ef4d7ace77e280d2f9ac54cf79af878cf728988126328cb"
+  "outputs/replay_eq2026053.json": "e42208abadf6fa140ef4d7ace77e280d2f9ac54cf79af878cf728988126328cb",
+  "outputs/audit_archive/audit_202607310058-EQ2026053-Waveform.txt": "0c70635cb6befecd0c07d31a14152735f5f3331352072cac09d6977fbecaffa4",
+  "outputs/audit_archive/audit_eq2026053.json": "74d7e5e9c929241f16cbf1cc07d6814dfa34d059f0b50bf272793ddd7df6d78f",
+  "outputs/audit_archive/done_202607310058-EQ2026053-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "outputs/audit_archive/report_eq2026053.md": "70a30b452df744ba18a6b8eb9f92d73e0c6d13d883580642798d5dddb1866dc9"
  },
- "audit_content_sha256": "096a2d63cafaf48f850c61fb2706a916eeddd405304c55f392fdf9cf16613c2b",
+ "audit_content_sha256": {
+  "eq2026053": "169db588aedd020c2069217f70eae6ba3234469a15551f4aa38a449bf53a7d82"
+ },
  "audit_content_note": "audit record hashed excluding ['report_md', 'report_model'] — since round 7 the FULL record file is also pinned in file_sha256, so this narrower hash is a diagnostic that distinguishes numeric drift from narrative-only change (any change now requires regenerating the summary; summary is the last derived artifact)",
  "audit_cross_check": {
   "status": "match",
-  "checked_fields": {
-   "t_first_loc_s": 4.9,
-   "first_mag": 5.88,
-   "final_mag": 4.81,
-   "final_err_km": 17.4,
-   "t_eew_s": 9.2,
-   "eew_fired": true,
-   "alert_fired": false
+  "events": {
+   "eq2026053": {
+    "t_first_loc_s": 4.9,
+    "first_mag": 5.88,
+    "final_mag": 4.81,
+    "final_err_km": 17.4,
+    "t_eew_s": 9.2,
+    "eew_fired": true,
+    "alert_fired": false
+   }
   },
-  "note": "each field re-derived from outputs/replay_eq2026053.json via simulate() at CANONICAL parameters during THIS generation and compared to the audit record; generation aborts on mismatch. Together with audit_content_sha256 this proves the record was consistent when frozen, not merely unchanged since."
+  "note": "for EVERY audit record in the archive, each field is re-derived from its replay artifact via simulate() at CANONICAL parameters during THIS generation and compared to the record; generation aborts on mismatch. Together with the content hashes this proves records were consistent when frozen, not merely unchanged since."
  },
  "site_correction": {
   "file": "outputs/site_terms.json",
