@@ -132,13 +132,17 @@ def main() -> None:
     ap.add_argument("--weights", default="none")
     ap.add_argument("--state-dict",
                     default=str(ROOT / "outputs" / "phasenet_cwa_ft.pt"))
-    ap.add_argument("--threshold", type=float, default=0.3)
+    ap.add_argument("--threshold", type=float, default=None,
+                    help="pick threshold (default: CANONICAL)")
     ap.add_argument("--sent", default=None,
                     help="report sent time for the audit comparison "
                          "(e.g. 2026-07-31T01:10:18+8:00)")
     ap.add_argument("--audit", action="store_true")
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
+    if args.threshold is None:
+        from edgequake.location.replay_sim import CANONICAL
+        args.threshold = CANONICAL["pick_threshold"]
 
     files: dict[str, bytes] = {}
     if args.fetch:

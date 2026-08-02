@@ -48,17 +48,26 @@ then an English version, separated by a line containing only '---'.
 Each version: 120-180 words, 2-3 short paragraphs, no headings, no lists.
 
 Cover: what the event was (magnitude, region from the coordinates, depth);
-how the engine did on the true timeline (first location, first magnitude
-and how it evolved to the final value vs the CWA catalog value, epicenter
-error); the EEW-criteria instant versus CWA's official 10-20 s issuance
-performance; whether the public-alert (PWS) gate fired and why that was
-the correct decision for this event size. If an "exposure" field exists,
-mention the estimated population in intensity-4+ (and 3+) shaking as an
-order-of-magnitude figure, citing pop_version, and note it assumes a point
-source and average site conditions. If a "similar" field exists, close
-with one sentence comparing to the most similar historical event (use its
-zh name if present; note USGS magnitudes are Mw-class, slightly different
-from CWA ML). Terminology: EEW 的中文為「強震即時警報」.
+how the engine did on the replayed timeline (first location, first
+magnitude and how it evolved to the final value vs the CWA catalog value,
+epicenter error); the instant the EEW issuance criteria were met — stated
+ONLY via the mandatory sentences given below, NEVER compared with official
+issuance times; whether the public-alert (PWS) gate fired, described ONLY
+by stating which numeric criterion was or was not met (e.g. 規模未達
+M≥5.0 門檻、無縣市預估震度達 4 級) — no evaluative wording. If an
+"exposure" field exists, phrase it strictly as an estimate: 「預估約 N 人
+可能感受到震度3以上搖晃」 / "an estimated ~N people may have felt
+intensity-3+ shaking"; NEVER 受災/波及/affected, never as a definite
+fact; cite pop_version and the point-source/average-site assumption. If a
+"similar" field exists, close with one sentence naming the most similar
+historical event (zh name if present; note USGS magnitudes are Mw-class,
+slightly different from CWA ML). Terminology: EEW 的中文為「強震即時警報」.
+
+FORBIDDEN words/claims (report is machine-rejected if any appear):
+優於、較快、更快、領先、時效、效率、受災、波及、完全正確、
+faster, outperform, compares favorably, better than, superior,
+high efficiency, correct decision, correctly, affected.
+Never rank EdgeQuake against CWA or any official system in any way.
 Time zone: origin_utc is UTC — ALWAYS present the event date/time in
 Taiwan local time (UTC+8; e.g. origin_utc 07-30T16:58 is 台灣時間 7月31日
 凌晨0時58分), matching how CWA reports it. Never show the UTC date as if
@@ -68,13 +77,55 @@ Hard rules: use ONLY numbers present in the record — never invent data.
 State times as 發震後 X 秒 / origin+Xs. This audit is a POST-HOC
 arrival-time replay: picker/compute latency is not modeled, so describe
 detection/EEW times as lower-bound estimates (理論下界), never as
-measured real-time performance. If alert_fired is false for a moderate
-event, frame the silence as correct restraint, not failure. End each
-language version with one sentence noting this is an automated
-research-prototype report, not official information. Do not exaggerate.
-
-Audit record JSON:
+measured real-time performance. End each language version with one
+sentence noting this is an automated research-prototype report, not
+official information. Do not exaggerate.
 """
+
+
+def mandatory_sentences(rec: dict) -> list[str]:
+    """Fixed sentences the report MUST contain verbatim (validated)."""
+    t = rec.get("t_eew_s")
+    if t is None:
+        return []
+    return [
+        f"{t} 秒為未納入系統延遲的理論下界，不可與官方發布時間直接比較。",
+        f"The {t} s figure is a theoretical lower bound that excludes "
+        "system latency and must not be compared directly with official "
+        "issuance times.",
+    ]
+
+
+FORBIDDEN = ["優於", "較快", "更快", "領先", "時效", "效率", "受災",
+             "波及", "完全正確", "faster", "outperform",
+             "compares favorably", "better than", "superior",
+             "high efficiency", "correct decision", "correctly",
+             "affected"]
+
+
+def validate(text: str, rec: dict) -> list[str]:
+    """Return a list of violations; empty = accept."""
+    problems = []
+    low = text.lower()
+    for w in FORBIDDEN:
+        if w.lower() in low:
+            problems.append(f"forbidden term present: {w!r}")
+    for s in mandatory_sentences(rec):
+        if s not in text:
+            problems.append(f"mandatory sentence missing: {s!r}")
+    return problems
+
+
+def build_prompt(rec: dict) -> str:
+    req = mandatory_sentences(rec)
+    extra = ""
+    if req:
+        extra = ("\nMANDATORY: include these sentences VERBATIM (the zh "
+                 "one in the Chinese version, the English one in the "
+                 "English version):\n"
+                 + "\n".join(f"  {s}" for s in req) + "\n")
+    return PROMPT + extra + "\nAudit record JSON:\n" + json.dumps(
+        rec, ensure_ascii=False, indent=1)
 
 
 def gemini(model: str, key: str, text: str) -> str:
@@ -162,45 +213,60 @@ def main() -> None:
 
     model = args.model
     for f, rec in todo:
-        payload = PROMPT + json.dumps(rec, ensure_ascii=False, indent=1)
-        try:
-            text = gemini(model, key, payload)
-        except urllib.error.HTTPError as e:
-            if e.code == 404:
-                fb = pick_fallback_model(key)
-                if fb and fb != model:
-                    print(f"[report] {model} not available -> {fb}")
-                    model = fb
-                    text = gemini(model, key, payload)
+        base_payload = build_prompt(rec)
+        text = None
+        feedback = ""
+        for attempt in range(3):   # generate + up to 2 validated retries
+            payload = base_payload + feedback
+            try:
+                cand = gemini(model, key, payload)
+            except urllib.error.HTTPError as e:
+                if e.code == 404:
+                    fb = pick_fallback_model(key)
+                    if fb and fb != model:
+                        print(f"[report] {model} not available -> {fb}")
+                        model = fb
+                        cand = gemini(model, key, payload)
+                    else:
+                        print(f"[report] no usable model ({e}) — aborting")
+                        return
+                elif e.code in (429, 503):
+                    print(f"[report] rate-limited ({e.code}), "
+                          "retrying in 30s")
+                    time.sleep(30)
+                    cand = gemini(model, key, payload)
                 else:
-                    print(f"[report] no usable model ({e}) — aborting")
+                    print(f"[report] API error {e.code}: "
+                          f"{e.read()[:300]}", file=sys.stderr)
                     return
-            elif e.code in (429, 503):
-                print(f"[report] rate-limited ({e.code}), retrying in 30s")
-                time.sleep(30)
-                text = gemini(model, key, payload)
-            else:
-                print(f"[report] API error {e.code}: "
-                      f"{e.read()[:300]}", file=sys.stderr)
-                return
-        if not looks_complete(text):
-            print(f"[report] {f.stem}: output looks truncated "
-                  f"({len(text)} chars) — retrying once")
+            problems = validate(cand, rec)
+            if not looks_complete(cand):
+                problems.append(f"output truncated / single-language "
+                                f"({len(cand)} chars)")
+            if not problems:
+                text = cand
+                break
+            print(f"[report] {f.stem}: attempt {attempt + 1} rejected — "
+                  + "; ".join(problems))
+            feedback = ("\n\nYour previous draft was REJECTED by the "
+                        "validator for these violations:\n"
+                        + "\n".join(f"- {p}" for p in problems)
+                        + "\nRegenerate the full bilingual report "
+                        "following EVERY rule above.")
             time.sleep(3)
-            text = gemini(model, key, payload + "\n\nIMPORTANT: output BOTH "
-                          "language versions in full, Traditional Chinese "
-                          "first, then '---', then English.")
-            if not looks_complete(text):
-                print(f"[report] {f.stem}: still short — keeping anyway, "
-                      "regenerate later with --force")
+        if text is None:
+            print(f"[report] {f.stem}: REJECTED after 3 attempts — no "
+                  "report saved (record keeps its numbers; rerun with "
+                  "--force after inspecting)")
+            continue
         rec["report_md"] = text
         rec["report_model"] = model
         f.write_text(json.dumps(rec, ensure_ascii=False, indent=1),
                      encoding="utf-8")
         md = arch / f"report_{rec.get('id', f.stem)}.md"
         md.write_text(text + "\n", encoding="utf-8")
-        print(f"[report] {f.stem}: {len(text)} chars ({model}) -> "
-              f"{md.name}")
+        print(f"[report] {f.stem}: {len(text)} chars ({model}), "
+              f"validator-clean -> {md.name}")
         time.sleep(2)   # stay far under free-tier RPM
 
 

@@ -88,10 +88,14 @@ def main() -> None:
     ap.add_argument("--weights", default="original",
                     help='"original" (needs internet once) or "none" (offline)')
     ap.add_argument("--state-dict", default=str(ROOT / "outputs" / "phasenet_cwa_ft.pt"))
-    ap.add_argument("--threshold", type=float, default=0.3)
+    ap.add_argument("--threshold", type=float, default=None,
+                    help="pick threshold (default: CANONICAL)")
     ap.add_argument("--truth", default=None, help="lat,lon,depth_km,mag override")
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
+    if args.threshold is None:
+        from edgequake.location.replay_sim import CANONICAL
+        args.threshold = CANONICAL["pick_threshold"]
 
     import obspy
     from obspy import UTCDateTime, read, read_inventory

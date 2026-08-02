@@ -65,7 +65,8 @@ def main() -> None:
     ap.add_argument("--weights", default="none")
     ap.add_argument("--state-dict",
                     default=str(ROOT / "outputs" / "phasenet_cwa_ft.pt"))
-    ap.add_argument("--threshold", type=float, default=0.3)
+    ap.add_argument("--threshold", type=float, default=None,
+                    help="pick threshold (default: CANONICAL)")
     ap.add_argument("--port", type=int, default=8600)
     ap.add_argument("--server", default="geofon.gfz.de:18000")
     ap.add_argument("--streams", default="",
@@ -82,6 +83,9 @@ def main() -> None:
                     help="send email/Telegram on PWS alert (config via env: "
                          "EQ_SMTP_USER/PASS/MAIL_TO, EQ_TG_TOKEN/CHAT)")
     args = ap.parse_args()
+    if args.threshold is None:
+        from edgequake.location.replay_sim import CANONICAL
+        args.threshold = CANONICAL["pick_threshold"]
 
     from edgequake.live.engine import LiveEngine
     from edgequake.live.sources import ReplaySource, SeedLinkSource, StationMeta

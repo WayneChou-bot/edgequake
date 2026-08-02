@@ -18,7 +18,11 @@ from .magnitude import DEFAULT_COEF, PgaMagnitude
 # invariant (verified for N in 20..200); N=60 keeps the Monte-Carlo std
 # of the bootstrap confidence fraction under ~6% (binomial, p~0.2).
 CANONICAL = {"max_stations": 60, "bootstrap": 60, "seed": 0,
-             "vp_km_s": 6.2, "dt_s": 0.25, "pick_threshold": 0.3}
+             "vp_km_s": 6.2, "dt_s": 0.25, "pick_threshold": 0.3,
+             # same crustal grid + hard ceiling as the live engine, so the
+             # offline replay and the live path share one depth policy
+             "depth_grid_km": [5, 10, 15, 20, 30, 40, 60, 80],
+             "max_depth_km": 80.0}
 
 # approximate county reference points (city halls / centroids)
 COUNTIES = [
@@ -58,9 +62,19 @@ def pws_alert(mag: float, intensity: float) -> bool:
     return (mag >= 5.0 and intensity >= 4) or (mag >= 6.5 and intensity >= 3)
 
 
-def simulate(ev, truth, vp=6.2, dt=0.25, max_stations=60, bootstrap=60,
+def simulate(ev, truth, vp=None, dt=None, max_stations=None, bootstrap=None,
              site_terms=None, exposure_model=None, similar_db=None):
-    """ev: DataFrame from load_replay_json/load_event; returns dict payload."""
+    """ev: DataFrame from load_replay_json/load_event; returns dict payload.
+
+    All run parameters default to CANONICAL — call sites may override for
+    experiments, but the dashboard/audit/summary paths pass nothing and
+    therefore cannot drift (external review round 3).
+    """
+    vp = CANONICAL["vp_km_s"] if vp is None else vp
+    dt = CANONICAL["dt_s"] if dt is None else dt
+    max_stations = (CANONICAL["max_stations"] if max_stations is None
+                    else max_stations)
+    bootstrap = CANONICAL["bootstrap"] if bootstrap is None else bootstrap
     n_max = min(max_stations, len(ev))
     t_ref = float(ev.t_p.values.min())
     t_p = ev.t_p.values[:n_max] - t_ref
@@ -78,7 +92,9 @@ def simulate(ev, truth, vp=6.2, dt=0.25, max_stations=60, bootstrap=60,
         pga_m = pga
     t_end = float(t_p[-1]) + 3.0
 
-    locator = PickLocator(vp_km_s=vp)
+    locator = PickLocator(vp_km_s=vp,
+                          depth_grid=CANONICAL["depth_grid_km"],
+                          max_depth_km=CANONICAL["max_depth_km"])
     magest = PgaMagnitude()
     vs = vp / 1.73
 
@@ -90,7 +106,8 @@ def simulate(ev, truth, vp=6.2, dt=0.25, max_stations=60, bootstrap=60,
         if k >= 3 and k != last_k:
             t_s_avail = np.where(t_s[:k] <= now, t_s[:k], np.nan)
             est = locator.locate(lats[:k], lons[:k], t_p[:k], t_s=t_s_avail,
-                                 bootstrap=bootstrap)
+                                 bootstrap=bootstrap,
+                                 seed=CANONICAL["seed"])
             last_k = k
         frame = {"t": round(float(now), 2), "k": k}
         if est is not None:

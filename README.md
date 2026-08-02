@@ -34,8 +34,9 @@ the result — timings are reported as lower bounds (see the audit notes).
   first location **origin+4.9 s**, EEW issuance criteria met at
   **origin+9.2 s** (CWA's official performance: 10–20 s), final magnitude
   **M4.81 vs CWA M4.7** with 17 km epicenter error — and the public-alert
-  gate **did not trigger — the correct outcome under the PWS criteria
-  for an event this size**. True negatives are part of the record.
+  gate **did not trigger** (event below the PWS thresholds: M≥5.0 with
+  a county at predicted intensity ≥4). True negatives are part of the
+  record.
 - **Out-of-sample replays** (post-hoc arrival-time, same caveat):
   2024-04-03 Hualien M7.2 first located at origin+3.8 s, final epicenter
   error ~21 km (110/112 stations picked); 2025 Dapu ML6.4 first located
@@ -74,7 +75,8 @@ picks (or triggers) pass **incremental association** (a new pick must
 match the current solution's predicted P within ±3.5 s — the defense
 against runaway-deep solutions absorbing mispicks), then a vectorized
 grid-search locator with bootstrap error ellipses and a hard 80 km
-crustal depth ceiling. Magnitude inverts a PGA-attenuation relation
+crustal depth ceiling — one canonical depth policy now shared by the
+live engine and the offline replay. Magnitude inverts a PGA-attenuation relation
 fitted on the 2019 training year only, with **per-station empirical
 residual corrections** (dominated by site effects, and absorbing a small
 aggregation-convention offset — both documented); a distance-conditioned
@@ -143,7 +145,7 @@ arrival-time; times are lower bounds):
 |---|---|---|
 | 2024-04-03 Hualien M7.2 (offshore) | origin+3.8 s, final err 20.9 km | climbs M5.4 (origin+6 s) → **M7.08** final — reproducing the early M7+ underestimation seen operationally, consistent with PGA saturation |
 | 2025-01-21 Dapu ML6.4 (inland) | origin+5.2 s, final err 8.6 km | site-corrected final **M6.38** (Δ0.02) |
-| 2026-07-31 Taitung M4.7 (audit; local date) | 17 km, origin+4.9 s (lower bound) | final M4.81 (Δ0.11); EEW at origin+9.2 s (lower bound); alert correctly silent |
+| 2026-07-31 Taitung M4.7 (audit; local date) | 17 km, origin+4.9 s (lower bound) | final M4.81 (Δ0.11); EEW at origin+9.2 s (lower bound); below PWS thresholds, no alert |
 
 Site-effect correction, final magnitude vs catalog:
 
@@ -154,14 +156,23 @@ Site-effect correction, final magnitude vs catalog:
 | Dapu M6.4 | Δ0.25 | **Δ0.02** |
 
 Every figure above is transcribed from
-[`outputs/results_summary.json`](outputs/results_summary.json) — a
-machine-readable run manifest (canonical parameters, checkpoint and input
-hashes, git commit); `scripts/build_results_summary.py --check-readme`
-fails if this section drifts from it. `outputs/v3_verify_x83.pt` was
-restored from a 2026-07-31 workspace snapshot and verified by bit-exact
-reproduction of both tracked replay artifacts; the replay *artifacts*
-are fully reproducible while the checkpoint's *training run* is only
-partially traceable — two different provenance levels, stated as such.
+[`outputs/results_summary.json`](outputs/results_summary.json) — a run
+manifest carrying the canonical parameters, file hashes, and the git
+commit it was computed from. `scripts/build_results_summary.py --verify`
+recomputes every recorded hash, requires a non-null commit, checks each
+quoted figure is present in this README and that known-stale figures are
+absent — any drift fails loudly. Checkpoint provenance:
+`outputs/v3_verify_x83.pt` is **byte-identical** to
+`outputs/phasenet_cwa_ft.pt` (same SHA-256), i.e. the replay artifacts
+were produced with the committed fine-tuned weights under an alternate
+filename; and
+[`outputs/reproduction_report.json`](outputs/reproduction_report.json)
+is a machine-generated reproduction record — raw-waveform hashes,
+checkpoint hash, field-by-field comparison, verdict `bit_exact` —
+regenerable with `scripts/verify_replay_reproduction.py` (needs the GDMS
+raw waveforms, which exceed repo size limits). The replay *artifacts*
+are fully reproducible; the checkpoint's *training run* is only
+partially traceable — two different provenance levels.
 
 Warning-time estimate (derived from the chain's component timings, not
 an end-to-end measured latency): for a Hualien-offshore
@@ -196,8 +207,7 @@ warning service.
 | First LLM report truncated at 298 chars | Gemini flash "thinks" by default and thinking tokens count against `maxOutputTokens` | thinkingBudget 0 + larger cap + completeness check with retry |
 | A 921-day M6.4 aftershock wore the "921 集集大地震" label | famous-event names matched by date only | names attach only when magnitude matches the mainshock ±0.4 |
 
-A longer engineering log (13 entries) exists — the best stories are told
-in person.
+A longer engineering log (13 entries) is kept offline.
 
 ## Quick start
 
@@ -210,7 +220,7 @@ python scripts/demo_replay.py
 # rebuild the console from the replay data
 python scripts/build_dashboard.py
 
-# rehearse the live engine on 0403 (simulated TREM feed, honest timeline)
+# rehearse the live engine on 0403 (simulated TREM feed, true pacing)
 python scripts/run_live.py --source trem-sim --event 0403 --speed 4
 
 # run it for real (community MEMS network, notifications via env config)
@@ -311,7 +321,7 @@ motion alerts in Taiwan requires an agreement with the CWA.
   重播，未計入拾取與運算延遲，**時間為理論下界**）：發震後 **4.9 秒**
   完成首次定位、**9.2 秒**達到強震即時警報發布條件（官方效能為
   10–20 秒）；最終規模 **M4.81** 對官方目錄 M4.7，震央誤差 17 公里。
-  未達國家級警報門檻，系統**未發布警報——依判定規則屬正確結果**；
+  未達國家級警報門檻（M≥5.0 且有縣市預估震度≥4），系統**未發布警報**；
   「沒發警報」也是紀錄的一部分。
 - **樣本外事後重播**（同為到時重播，時間為下界）：0403 花蓮 M7.2 於發震後
   3.8 秒首次定位、最終誤差約 21 公里（110/112 站成功辨識）；大埔 ML6.4 於

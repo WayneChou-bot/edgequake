@@ -1,6 +1,7 @@
 {
- "generated_at": "2026-08-02 13:32:48 UTC",
- "git_commit": null,
+ "generated_at": "2026-08-02 14:15:43 UTC",
+ "git_commit": "0c81ba6e5cddb94f883de2b57f91c8f420602b39",
+ "git_commit_note": "repo HEAD at generation time; the summary file itself lands in the following commit",
  "parameters": {
   "max_stations": 60,
   "bootstrap": 60,
@@ -8,38 +9,43 @@
   "vp_km_s": 6.2,
   "dt_s": 0.25,
   "pick_threshold": 0.3,
-  "velocity_model": "homogeneous half-space, vp=6.2 km/s, vs=vp/1.73",
   "depth_grid_km": [
-   5.0,
-   10.0,
-   20.0,
-   30.0,
-   50.0,
-   75.0,
-   100.0,
-   130.0,
-   170.0
+   5,
+   10,
+   15,
+   20,
+   30,
+   40,
+   60,
+   80
   ],
-  "note": "bootstrap-count invariance of point estimates verified for N in {20,30,60,100,200} (identical to 3 decimals)"
+  "max_depth_km": 80.0,
+  "velocity_model": "homogeneous half-space, vp from CANONICAL, vs=vp/1.73",
+  "note": "all three events computed by simulate() with every parameter defaulting to CANONICAL (no per-call-site overrides); point estimates verified bootstrap-count invariant for N in {20,30,60,100,200}"
  },
- "checkpoints": {
-  "outputs/v3_verify_x83.pt": {
-   "sha256": "26da59c137c878890f631f7f76e8e37388f5e1247e1f7366e8ddbafc3b1e7669",
-   "provenance": "restored from a 2026-07-31 workspace snapshot; verified by bit-exact reproduction of both tracked replay artifacts (0403: 110 P/81 S picks; dapu: 116 P/107 S picks — all arrival times, probabilities and PGA identical). The checkpoint's training run is only partially traceable; the replay ARTIFACTS are fully reproducible, the training is not — these are different provenance levels."
-  },
-  "outputs/phasenet_cwa_ft.pt": {
-   "sha256": "db3c250cd4a4876660c70e2c49b23ab01c07fd750e3ddb12ae674276318aa629"
-  }
+ "checkpoint_identity": {
+  "finding": "outputs/v3_verify_x83.pt and outputs/phasenet_cwa_ft.pt are byte-identical (same sha256) — the replay artifacts were produced with the committed fine-tuned weights under an alternate filename",
+  "reproduction": "outputs/reproduction_report.json — machine-generated record: raw-waveform hashes + checkpoint hash + field-by-field comparison, verdict bit_exact; regenerate with scripts/verify_replay_reproduction.py (requires the GDMS raw waveforms, which are too large for the repo)",
+  "training_provenance": "the checkpoint's training run is only partially traceable — a different, weaker provenance level than the replay artifacts, which are fully reproducible"
  },
+ "file_sha256": {
+  "outputs/v3_verify_x83.pt": "26da59c137c878890f631f7f76e8e37388f5e1247e1f7366e8ddbafc3b1e7669",
+  "outputs/phasenet_cwa_ft.pt": "26da59c137c878890f631f7f76e8e37388f5e1247e1f7366e8ddbafc3b1e7669",
+  "outputs/site_terms.json": "8574ae88124a44894af9d4e569bd4efab558d9508c309769575365933ac1f2aa",
+  "outputs/reproduction_report.json": "f81b1c972d11fbf809dd0c060d053ef6378316e4d352811bcf7fccda6569a6a8",
+  "outputs/replay_0403.json": "513dc26599b4a759095d8c656ac98c6eda89823767daa7f7f2e79aa195dd34f1",
+  "outputs/replay_dapu.json": "15c6aa797b70bc5252caf2e839a37afb41d19393f70c7159e1a5ccf20787a907",
+  "outputs/replay_eq2026053.json": "e42208abadf6fa140ef4d7ace77e280d2f9ac54cf79af878cf728988126328cb"
+ },
+ "audit_content_sha256": "447f972500f309ecbc3e3db03977e99d344a58c040ed9652d08e4240c39b6b19",
+ "audit_content_note": "audit record hashed excluding ['report_md', 'report_model'] so LLM-report regeneration does not invalidate this manifest",
  "site_correction": {
   "file": "outputs/site_terms.json",
-  "sha256": "8574ae88124a44894af9d4e569bd4efab558d9508c309769575365933ac1f2aa",
   "n_stations": 737
  },
  "events": {
   "0403": {
    "input": "outputs/replay_0403.json",
-   "input_sha256": "513dc26599b4a759095d8c656ac98c6eda89823767daa7f7f2e79aa195dd34f1",
    "picker_in_artifact": "seisbench-phasenet-ft-v3_verify_x83",
    "truth_mag": 7.2,
    "raw": {
@@ -63,7 +69,6 @@
   },
   "dapu": {
    "input": "outputs/replay_dapu.json",
-   "input_sha256": "15c6aa797b70bc5252caf2e839a37afb41d19393f70c7159e1a5ccf20787a907",
    "picker_in_artifact": "seisbench-phasenet-ft-v3_verify_x83",
    "truth_mag": 6.4,
    "raw": {
@@ -86,9 +91,18 @@
    }
   },
   "eq2026053": {
-   "input": "outputs/audit_archive/audit_eq2026053.json",
-   "input_sha256": "e2e9e78219fe6b1e4bcec3f9cbc00e96143ca5c392a2cb4fc1a2d120c70131f6",
+   "input": "outputs/replay_eq2026053.json",
+   "picker_in_artifact": "seisbench-phasenet-ft-phasenet_cwa_ft",
    "truth_mag": 4.7,
+   "raw": {
+    "final_mag": 4.76,
+    "final_err_km": 17.4,
+    "abs_dmag": 0.06,
+    "first_loc_s": 4.9,
+    "first_mag_s": 9.2,
+    "first_mag": 6.25,
+    "bconf": 100
+   },
    "site_corrected": {
     "final_mag": 4.81,
     "final_err_km": 17.4,
@@ -96,9 +110,14 @@
     "first_loc_s": 4.9,
     "first_mag_s": 9.2,
     "first_mag": 5.88,
-    "t_eew_s": 9.2
+    "bconf": 100
    },
-   "note": "post-hoc arrival-time replay; times are lower bounds"
+   "audit_record": {
+    "t_first_loc_s": 4.9,
+    "t_eew_s": 9.2,
+    "alert_fired": false,
+    "note": "post-hoc arrival-time replay; times are lower bounds"
+   }
   }
  },
  "mean_abs_dmag": {
@@ -109,9 +128,19 @@
   "M7.08",
   "M6.38",
   "M4.81",
-  "4.9",
-  "9.2",
+  "origin+4.9",
+  "origin+9.2",
+  "0.17 → 0.08",
   "0.702",
   "0.635"
+ ],
+ "forbidden_quotes": [
+  "M7.11",
+  "M6.34",
+  "0.680",
+  "1.3 km",
+  "0.17 → 0.09",
+  "M7.39",
+  "M6.65 (Δ"
  ]
 }

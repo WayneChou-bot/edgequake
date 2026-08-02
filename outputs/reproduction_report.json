@@ -1,0 +1,100 @@
+{
+ "generated_at": "2026-08-02 13:59:01 UTC",
+ "checkpoint": {
+  "path": "outputs/v3_verify_x83.pt",
+  "sha256": "26da59c137c878890f631f7f76e8e37388f5e1247e1f7366e8ddbafc3b1e7669"
+ },
+ "procedure": "scripts/ingest_gdms.py --event <e> --weights none --state-dict outputs/v3_verify_x83.pt (defaults, threshold from CANONICAL), compared field-by-field against tracked outputs/replay_<e>.json (tolerance 1e-3 s / 1e-3)",
+ "events": {
+  "0403": {
+   "stations_ref": 112,
+   "stations_new": 112,
+   "station_sets_equal": true,
+   "fields": {
+    "t_p": {
+     "n": 110,
+     "exact": 110,
+     "max_diff": 0.0,
+     "presence_mismatch": 0
+    },
+    "t_s": {
+     "n": 81,
+     "exact": 81,
+     "max_diff": 0.0,
+     "presence_mismatch": 0
+    },
+    "p_prob": {
+     "n": 110,
+     "exact": 110,
+     "max_diff": 0.0,
+     "presence_mismatch": 0
+    },
+    "s_prob": {
+     "n": 81,
+     "exact": 81,
+     "max_diff": 0.0,
+     "presence_mismatch": 0
+    },
+    "pga_cmps2": {
+     "n": 66,
+     "exact": 66,
+     "max_diff": 0.0,
+     "presence_mismatch": 0
+    }
+   },
+   "bit_exact": true,
+   "inputs_sha256": {
+    "raw_0403/hualien0403_HH.mseed": "45e6b5de151166ec911be6eea8012f42aa6756585f56fb8e68003ffa59f3d4b2",
+    "raw_0403/hualien0403_EH.mseed": "e5dc7be9bb4f1854e8878e02bc8bbb457089ceed9a0009795b1d01752355a690",
+    "raw_0403/hualien0403_HL.mseed": "23876453fdd780723cf400c6f7ea1336a9a78678c9b7e31722f4b8e1dcdc9ace"
+   },
+   "tracked_artifact": "outputs/replay_0403.json",
+   "tracked_artifact_sha256": "513dc26599b4a759095d8c656ac98c6eda89823767daa7f7f2e79aa195dd34f1"
+  },
+  "dapu": {
+   "stations_ref": 117,
+   "stations_new": 117,
+   "station_sets_equal": true,
+   "fields": {
+    "t_p": {
+     "n": 116,
+     "exact": 116,
+     "max_diff": 0.0,
+     "presence_mismatch": 0
+    },
+    "t_s": {
+     "n": 107,
+     "exact": 107,
+     "max_diff": 0.0,
+     "presence_mismatch": 0
+    },
+    "p_prob": {
+     "n": 116,
+     "exact": 116,
+     "max_diff": 0.0,
+     "presence_mismatch": 0
+    },
+    "s_prob": {
+     "n": 107,
+     "exact": 107,
+     "max_diff": 0.0,
+     "presence_mismatch": 0
+    },
+    "pga_cmps2": {
+     "n": 66,
+     "exact": 66,
+     "max_diff": 0.0,
+     "presence_mismatch": 0
+    }
+   },
+   "bit_exact": true,
+   "inputs_sha256": {
+    "raw_dapu/dapu0121_HH.mseed": "f8032a46b5e7bfa1adb4444e203a4706555559dd50de7e17681f35c16379541f",
+    "raw_dapu/dapu0121_HL.mseed": "03f932c6264c0a22d87c2f99499719153b0a6ab2860d75f9668c015a83c6dd22"
+   },
+   "tracked_artifact": "outputs/replay_dapu.json",
+   "tracked_artifact_sha256": "15c6aa797b70bc5252caf2e839a37afb41d19393f70c7159e1a5ccf20787a907"
+  }
+ },
+ "verdict": "bit_exact"
+}
