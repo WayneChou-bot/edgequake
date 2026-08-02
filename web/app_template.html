@@ -1138,7 +1138,7 @@ function render(){
       const e = evs[i];
       if(!mapReady) return;
       map.flyTo({center: [e.lon, e.lat],
-                 zoom: e.kind === 'usgs' ? 6 : 8});
+                 zoom: e.kind === 'usgs' ? 6 : 7});
       showPopup(e);
     });
   }
