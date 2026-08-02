@@ -79,15 +79,30 @@ def git_commit() -> str | None:
 
 
 def git_dirty() -> bool | None:
-    """True if the working tree differs from HEAD (round-4 review: a
-    summary generated on a dirty tree cannot claim HEAD as its source)."""
+    """True if the working tree differs from HEAD in any NON-derived path.
+
+    Round-4 review: a summary generated on a dirty tree cannot claim HEAD
+    as its source. But the two-phase protocol REGENERATES the derived
+    artifacts on the clean code tree, which necessarily makes the
+    DERIVED_PATHS dirty before the second commit — so those paths are
+    exempt. What this flag guarantees is exactly that the CODE that
+    produced the numbers is the recorded commit, nothing more."""
     try:
         out = subprocess.check_output(
             ["git", "status", "--porcelain"], cwd=ROOT,
             stderr=subprocess.DEVNULL).decode()
-        return bool(out.strip())
     except Exception:
         return None
+    for line in out.splitlines():
+        if not line.strip():
+            continue
+        path = line[3:]
+        if " -> " in path:          # rename: "old -> new"
+            path = path.split(" -> ", 1)[1]
+        path = path.strip().strip('"').replace("\\", "/")
+        if not any(path.startswith(d) for d in DERIVED_PATHS):
+            return True
+    return False
 
 
 # files whose content determines the numeric results — hashed into the
@@ -292,8 +307,10 @@ def main() -> None:
             "this summary is generated on that clean tree and lands in a "
             "second, derived-artifacts-only commit. --verify enforces "
             "that the recorded commit is HEAD or an ancestor whose diff "
-            "to HEAD touches only derived paths, and that the tree was "
-            "clean at generation time.",
+            "to HEAD touches only derived paths, and that at generation "
+            "time no NON-derived path was dirty (derived paths are "
+            "necessarily dirty mid-protocol, so they are exempt from the "
+            "dirty check — they are pinned by file_sha256 instead).",
         "source_file_sha256": {f: sha256(ROOT / f) for f in SOURCE_FILES},
         "parameters": dict(
             CANONICAL,
@@ -311,11 +328,12 @@ def main() -> None:
                 "the committed fine-tuned weights under an alternate "
                 "filename",
             "reproduction": "outputs/reproduction_report.json — machine-"
-                "generated record: raw-waveform hashes + checkpoint hash "
-                "+ field-by-field comparison, verdict bit_exact; "
-                "regenerate with scripts/verify_replay_reproduction.py "
-                "(requires the GDMS raw waveforms, which are too large "
-                "for the repo)",
+                "generated record: raw-waveform + dataless-inventory + "
+                "checkpoint hashes, environment versions, canonical "
+                "whole-JSON comparison, verdict "
+                "identical_canonical_json; regenerate with "
+                "scripts/verify_replay_reproduction.py (requires the "
+                "GDMS raw waveforms, which are too large for the repo)",
             "training_provenance": "the checkpoint's training run is only "
                 "partially traceable — a different, weaker provenance "
                 "level than the replay artifacts, which are fully "
