@@ -71,6 +71,12 @@ jobs:
         run: |
           python scripts/ingest_cwa_wave.py --fetch --audit 2>&1 | tee audit_log.txt
 
+      - name: LLM event report
+        if: steps.check.outputs.new == 'true'
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python scripts/llm_report.py
+
       - name: Build audit index
         if: steps.check.outputs.new == 'true'
         run: python scripts/build_audit_index.py

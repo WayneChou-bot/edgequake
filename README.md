@@ -152,6 +152,7 @@ outputs/            # evaluation figures/JSON + finetuned weights (1.1 MB)
 | Aggregated AI-magnitude σ reached 0.07 while the error was 2.2 | inverse-variance weighting assumes independent stations; event-level bias is shared | correlation floor: σ_agg² = 1/Σw + 0.3² |
 | Live tab looked like a real earthquake during replays | rehearsal state rendered next to real CWA data | replay runs are labeled 演練/rehearsal, never pulse red, and their map overlay is opt-in |
 | First live night on TREM: two phantom M6.6+ alert emails, no earthquake | 2.5 gal trigger threshold sits below the urban MEMS noise floor (2–4 gal); randomly-associated noise picks fit a deep/offshore solution, and "3 gal at 200 km" inverts to M6.6 | 8 gal threshold + 2-consecutive-poll persistence + 150 km declaration radius + alerts require ≥25 gal actually observed at some station |
+| First LLM event report came back truncated at 298 chars, English half missing | Gemini 3.x flash models "think" by default and thinking tokens count against `maxOutputTokens` — a 2048 cap was eaten by invisible reasoning | `thinkingBudget: 0` (narration needs no reasoning) + 8192 cap + completeness check that retries once on short/one-language output |
 
 The meta-lesson: **loss is a proxy; task-level evaluation is not optional.**
 The collapsed model had a beautiful training loss (0.115) and a

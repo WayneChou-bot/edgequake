@@ -163,6 +163,13 @@
     white-space:nowrap}
   table.aud td{padding:7px 9px; border-bottom:1px solid var(--grid);
     white-space:nowrap}
+  table.aud tr.hasrep{cursor:pointer}
+  table.aud tr.hasrep:hover td{background:#242423}
+  table.aud tr.repRow td{white-space:pre-wrap; background:var(--surface);
+    color:var(--ink2); font-family:'Segoe UI',system-ui,sans-serif;
+    font-size:12px; line-height:1.75; padding:12px 16px;
+    border-left:2px solid var(--blue)}
+  .replbl{color:var(--blue); font-size:10px; margin-left:6px}
 </style>
 </head>
 <body>
@@ -1338,7 +1345,19 @@ const T = {
              'Actions on the deployment).'},
   never: {zh: '未觸發', en: 'not fired'},
   fired: {zh: '⚠ 觸發', en: '⚠ fired'},
+  rep: {zh: '▸ AI 報告', en: '▸ AI report'},
+  repby: {zh: '自動事件報告（LLM 生成，僅敘述稽核數據）· 模型：',
+          en: 'Automated event report (LLM-written narration of the audit '
+              + 'numbers) · model: '},
 };
+let openId = null;
+
+function reportText(e, lang){
+  // report_md = zh-TW, then '---', then EN
+  const parts = (e.report_md || '').split(/\n-{3,}\n/);
+  if(parts.length < 2) return e.report_md || '';
+  return lang === 'zh' ? parts[0].trim() : parts[1].trim();
+}
 
 async function load(){
   if(tried) return;
@@ -1389,8 +1408,14 @@ function renderAudit(){
   body.innerHTML = evs.map(e => {
     const dm = (e.final_mag !== null && e.cwa && e.cwa.mag !== null) ?
       (e.final_mag - e.cwa.mag) : null;
-    return `<tr>
-      <td><b>${(e.id || '').toUpperCase()}</b></td>
+    const rep = e.report_md ?
+      `<span class="replbl">${T.rep[LANG]}</span>` : '';
+    const detail = (e.report_md && openId === e.id) ?
+      `<tr class="repRow"><td colspan="10"><span class="dim" style="color:` +
+      `var(--blue);font-size:10px">${T.repby[LANG]}${e.report_model || ''}` +
+      `</span>\n${reportText(e, LANG)}</td></tr>` : '';
+    return `<tr${e.report_md ? ` class="hasrep" data-eid="${e.id}"` : ''}>
+      <td><b>${(e.id || '').toUpperCase()}</b>${rep}</td>
       <td>${(e.origin_utc || '').replace('T', ' ').slice(0, 19)}</td>
       <td>M${e.cwa && e.cwa.mag !== null ? e.cwa.mag.toFixed(1) : '–'}</td>
       <td style="color:var(--blue)">M${e.final_mag !== null ?
@@ -1408,8 +1433,12 @@ function renderAudit(){
         : `+${e.t_first_mag_s}s`) : '–'}</td>
       <td style="color:${e.alert_fired ? 'var(--alert)' : 'var(--ok)'}">${
         e.alert_fired ? T.fired[LANG] : T.never[LANG]}</td>
-    </tr>`;
+    </tr>${detail}`;
   }).join('');
+  body.querySelectorAll('tr.hasrep').forEach(row => row.onclick = () => {
+    openId = openId === row.dataset.eid ? null : row.dataset.eid;
+    renderAudit();
+  });
 }
 
 window.__auditShow = function(){ load(); renderAudit(); };
