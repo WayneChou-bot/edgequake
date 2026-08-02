@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-02 18:58:46 UTC",
- "git_commit": "839697a4599b98f0402902b9e6c44716c0897411",
+ "generated_at": "2026-08-02 19:23:20 UTC",
+ "git_commit": "faacf0d74230267f2c4417609b435a4f7b1f6415",
  "working_tree_dirty": false,
  "environment": {
   "python": "3.11.15",
@@ -14,7 +14,7 @@
  "source_file_sha256": {
   "scripts/build_results_summary.py": "cff4cc3a90e4841b77fe12d7a34a7ff082a8895b484e31360df4ed7cbbb7d2fe",
   "scripts/demo_convergence.py": "f5798d742b4cf4d6dea9b1345c1546d7a6b58464309faa544263cc87cb7021ee",
-  "src/edgequake/location/replay_sim.py": "e94a3e8b66aed9958adaf4d121a163cea899ad25cde96742356c37b00d10b40b",
+  "src/edgequake/location/replay_sim.py": "d776c8ac50b1575e8927862c07a2749e38c9eab73f861a82f79c27b5594b8eee",
   "src/edgequake/location/locator.py": "f5ec7edb6c6032128dec9517282ebcefb630f790b056056f5247b008507a9fb6",
   "src/edgequake/location/magnitude.py": "47bd59630b557ec496c6163c8fe1254cda7a829ece9f806c299b0c96eec642b6",
   "src/edgequake/location/site.py": "a8c37caec1f757975aee7a7bc3b66d95deddf52a45e4ad2525a067d4d9a1a014"
@@ -50,17 +50,17 @@
   "outputs/phasenet_cwa_ft.pt": "26da59c137c878890f631f7f76e8e37388f5e1247e1f7366e8ddbafc3b1e7669",
   "outputs/site_terms.json": "8574ae88124a44894af9d4e569bd4efab558d9508c309769575365933ac1f2aa",
   "outputs/reproduction_report.json": "1210f7bf9022e846d014535af7ed09818972a373e43b4af73b8bf27d7ee2ba78",
-  "docs/audit.json": "f3ba4989be192da3a64e1e0bbac37718c8ef5e2080662f089087b3c6f2391343",
-  "vercel/audit.json": "f3ba4989be192da3a64e1e0bbac37718c8ef5e2080662f089087b3c6f2391343",
-  "docs/index.html": "e64179251773585953ec431936ccd3f1e6ffbbf161b25b156e6d6667b10205f4",
-  "vercel/index.html": "e64179251773585953ec431936ccd3f1e6ffbbf161b25b156e6d6667b10205f4",
+  "docs/audit.json": "ec899c2b5bd15ddcf133dfbca6c065b5b23f566af049c6e1770e19aec7b29337",
+  "vercel/audit.json": "ec899c2b5bd15ddcf133dfbca6c065b5b23f566af049c6e1770e19aec7b29337",
+  "docs/index.html": "392f3a0b1ba8759262b2106f5981effba7db6fcbb63f0def64fb8fde0a8761bf",
+  "vercel/index.html": "392f3a0b1ba8759262b2106f5981effba7db6fcbb63f0def64fb8fde0a8761bf",
   "outputs/replay_0403.json": "513dc26599b4a759095d8c656ac98c6eda89823767daa7f7f2e79aa195dd34f1",
   "outputs/replay_dapu.json": "15c6aa797b70bc5252caf2e839a37afb41d19393f70c7159e1a5ccf20787a907",
   "outputs/replay_eq2026053.json": "e42208abadf6fa140ef4d7ace77e280d2f9ac54cf79af878cf728988126328cb",
   "outputs/audit_archive/audit_202607310058-EQ2026053-Waveform.txt": "0c70635cb6befecd0c07d31a14152735f5f3331352072cac09d6977fbecaffa4",
-  "outputs/audit_archive/audit_eq2026053.json": "70577357ce985651fa0f8bc10d0b771bd57aa9094a36ceeb5b630537216ac14f",
+  "outputs/audit_archive/audit_eq2026053.json": "83a48e61a47bd86c3d86b7ab05296de680298bd32cecba84a10c8b8e495d14e8",
   "outputs/audit_archive/done_202607310058-EQ2026053-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "outputs/audit_archive/report_eq2026053.md": "cc580d1055199f85bfbd718cde5230b612ccdd8e34998dca038de07d54ba2132"
+  "outputs/audit_archive/report_eq2026053.md": "c7887dbf8a03261fd819596c355db947eb0dc4f0d7f8aefe70d9f35c32a8d713"
  },
  "audit_content_sha256": {
   "eq2026053": "169db588aedd020c2069217f70eae6ba3234469a15551f4aa38a449bf53a7d82"
