@@ -1400,10 +1400,10 @@ const T = {
     '(trigger → locate → magnitude → alert decision) to measure how the ' +
     'engine would have performed, compared against the CWA catalog. ' +
     'Fully automated, every event kept — no cherry-picking.'},
-  cols: {zh: ['事件', '發震時刻 (UTC)', 'CWA M', 'EdgeQuake M', 'ΔM',
+  cols: {zh: ['事件', '發震時刻（台灣時間）', 'CWA M', 'EdgeQuake M', 'ΔM',
               '定位誤差', '首次定位', 'EEW 判定', '首報規模', 'I≥4 曝險',
               'PWS 警報'],
-         en: ['Event', 'Origin (UTC)', 'CWA M', 'EdgeQuake M', 'ΔM',
+         en: ['Event', 'Origin (UTC+8)', 'CWA M', 'EdgeQuake M', 'ΔM',
               'Loc err', 'First loc', 'EEW', 'First M', 'I4+ exposure',
               'PWS alert']},
   stats: {zh: ['稽核事件', '平均 |ΔM|', '平均定位誤差', '平均首次定位',
@@ -1432,6 +1432,19 @@ const T = {
               + 'numbers) · model: '},
 };
 let openId = null;
+
+function localTime(utc){
+  // '2026-07-30T16:58:36...' (UTC) -> '2026-07-31 00:58:36' (Taiwan)
+  if(!utc) return '';
+  const d = new Date(utc.replace(' ', 'T')
+                        .replace(/(\.\d+)?Z?$/, '') + 'Z');
+  if(isNaN(d)) return utc.replace('T', ' ').slice(0, 19);
+  const l = new Date(d.getTime() + 8 * 3600e3);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${l.getUTCFullYear()}-${p(l.getUTCMonth()+1)}-` +
+    `${p(l.getUTCDate())} ${p(l.getUTCHours())}:${p(l.getUTCMinutes())}:` +
+    `${p(l.getUTCSeconds())}`;
+}
 
 function reportText(e, lang){
   // report_md = zh-TW, then '---', then EN
@@ -1503,7 +1516,7 @@ function renderAudit(){
       `</td></tr>` : '';
     return `<tr${e.report_md ? ` class="hasrep" data-eid="${e.id}"` : ''}>
       <td><b>${(e.id || '').toUpperCase()}</b>${rep}</td>
-      <td>${(e.origin_utc || '').replace('T', ' ').slice(0, 19)}</td>
+      <td>${localTime(e.origin_utc)}</td>
       <td>M${e.cwa && e.cwa.mag !== null ? e.cwa.mag.toFixed(1) : '–'}</td>
       <td style="color:var(--blue)">M${e.final_mag !== null ?
         e.final_mag.toFixed(2) : '–'}</td>

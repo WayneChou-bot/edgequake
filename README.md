@@ -27,7 +27,8 @@ re-run through the engine and compared against the official catalog.
 
 ## At a glance
 
-- **First real-event audit** (2026-07-30 Taitung M4.7, fully automated):
+- **First real-event audit** (2026-07-31 00:58 Taiwan time, Taitung M4.7,
+  fully automated):
   first location **origin+4.9 s**, EEW issuance criteria met at
   **origin+9.2 s** (CWA's official performance: 10–20 s), final magnitude
   **M4.81 vs CWA M4.7** with 17 km epicenter error — and the public-alert
@@ -109,7 +110,7 @@ Blind replays against the official record:
 |---|---|---|
 | 2024-04-03 Hualien M7.2 (offshore) | ~18 km @ origin+4 s | M6.0 vs CWA M6.2 at their 9-s first report — an independent chain reproducing the operational system's early M7+ underestimation (PGA saturation is physics) |
 | 2025-01-21 Dapu ML6.4 (inland) | 1.3 km @ origin+8 s | site-corrected final M6.34 (Δ0.06) |
-| 2026-07-30 Taitung M4.7 (audit) | 17 km, origin+4.9 s | final M4.81 (Δ0.11); EEW at origin+9.2 s; alert correctly silent |
+| 2026-07-31 Taitung M4.7 (audit; local date) | 17 km, origin+4.9 s | final M4.81 (Δ0.11); EEW at origin+9.2 s; alert correctly silent |
 
 Site-effect correction, final magnitude vs catalog:
 
@@ -252,7 +253,7 @@ motion alerts in Taiwan requires an agreement with the CWA.
 
 ## 一眼看懂的數字
 
-首筆全自動稽核（2026-07-30 台東 M4.7）：發震後 **4.9 秒**首次定位、
+首筆全自動稽核（2026-07-31 台灣時間 00:58 台東 M4.7）：發震後 **4.9 秒**首次定位、
 **9.2 秒**達強震即時警報發布條件（官方效能 10–20 秒）、最終規模 **M4.81
 對官方 M4.7**、震央誤差 17 公里，且國家級警報閘門**正確保持沉默**——
 「沒發警報」也是紀錄的一部分。盲測回放：0403 花蓮 M7.2 於發震後 4 秒定位

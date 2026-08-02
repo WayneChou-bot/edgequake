@@ -57,6 +57,10 @@ source and average site conditions. If a "similar" field exists, close
 with one sentence comparing to the most similar historical event (use its
 zh name if present; note USGS magnitudes are Mw-class, slightly different
 from CWA ML). Terminology: EEW 的中文為「強震即時警報」.
+Time zone: origin_utc is UTC — ALWAYS present the event date/time in
+Taiwan local time (UTC+8; e.g. origin_utc 07-30T16:58 is 台灣時間 7月31日
+凌晨0時58分), matching how CWA reports it. Never show the UTC date as if
+it were the local date.
 
 Hard rules: use ONLY numbers present in the record — never invent data.
 State times as 發震後 X 秒 / origin+Xs. If alert_fired is false for a
