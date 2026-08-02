@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-02 17:52:57 UTC",
- "git_commit": "54cf0be1f0eb71ed13863a36385b4a06ba7b0fba",
+ "generated_at": "2026-08-02 18:21:12 UTC",
+ "git_commit": "64dd0e7cb01b065f6b0efb00c7e8f6b4ac72536a",
  "working_tree_dirty": false,
  "environment": {
   "python": "3.11.15",
@@ -12,9 +12,9 @@
  },
  "git_commit_note": "two-phase protocol: code is committed FIRST; this summary is generated on that clean tree and lands in a second, derived-artifacts-only commit. --verify enforces that the recorded commit is HEAD or an ancestor whose diff to HEAD touches only derived paths, and that at generation time no NON-derived path was dirty (derived paths are necessarily dirty mid-protocol, so they are exempt from the dirty check — they are pinned by file_sha256 instead).",
  "source_file_sha256": {
-  "scripts/build_results_summary.py": "64f561b0974d057af1adcfb3f5d50b80e05e899a05385b55c46e37e9fc1cae48",
+  "scripts/build_results_summary.py": "98c404ba75771f9d1e7106ab5fa33b375f1b3019e67bbee6f5bebdaf2e9426dc",
   "scripts/demo_convergence.py": "f5798d742b4cf4d6dea9b1345c1546d7a6b58464309faa544263cc87cb7021ee",
-  "src/edgequake/location/replay_sim.py": "9a255ef71bcc658cbc24155b8b56aa44368de05788602779b2a381704c68478b",
+  "src/edgequake/location/replay_sim.py": "4d1668368b8ee93c50b934dfdbba2f59ee7b2df1b042772730ef6f632fb51776",
   "src/edgequake/location/locator.py": "f5ec7edb6c6032128dec9517282ebcefb630f790b056056f5247b008507a9fb6",
   "src/edgequake/location/magnitude.py": "47bd59630b557ec496c6163c8fe1254cda7a829ece9f806c299b0c96eec642b6",
   "src/edgequake/location/site.py": "a8c37caec1f757975aee7a7bc3b66d95deddf52a45e4ad2525a067d4d9a1a014"
@@ -52,8 +52,8 @@
   "outputs/reproduction_report.json": "1210f7bf9022e846d014535af7ed09818972a373e43b4af73b8bf27d7ee2ba78",
   "docs/audit.json": "1f57efa4df9d115e2b8ccf669e9b34785bb066ee8a7833a09e42b1e551ed9e47",
   "vercel/audit.json": "1f57efa4df9d115e2b8ccf669e9b34785bb066ee8a7833a09e42b1e551ed9e47",
-  "docs/index.html": "0b1cf986c25b1e078f3495dfdca995d6c615452326fe5daa609b237554876fa4",
-  "vercel/index.html": "0b1cf986c25b1e078f3495dfdca995d6c615452326fe5daa609b237554876fa4",
+  "docs/index.html": "faefa2de1b08438e5a4230271d16952c6763d74b9677368b7dbe2849118e3bf5",
+  "vercel/index.html": "faefa2de1b08438e5a4230271d16952c6763d74b9677368b7dbe2849118e3bf5",
   "outputs/replay_0403.json": "513dc26599b4a759095d8c656ac98c6eda89823767daa7f7f2e79aa195dd34f1",
   "outputs/replay_dapu.json": "15c6aa797b70bc5252caf2e839a37afb41d19393f70c7159e1a5ccf20787a907",
   "outputs/replay_eq2026053.json": "e42208abadf6fa140ef4d7ace77e280d2f9ac54cf79af878cf728988126328cb",
