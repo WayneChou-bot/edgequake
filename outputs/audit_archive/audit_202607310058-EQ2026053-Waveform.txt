@@ -1,0 +1,9 @@
+[cwawave] downloading 202607310058-EQ2026053-Waveform ...
+[cwawave] 40 stations | origin 2026-07-30T16:58:36.000000Z UTC | CWA M4.7 @ 23.1/121.36 depth 20.2 km
+[cwawave] P picks 40/40
+[cwawave] wrote /home/runner/work/edgequake/edgequake/outputs/replay_eq2026053.json
+[audit] ---- had EdgeQuake been running ----
+[audit] first location : origin+4.9s
+[audit] first magnitude: origin+9.2s  M6.2 (CWA M4.7) err 43 km
+[audit] PWS criteria   : never
+[audit] CWA report sent: 2026-07-31T01:10:18+8:00 (waveform zip ~12 min after origin)

@@ -8,7 +8,7 @@
   "mag": 4.7,
   "label": "CWA report solution (E-A0015-004 header)"
  },
- "picker": "seisbench-phasenet-ft-v3_verify_x83",
+ "picker": "seisbench-phasenet-ft-phasenet_cwa_ft",
  "threshold": 0.3,
  "report_sent": "2026-07-31T01:10:18+8:00",
  "stations": [
