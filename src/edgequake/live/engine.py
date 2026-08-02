@@ -83,9 +83,10 @@ class LiveEngine:
         # crustal depth grid + HARD 80 km ceiling: an unconstrained deep
         # solution absorbs systematically-late mispicks (S picked as P)
         # with tiny residuals. Taiwan EEW targets are crustal.
-        self.locator = PickLocator(depth_grid=[5, 10, 15, 20, 30, 40,
-                                               60, 80],
-                                   max_depth_km=80.0)
+        from ..location.replay_sim import CANONICAL
+        self.locator = PickLocator(
+            depth_grid=CANONICAL["depth_grid_km"],
+            max_depth_km=CANONICAL["max_depth_km"])
         self.magest = PgaMagnitude()
         # Phase 7 site terms: {code: dS}. PGA is divided by 10**dS BEFORE
         # magnitude inversion (unknown codes -> no correction). The alert

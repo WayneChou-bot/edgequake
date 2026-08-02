@@ -139,11 +139,8 @@ def main() -> None:
         from edgequake.location.site import load_site_terms
         from edgequake.impact import get_model
         from edgequake.similar import get_similar
-        from edgequake.location.replay_sim import CANONICAL
         site_terms = load_site_terms(ROOT / "outputs" / "site_terms.json")
-        payload = simulate(ev, truth,
-                           max_stations=CANONICAL["max_stations"],
-                           bootstrap=CANONICAL["bootstrap"],
+        payload = simulate(ev, truth,   # params: CANONICAL defaults
                            site_terms=site_terms,
                            exposure_model=get_model(),
                            similar_db=get_similar())

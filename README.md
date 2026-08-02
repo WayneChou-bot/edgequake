@@ -62,8 +62,8 @@ the result — timings are reported as lower bounds (see the audit notes).
 
 1. **Offline research pipeline**: official post-event / historical
    waveforms → fine-tuned PhaseNet P/S picking → location → magnitude.
-   This is where the AI picker lives, and where blind tests and audits
-   run.
+   This is where the AI picker lives, and where the out-of-sample
+   replays and audits run.
 2. **Live experimental PGA pipeline**: the community network delivers
    1 Hz PGA/PGV per station — not waveforms — so the live path uses
    PGA-jump triggers in place of phase picks and reuses the same
@@ -159,16 +159,21 @@ Every figure above is transcribed from
 [`outputs/results_summary.json`](outputs/results_summary.json) — a run
 manifest carrying the canonical parameters, file hashes, and the git
 commit it was computed from. `scripts/build_results_summary.py --verify`
-recomputes every recorded hash, requires a non-null commit, checks each
-quoted figure is present in this README and that known-stale figures are
-absent — any drift fails loudly. Checkpoint provenance:
+recomputes every recorded hash (results, sources, checkpoints), enforces
+the two-phase provenance protocol (the recorded commit must be HEAD or
+an ancestor whose diff to HEAD touches only derived artifacts, and the
+tree must have been clean at generation), semantically checks the
+reproduction report (verdict, checkpoint identity, artifact hashes), and
+checks each quoted figure is present in this README while known-stale
+figures are absent — any drift fails loudly. Checkpoint provenance:
 `outputs/v3_verify_x83.pt` is **byte-identical** to
 `outputs/phasenet_cwa_ft.pt` (same SHA-256), i.e. the replay artifacts
 were produced with the committed fine-tuned weights under an alternate
 filename; and
 [`outputs/reproduction_report.json`](outputs/reproduction_report.json)
 is a machine-generated reproduction record — raw-waveform hashes,
-checkpoint hash, field-by-field comparison, verdict `bit_exact` —
+checkpoint hash, environment versions, full canonical-JSON comparison,
+verdict `identical_canonical_json` —
 regenerable with `scripts/verify_replay_reproduction.py` (needs the GDMS
 raw waveforms, which exceed repo size limits). The replay *artifacts*
 are fully reproducible; the checkpoint's *training run* is only

@@ -141,7 +141,6 @@ def main() -> None:
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
     if args.threshold is None:
-        from edgequake.location.replay_sim import CANONICAL
         args.threshold = CANONICAL["pick_threshold"]
 
     files: dict[str, bytes] = {}
@@ -240,9 +239,7 @@ def main() -> None:
         from edgequake.similar import get_similar
         from edgequake.location.replay_sim import CANONICAL
         impact = get_model()
-        payload = simulate(ev_df, tr,
-                           max_stations=CANONICAL["max_stations"],
-                           bootstrap=CANONICAL["bootstrap"],
+        payload = simulate(ev_df, tr,   # params: CANONICAL defaults
                            site_terms=site_terms, exposure_model=impact,
                            similar_db=get_similar())
         t_first = min(x["tp"] for x in payload["stations"])

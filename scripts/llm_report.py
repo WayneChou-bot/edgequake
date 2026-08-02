@@ -113,6 +113,13 @@ def validate(text: str, rec: dict) -> list[str]:
     for s in mandatory_sentences(rec):
         if s not in text:
             problems.append(f"mandatory sentence missing: {s!r}")
+    # numeric grounding: the report must actually quote the record's core
+    # numbers (round-4 review: validator did not check number content)
+    core = [rec.get("t_first_loc_s"), rec.get("t_eew_s"),
+            rec.get("final_mag"), (rec.get("cwa") or {}).get("mag")]
+    for v in core:
+        if v is not None and str(v) not in text:
+            problems.append(f"core number missing from report: {v}")
     return problems
 
 

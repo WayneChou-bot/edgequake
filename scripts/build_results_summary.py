@@ -78,6 +78,37 @@ def git_commit() -> str | None:
         return None
 
 
+def git_dirty() -> bool | None:
+    """True if the working tree differs from HEAD (round-4 review: a
+    summary generated on a dirty tree cannot claim HEAD as its source)."""
+    try:
+        out = subprocess.check_output(
+            ["git", "status", "--porcelain"], cwd=ROOT,
+            stderr=subprocess.DEVNULL).decode()
+        return bool(out.strip())
+    except Exception:
+        return None
+
+
+# files whose content determines the numeric results — hashed into the
+# manifest so provenance holds even if the commit bookkeeping is imperfect
+SOURCE_FILES = [
+    "scripts/build_results_summary.py",
+    "src/edgequake/location/replay_sim.py",
+    "src/edgequake/location/locator.py",
+    "src/edgequake/location/magnitude.py",
+    "src/edgequake/location/site.py",
+]
+
+# the ONLY paths allowed to differ between the recorded commit and HEAD
+# (two-phase protocol: commit code first, generate on the clean tree,
+# commit derived artifacts second)
+DERIVED_PATHS = ("outputs/results_summary.json",
+                 "outputs/reproduction_report.json",
+                 "outputs/audit_archive/", "docs/audit.json",
+                 "vercel/audit.json", "outputs/replay_eq")
+
+
 def verify() -> None:
     out_path = ROOT / "outputs" / "results_summary.json"
     s = json.loads(out_path.read_text(encoding="utf-8"))
@@ -87,6 +118,41 @@ def verify() -> None:
     if not s.get("git_commit"):
         fails.append("git_commit is null — regenerate the summary inside "
                      "the git repo (python scripts/build_results_summary.py)")
+    if s.get("working_tree_dirty") is not False:
+        fails.append("summary was generated on a dirty (or unknown) "
+                     "working tree — commit code first, then regenerate "
+                     "on the clean tree (two-phase protocol)")
+    rec_commit = s.get("git_commit")
+    if rec_commit:
+        try:
+            head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=ROOT,
+                stderr=subprocess.DEVNULL).decode().strip()
+            if rec_commit != head:
+                anc = subprocess.run(
+                    ["git", "merge-base", "--is-ancestor", rec_commit,
+                     "HEAD"], cwd=ROOT).returncode == 0
+                if not anc:
+                    fails.append(f"recorded commit {rec_commit[:10]} is "
+                                 "not an ancestor of HEAD")
+                else:
+                    diff = subprocess.check_output(
+                        ["git", "diff", "--name-only",
+                         f"{rec_commit}..HEAD"], cwd=ROOT).decode().split()
+                    bad = [f for f in diff
+                           if not any(f.startswith(d)
+                                      for d in DERIVED_PATHS)]
+                    if bad:
+                        fails.append(
+                            "commits since the recorded commit touch "
+                            "NON-derived files (source drifted): "
+                            + ", ".join(bad[:8]))
+        except Exception as e:
+            fails.append(f"git provenance check unavailable: {e}")
+    for path, want in s.get("source_file_sha256", {}).items():
+        got = sha256(ROOT / path)
+        if got != want:
+            fails.append(f"source file drifted since generation: {path}")
     for path, want in s.get("file_sha256", {}).items():
         got = sha256(ROOT / path)
         if got != want:
@@ -96,6 +162,31 @@ def verify() -> None:
     got = audit_content_sha256(ROOT / AUDIT)
     if want != got:
         fails.append(f"audit numeric content drifted: {AUDIT}")
+
+    # semantic checks on the reproduction report (round 4: verifying the
+    # file's hash proves it did not change, not that its content holds)
+    rp = ROOT / "outputs" / "reproduction_report.json"
+    if not rp.exists():
+        fails.append("outputs/reproduction_report.json missing")
+    else:
+        rep = json.loads(rp.read_text(encoding="utf-8"))
+        if rep.get("verdict") != "identical_canonical_json":
+            fails.append("reproduction report verdict is "
+                         f"{rep.get('verdict')!r}, not "
+                         "'identical_canonical_json'")
+        v3 = sha256(ROOT / "outputs" / "v3_verify_x83.pt")
+        ft = sha256(ROOT / "outputs" / "phasenet_cwa_ft.pt")
+        if rep.get("checkpoint", {}).get("sha256") != v3:
+            fails.append("reproduction report checkpoint hash != current "
+                         "outputs/v3_verify_x83.pt")
+        if v3 != ft:
+            fails.append("checkpoint identity broken: v3_verify_x83.pt "
+                         "!= phasenet_cwa_ft.pt")
+        for e, ev in rep.get("events", {}).items():
+            cur = sha256(ROOT / ev["tracked_artifact"])
+            if ev.get("tracked_artifact_sha256") != cur:
+                fails.append(f"replay artifact changed since "
+                             f"reproduction: {ev['tracked_artifact']}")
     for q in s.get("readme_quotes", []):
         if q not in readme:
             fails.append(f"README missing quoted figure: {q!r}")
@@ -182,17 +273,28 @@ def main() -> None:
     }
 
     commit = git_commit()
+    dirty = git_dirty()
     if commit is None:
         print("[summary] WARNING: not a git checkout — git_commit is null "
               "and --verify WILL FAIL until regenerated inside the repo")
+    elif dirty:
+        print("[summary] WARNING: working tree is DIRTY — --verify will "
+              "fail; commit code first, then regenerate (two-phase "
+              "protocol)")
 
     e0, ed, et = events["0403"], events["dapu"], events["eq2026053"]
     summary = {
         "generated_at": time.strftime("%Y-%m-%d %H:%M:%S UTC",
                                       time.gmtime()),
         "git_commit": commit,
-        "git_commit_note": "repo HEAD at generation time; the summary "
-            "file itself lands in the following commit",
+        "working_tree_dirty": dirty,
+        "git_commit_note": "two-phase protocol: code is committed FIRST; "
+            "this summary is generated on that clean tree and lands in a "
+            "second, derived-artifacts-only commit. --verify enforces "
+            "that the recorded commit is HEAD or an ancestor whose diff "
+            "to HEAD touches only derived paths, and that the tree was "
+            "clean at generation time.",
+        "source_file_sha256": {f: sha256(ROOT / f) for f in SOURCE_FILES},
         "parameters": dict(
             CANONICAL,
             velocity_model="homogeneous half-space, vp from CANONICAL, "

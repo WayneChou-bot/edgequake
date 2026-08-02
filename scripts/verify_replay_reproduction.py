@@ -6,10 +6,17 @@ This script IS the procedure, and its output IS the record:
 
   1. hash the raw input waveforms and the checkpoint,
   2. re-run the exact ingestion (scripts/ingest_gdms.py) into a temp file,
-  3. compare every station's t_p / t_s / p_prob / s_prob / pga against the
-     tracked outputs/replay_<event>.json, field by field,
-  4. write outputs/reproduction_report.json (command, hashes, per-field
-     match counts, verdict) and exit non-zero on ANY mismatch.
+  3. compare the ENTIRE regenerated JSON against the tracked
+     outputs/replay_<event>.json via canonical serialization (sort_keys),
+     plus per-field statistics for diagnostics,
+  4. write outputs/reproduction_report.json (command, input/output hashes,
+     environment versions, per-field stats, verdict) and exit non-zero
+     unless the canonical JSONs are identical.
+
+Verdict vocabulary (round-4 review: say exactly what is guaranteed):
+  identical_canonical_json  — full JSON equal after canonical serialization
+  selected_fields_match_within_1e-3 — only the field-level comparison holds
+  MISMATCH                  — anything else
 
 The raw GDMS waveforms are too large for the repo (see .gitignore), so a
 third party needs to fetch them (GDMS, doi:10.7914/SN/T5) to re-run this;
@@ -50,13 +57,19 @@ def sha256(p: Path) -> str:
     return h.hexdigest()
 
 
+def canonical_sha256(obj) -> str:
+    return hashlib.sha256(
+        json.dumps(obj, ensure_ascii=False, sort_keys=True).encode()
+    ).hexdigest()
+
+
 def compare(ref_path: Path, new_path: Path) -> dict:
     from obspy import UTCDateTime
 
-    ref = {s["code"]: s for s in
-           json.loads(ref_path.read_text(encoding="utf-8"))["stations"]}
-    new = {s["code"]: s for s in
-           json.loads(new_path.read_text(encoding="utf-8"))["stations"]}
+    ref_doc = json.loads(ref_path.read_text(encoding="utf-8"))
+    new_doc = json.loads(new_path.read_text(encoding="utf-8"))
+    ref = {s["code"]: s for s in ref_doc["stations"]}
+    new = {s["code"]: s for s in new_doc["stations"]}
     out = {"stations_ref": len(ref), "stations_new": len(new),
            "station_sets_equal": set(ref) == set(new), "fields": {}}
     ok = out["station_sets_equal"]
@@ -78,7 +91,15 @@ def compare(ref_path: Path, new_path: Path) -> dict:
         out["fields"][f] = {"n": n, "exact": exact, "max_diff": round(mx, 6),
                             "presence_mismatch": presence_mismatch}
         ok = ok and exact == n and presence_mismatch == 0
-    out["bit_exact"] = ok
+    out["canonical_sha256_ref"] = canonical_sha256(ref_doc)
+    out["canonical_sha256_new"] = canonical_sha256(new_doc)
+    out["new_artifact_sha256"] = sha256(new_path)
+    if out["canonical_sha256_ref"] == out["canonical_sha256_new"]:
+        out["verdict"] = "identical_canonical_json"
+    elif ok:
+        out["verdict"] = "selected_fields_match_within_1e-3"
+    else:
+        out["verdict"] = "MISMATCH"
     return out
 
 
@@ -90,11 +111,28 @@ def main() -> None:
     args = ap.parse_args()
     base = Path(args.base_dir)
 
+    import platform
+
+    import numpy
+    import obspy as _obspy
+    import seisbench as _sb
+    import torch as _torch
+
+    dataless = base / "raw_resp" / "Dataless_CWASN.dataless"
     report = {
         "generated_at": time.strftime("%Y-%m-%d %H:%M:%S UTC",
                                       time.gmtime()),
+        "environment": {
+            "python": platform.python_version(),
+            "numpy": numpy.__version__, "obspy": _obspy.__version__,
+            "torch": _torch.__version__, "seisbench": _sb.__version__,
+        },
         "checkpoint": {"path": "outputs/v3_verify_x83.pt",
                        "sha256": sha256(CKPT)},
+        "dataless_inventory": {
+            "path": "raw_resp/Dataless_CWASN.dataless",
+            "sha256": sha256(dataless) if dataless.exists() else None,
+        },
         "procedure": "scripts/ingest_gdms.py --event <e> --weights none "
                      "--state-dict outputs/v3_verify_x83.pt (defaults, "
                      "threshold from CANONICAL), compared field-by-field "
@@ -128,12 +166,12 @@ def main() -> None:
             cmp["tracked_artifact"] = f"outputs/replay_{e}.json"
             cmp["tracked_artifact_sha256"] = sha256(ref)
             report["events"][e] = cmp
-            all_ok = all_ok and cmp["bit_exact"]
-            print(f"[repro] {e}: " + ("BIT-EXACT" if cmp["bit_exact"]
-                                      else "MISMATCH") +
-                  " " + json.dumps(cmp["fields"]))
+            all_ok = all_ok and cmp["verdict"] == "identical_canonical_json"
+            print(f"[repro] {e}: {cmp['verdict']} "
+                  + json.dumps(cmp["fields"]))
 
-    report["verdict"] = "bit_exact" if all_ok else "MISMATCH"
+    report["verdict"] = ("identical_canonical_json" if all_ok
+                         else "MISMATCH")
     outp = ROOT / "outputs" / "reproduction_report.json"
     outp.write_text(json.dumps(report, indent=1), encoding="utf-8")
     print(f"[repro] wrote {outp} — verdict: {report['verdict']}")
