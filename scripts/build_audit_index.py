@@ -36,11 +36,14 @@ def main() -> None:
           if r.get("final_err_km") is not None]
     tl = [r["t_first_loc_s"] for r in records
           if r.get("t_first_loc_s") is not None]
+    te = [r["t_eew_s"] for r in records if r.get("t_eew_s") is not None]
     summary = {
         "n_events": len(records),
         "mean_abs_dmag": round(sum(dm) / len(dm), 2) if dm else None,
         "mean_err_km": round(sum(ek) / len(ek), 1) if ek else None,
         "mean_t_first_loc_s": round(sum(tl) / len(tl), 1) if tl else None,
+        "mean_t_eew_s": round(sum(te) / len(te), 1) if te else None,
+        "n_eew_fired": sum(1 for r in records if r.get("eew_fired")),
         "n_alert_fired": sum(1 for r in records if r.get("alert_fired")),
         "n_report_sent": sum(1 for r in records if r.get("report_sent")),
     }

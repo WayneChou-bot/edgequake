@@ -231,12 +231,14 @@ def main() -> None:
         payload = simulate(ev_df, tr, max_stations=40, bootstrap=40)
         t_first = min(x["tp"] for x in payload["stations"])
         o_rel = payload["origin_rel"] or 0.0
-        first_loc = first_mag = first_alert = None
+        first_loc = first_mag = first_alert = first_eew = None
         for f in payload["frames"]:
             if first_loc is None and "lat" in f:
                 first_loc = f
             if first_mag is None and f.get("mag") is not None:
                 first_mag = f
+            if first_eew is None and f.get("eew"):
+                first_eew = f
             if first_alert is None and any(
                     c.get("alert") for c in f.get("cty", [])):
                 first_alert = f
@@ -257,6 +259,8 @@ def main() -> None:
         if last_mag:
             print(f"[audit] final estimate : M{last_mag['mag']:.2f} "
                   f"err {err_final:.0f} km @ {last_mag['k']} stations")
+        print(f"[audit] EEW criteria   : {rel(first_eew)}"
+              "  (CWA rule: M>=4.5 & I>=3, ~origin+10-20s official)")
         print(f"[audit] PWS criteria   : {rel(first_alert)}")
         if args.sent:
             print(f"[audit] CWA report sent: {args.sent} "
@@ -282,6 +286,9 @@ def main() -> None:
             "final_mag": (round(last_mag["mag"], 2) if last_mag else None),
             "final_err_km": (round(err_final, 1) if err_final is not None
                              else None),
+            "t_eew_s": (round(first_eew["t"] - o_rel, 1)
+                        if first_eew else None),
+            "eew_fired": first_eew is not None,
             "alert_fired": first_alert is not None,
             "report_sent": args.sent,
             "audited_at": _time.strftime("%Y-%m-%d %H:%M:%S UTC",

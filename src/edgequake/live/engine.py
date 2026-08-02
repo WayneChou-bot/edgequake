@@ -386,7 +386,7 @@ class LiveEngine:
                 and obs_pga >= self.alert_min_pga)
 
         vs = self.locator.vp / 1.73
-        cty, any_alert = [], False
+        cty, any_alert, max_i = [], False, 0.0
         for name, cla, clo in COUNTIES:
             d_ep = haversine_km(est.lat, est.lon, cla, clo)
             r_hyp = float(np.hypot(d_ep, est.depth_km))
@@ -402,7 +402,20 @@ class LiveEngine:
                 al = pws_alert(mag.mag, i) and q_ok
                 entry.update(i=i, alert=al)
                 any_alert = any_alert or al
+                max_i = max(max_i, i)
             cty.append(entry)
+        # ---- EEW tier: CWA 強震即時警報 issuance criteria (M>=4.5 and
+        # predicted intensity >=3 somewhere) — log/display only, NO
+        # notification. Lighter shaking gate than PWS (a real M4.5 puts
+        # ~10 gal on near stations; MEMS noise never sustains that).
+        eew_now = (mag is not None and mag.mag >= 4.5 and max_i >= 3
+                   and len(members) >= 6
+                   and (est.ellipse_major_km or 999) <= 80
+                   and obs_pga >= 10.0)
+        if eew_now and "t_eew" not in ev:
+            ev["t_eew"] = round(self.now, 2)
+            self._log("EEW criteria met (M>=4.5, I>=3 — CWA issuance rule)")
+        ev["eew"] = eew_now or ("t_eew" in ev)   # latches once met
         if any_alert and not ev.get("alerted"):
             ev["alerted"] = True
             self._log("PWS ALERT criteria met")
@@ -456,9 +469,11 @@ class LiveEngine:
                      if k in ("lat", "lon", "depth", "mag", "msig", "k",
                               "emaj", "emin", "eaz", "r4", "r5", "alert",
                               "cty", "n_mag", "ai_mag", "ai_sig", "n_ai",
-                              "bconf")}
+                              "bconf", "eew")}
             event["age"] = round(self.now - ev["t_first"], 1)
             event["t0_age"] = round(self.now - ev["t0"], 1)
+            if "t_eew" in ev:   # EEW issuance instant, origin-relative
+                event["t_eew_rel"] = round(ev["t_eew"] - ev["t0"], 1)
 
         # waveform strips: earliest picked stations (else quiet placeholder)
         picked = sorted([s for s in self.stations.values() if s.tp],

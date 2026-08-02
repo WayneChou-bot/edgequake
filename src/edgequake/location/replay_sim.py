@@ -127,6 +127,16 @@ def simulate(ev, truth, vp=6.2, dt=0.25, max_stations=60, bootstrap=60):
                     entry.update({"i": i, "alert": pws_alert(mag.mag, i)})
                 cty.append(entry)
             frame["cty"] = cty
+            # EEW tier (CWA 強震即時警報 issuance rule): M>=4.5 and
+            # predicted intensity >=3 somewhere — same quality gate as
+            # the live engine (k>=6, ellipse<=80 km, >=10 gal observed)
+            if mag:
+                max_i = max((c.get("i", 0) for c in cty), default=0)
+                obs = float(np.nanmax(pga[:k][m_ok]))  # S-passed stations
+                frame["eew"] = bool(
+                    mag.mag >= 4.5 and max_i >= 3 and k >= 6
+                    and (est.ellipse_major_km or 999) <= 80
+                    and obs >= 10.0)
         frames.append(frame)
 
     return {

@@ -4,6 +4,8 @@
   "mean_abs_dmag": 0.06,
   "mean_err_km": 17.4,
   "mean_t_first_loc_s": 4.9,
+  "mean_t_eew_s": 9.2,
+  "n_eew_fired": 1,
   "n_alert_fired": 0,
   "n_report_sent": 1
  },
@@ -24,9 +26,11 @@
    "first_mag": 6.25,
    "final_mag": 4.76,
    "final_err_km": 17.4,
+   "t_eew_s": 9.2,
+   "eew_fired": true,
    "alert_fired": false,
    "report_sent": "2026-07-31T01:10:18+8:00",
-   "audited_at": "2026-08-02 05:57:41 UTC"
+   "audited_at": "2026-08-02 06:26:36 UTC"
   }
  ]
 }

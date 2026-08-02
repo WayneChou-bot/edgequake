@@ -14,7 +14,9 @@
  "first_mag": 6.25,
  "final_mag": 4.76,
  "final_err_km": 17.4,
+ "t_eew_s": 9.2,
+ "eew_fired": true,
  "alert_fired": false,
  "report_sent": "2026-07-31T01:10:18+8:00",
- "audited_at": "2026-08-02 05:57:41 UTC"
+ "audited_at": "2026-08-02 06:26:36 UTC"
 }

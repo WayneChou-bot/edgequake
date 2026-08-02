@@ -636,10 +636,11 @@ function intelHTML(o){
   const rows = [];
   const L = Z ?
     {firstP: '首個P波', stations: '觸發測站', physM: '物理規模',
-     aiM: 'AI 規模', epi: '震央信心', lead: '預警餘裕'} :
+     aiM: 'AI 規模', epi: '震央信心', eew: 'EEW判定', lead: '預警餘裕'} :
     {firstP: 'First P', stations: 'Stations', physM: 'Physics M',
-     aiM: 'AI M', epi: 'Epi conf', lead: 'Lead time'};
-  for(const k of ['firstP', 'stations', 'physM', 'aiM', 'epi', 'lead'])
+     aiM: 'AI M', epi: 'Epi conf', eew: 'EEW', lead: 'Lead time'};
+  for(const k of ['firstP', 'stations', 'physM', 'aiM', 'epi', 'eew',
+                  'lead'])
     if(o[k]) rows.push(`<span class="dim">${pad(L[k], Z ? 6 : 10)}</span>` +
                        o[k]);
   return `<div class="ih">AI SIGNAL INTELLIGENCE</div>` + rows.join('\n');
@@ -677,6 +678,16 @@ function renderIntel(E, F){
   if(F.bconf !== undefined)
     o.epi = `<b>${F.bconf}%</b> <span class="dim">` +
       (Z ? '(靴拔解 ≤20 km 佔比)' : '(bootstrap ≤20 km)') + `</span>`;
+  // EEW tier: first frame (up to now) meeting the CWA issuance rule
+  const fe = E.frames.find(f => f.eew && f.t <= t);
+  if(fe){
+    const orel2 = E.origin_rel;
+    o.eew = `<b style="color:var(--flash)">${orel2 !== null ?
+      `origin+${(fe.t - orel2).toFixed(1)}s` : `t+${fe.t.toFixed(1)}s`}</b>` +
+      ` <span class="dim">${Z ? 'M≥4.5·I≥3 達標' : 'M≥4.5·I≥3 met'}</span>`;
+  } else if(F.mag !== undefined)
+    o.eew = `<span class="dim">${Z ? '未達 M≥4.5·I≥3' :
+      'below M≥4.5·I≥3'}</span>`;
   const ld = bestLead(BIG3, F.cty ? F.cty.map((c, i) =>
     ({name: E.counties[i].name, eta: c.eta})) : null, Z);
   if(ld) o.lead = ld + ` <span class="dim">${Z ? 'S 波抵達前' : 'to S'}</span>`;
@@ -1167,6 +1178,8 @@ async function pollEngine(){
     ((Z ? ' · AI M' : ' · AI M') + E.ai_mag.toFixed(1) +
      '±' + E.ai_sig.toFixed(1) + ` (${E.n_ai})`) : '';
   if(ai) eb.textContent += ai;
+  if(E && E.eew && !alert)
+    eb.textContent += Z ? ' · EEW 達標' : ' · EEW met';
   elog.innerHTML = (S.log || []).slice(0, 3).map(x =>
     `<div>${new Date(x.t * 1e3).toISOString().slice(11, 19)} ${x.msg}</div>`
   ).join('');
@@ -1198,6 +1211,11 @@ async function pollEngine(){
       lab(Z ? '震央信心' : 'Epi conf',
         `<b>${E.bconf}%</b> <span class="dim">` +
         (Z ? '(靴拔解 ≤20 km 佔比)' : '(bootstrap ≤20 km)') + `</span>`);
+    if(E.eew)
+      lab(Z ? 'EEW判定' : 'EEW',
+        `<b style="color:var(--flash)">${E.t_eew_rel !== undefined ?
+        `origin+${E.t_eew_rel.toFixed(1)}s` : '✓'}</b> ` +
+        `<span class="dim">${Z ? 'M≥4.5·I≥3 達標' : 'M≥4.5·I≥3 met'}</span>`);
     let best = null;
     for(const c of E.cty || [])
       if(['Taipei', 'Taichung', 'Kaohsiung'].includes(c.name) &&
@@ -1300,12 +1318,18 @@ const T = {
     'engine would have performed, compared against the CWA catalog. ' +
     'Fully automated, every event kept — no cherry-picking.'},
   cols: {zh: ['事件', '發震時刻 (UTC)', 'CWA M', 'EdgeQuake M', 'ΔM',
-              '定位誤差', '首次定位', '首報規模', '警報'],
+              '定位誤差', '首次定位', 'EEW 判定', '首報規模', 'PWS 警報'],
          en: ['Event', 'Origin (UTC)', 'CWA M', 'EdgeQuake M', 'ΔM',
-              'Loc err', 'First loc', 'First M', 'Alert']},
-  stats: {zh: ['稽核事件', '平均 |ΔM|', '平均定位誤差', '平均首次定位', '警報次數'],
+              'Loc err', 'First loc', 'EEW', 'First M', 'PWS alert']},
+  stats: {zh: ['稽核事件', '平均 |ΔM|', '平均定位誤差', '平均首次定位',
+               '平均 EEW 判定', 'PWS 警報次數'],
           en: ['Events audited', 'Mean |ΔM|', 'Mean loc err',
-               'Mean first loc', 'Alerts fired']},
+               'Mean first loc', 'Mean EEW time', 'PWS alerts']},
+  eewhint: {zh: 'EEW 判定＝達到 CWA 強震即時警報發布條件（M≥4.5 且預估震度≥3）' +
+             '的時刻；CWA 官方效能為發震後約 10–20 秒。',
+            en: 'EEW = instant the CWA earthquake-early-warning issuance ' +
+             'rule (M≥4.5 & predicted intensity ≥3) is met; official CWA ' +
+             'performance is ~10–20 s after origin.'},
   empty: {zh: '尚無稽核紀錄 — 下一次 CWA 顯著有感地震報告釋出波形後自動出現。',
           en: 'No audit records yet — the next CWA significant-earthquake ' +
               'waveform release will appear here automatically.'},
@@ -1347,17 +1371,21 @@ function renderAudit(){
   }
   const s = aud.summary || {};
   const sv = [s.n_events,
-              s.mean_abs_dmag !== null ? s.mean_abs_dmag : '–',
-              s.mean_err_km !== null ? s.mean_err_km + ' km' : '–',
-              s.mean_t_first_loc_s !== null ?
+              s.mean_abs_dmag != null ? s.mean_abs_dmag : '–',
+              s.mean_err_km != null ? s.mean_err_km + ' km' : '–',
+              s.mean_t_first_loc_s != null ?
                 (Z ? `發震後 ${s.mean_t_first_loc_s} 秒`
                    : `origin+${s.mean_t_first_loc_s}s`) : '–',
+              s.mean_t_eew_s != null ?
+                (Z ? `發震後 ${s.mean_t_eew_s} 秒`
+                   : `origin+${s.mean_t_eew_s}s`) : '–',
               s.n_alert_fired];
   stats.innerHTML = T.stats[LANG].map((l, i) =>
     `<div class="astat"><div class="v">${sv[i]}</div>` +
     `<div class="l">${l}</div></div>`).join('');
   const evs = aud.events || [];
-  msg.textContent = evs.length ? '' : T.empty[LANG];
+  msg.textContent = (evs.length ? '' : T.empty[LANG] + ' ') +
+    T.eewhint[LANG];
   body.innerHTML = evs.map(e => {
     const dm = (e.final_mag !== null && e.cwa && e.cwa.mag !== null) ?
       (e.final_mag - e.cwa.mag) : null;
@@ -1372,6 +1400,9 @@ function renderAudit(){
                                     : '–'}</td>
       <td>${e.t_first_loc_s !== null ? (Z ? `發震後 ${e.t_first_loc_s} 秒`
         : `origin+${e.t_first_loc_s}s`) : '–'}</td>
+      <td style="color:${e.eew_fired ? 'var(--flash)' : ''}">${
+        e.t_eew_s != null ? (Z ? `發震後 ${e.t_eew_s} 秒`
+        : `origin+${e.t_eew_s}s`) : (Z ? '未達門檻' : 'below rule')}</td>
       <td>${e.t_first_mag_s !== null && e.first_mag !== null ?
         `M${e.first_mag.toFixed(1)} @ ` + (Z ? `+${e.t_first_mag_s}s`
         : `+${e.t_first_mag_s}s`) : '–'}</td>
