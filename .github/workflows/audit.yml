@@ -71,6 +71,10 @@ jobs:
         run: |
           python scripts/ingest_cwa_wave.py --fetch --audit 2>&1 | tee audit_log.txt
 
+      - name: Build audit index
+        if: steps.check.outputs.new == 'true'
+        run: python scripts/build_audit_index.py
+
       - name: Commit audit record
         if: steps.check.outputs.new == 'true'
         run: |
@@ -79,7 +83,7 @@ jobs:
           cp audit_log.txt "outputs/audit_archive/audit_${{ steps.check.outputs.id }}.txt"
           git config user.name  "edgequake-audit-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add outputs/replay_eq*.json outputs/audit_archive/
+          git add outputs/replay_eq*.json outputs/audit_archive/ docs/audit.json vercel/audit.json
           git commit -m "shadow audit: ${{ steps.check.outputs.id }}" || exit 0
           git pull --rebase origin main
           git push
