@@ -100,7 +100,7 @@
                    50%{box-shadow:0 0 0 9px rgba(229,72,77,0)}}
   .layout{display:flex; gap:18px; flex-wrap:wrap}
   .mapbox{background:var(--panel); border-radius:10px; padding:10px}
-  .mapbox svg{display:block; width:min(440px, 36vw); height:auto}
+  .mapbox svg{display:block; width:min(420px, 34vw); height:auto}
   svg text{font-family:'Segoe UI',sans-serif}
   .side{flex:1; min-width:320px; display:flex;
         flex-direction:column; gap:12px}
@@ -370,10 +370,12 @@ let evKey = Object.keys(DATA.events)[0];
 let t = 0, playing = false, speed = 1, timer = null;
 
 const svg = document.getElementById('map');
-// crop the empty ocean west of 119.9°E so the island sits centered
-const VCROP = 34;
-svg.setAttribute('width', M.w - VCROP); svg.setAttribute('height', M.h);
-svg.setAttribute('viewBox', `${VCROP} 0 ${M.w - VCROP} ${M.h}`);
+// crop empty ocean on BOTH sides (west of ~119.9°E, east of ~122.15°E)
+// so the island itself sits centered; offshore epicenters still fit
+const VCROP = 34, ECROP = 64;
+svg.setAttribute('width', M.w - VCROP - ECROP);
+svg.setAttribute('height', M.h);
+svg.setAttribute('viewBox', `${VCROP} 0 ${M.w - VCROP - ECROP} ${M.h}`);
 
 function el(tag, attrs){ const e = document.createElementNS(
   'http://www.w3.org/2000/svg', tag);
