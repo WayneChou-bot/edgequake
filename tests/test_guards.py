@@ -189,7 +189,56 @@ class LocalDateGrounding(unittest.TestCase):
         rec = {"origin_utc": "2026-07-30T02:00:00Z"}   # local 30th too
         self.assertEqual(
             lr.date_problems("台灣時間 2026 年 7 月 30 日上午 10 時 0 分"
-                             "---July 30, 2026", rec), [])
+                             "---July 30, 2026, at 10:00 local time.",
+                             rec), [])
+
+    def test_wrong_hour_rejected(self):
+        # round-11: "9時58分" instead of 0時58分 — any stated clock
+        # time must match a record time
+        problems = lr.date_problems(
+            "台灣時間 2026 年 7 月 31 日上午 9 時 58 分"
+            "---July 31, 2026, at 00:58 local time.", self.REC)
+        self.assertTrue(any("matches no time" in p for p in problems),
+                        problems)
+
+    def test_integer_hour_wrong_minute_rejected(self):
+        # round-11: minute==0 used to skip minute validation entirely
+        rec = {"origin_utc": "2026-07-30T02:00:00Z"}   # local 10:00
+        problems = lr.date_problems(
+            "台灣時間 2026 年 7 月 30 日上午 10 時 59 分"
+            "---July 30, 2026, at 10:00 local time.", rec)
+        self.assertTrue(any("matches no time" in p for p in problems),
+                        problems)
+
+    def test_report_sent_time_not_false_positive(self):
+        rec = dict(self.REC, report_sent="2026-07-31T01:10:18+8:00")
+        self.assertEqual(lr.date_problems(
+            "台灣時間 2026 年 7 月 31 日凌晨 0 時 58 分發震，官方報告"
+            "於 1 時 10 分發布。"
+            "---July 31, 2026, at 00:58 local time.", rec), [])
+
+    def test_english_year_required(self):
+        problems = lr.date_problems(
+            "台灣時間 2026 年 7 月 31 日凌晨 0 時 58 分"
+            "---On July 31 at 00:58 local time.", self.REC)
+        self.assertTrue(any("local year 2026" in p for p in problems),
+                        problems)
+
+    def test_english_time_required(self):
+        problems = lr.date_problems(
+            "台灣時間 2026 年 7 月 31 日凌晨 0 時 58 分"
+            "---July 31, 2026.", self.REC)
+        self.assertTrue(any("state the local time" in p
+                            for p in problems), problems)
+
+    def test_mixed_am_pm_rejected(self):
+        # round-11 / reviewer style note: "00:58 AM" mixes 24-hour and
+        # 12-hour conventions
+        problems = lr.date_problems(
+            "台灣時間 2026 年 7 月 31 日凌晨 0 時 58 分"
+            "---July 31, 2026, at 00:58 AM local time.", self.REC)
+        self.assertTrue(any("mixed time style" in p for p in problems),
+                        problems)
 
 
 class ContradictionFreeDisplay(unittest.TestCase):
@@ -232,6 +281,30 @@ class ContradictionFreeDisplay(unittest.TestCase):
             ev["max_mag"], ev["max_predicted_county_intensity"]))
         s = lr.pws_sentences({"pws_evidence": ev})
         self.assertIn("4.996", s[0])
+
+    def test_pga_narrow_boundary_exact_storage(self):
+        # round-11: raw 24.9996 rounds to 25.0 even at THREE decimals —
+        # only exact (un-rounded) storage lets the display fall back to
+        # the true value
+        ev = self.pws_evidence(_payload([_frame(
+            1.0, 5.5, 4, 25.0,
+            pws={"rule": True, "obs_ok": False, "gate": True,
+                 "mag": 5.5, "obs": 24.9996})]))
+        shown = ev["while_rule_met"]["max_observed_pga_gal"]
+        self.assertLess(shown, 25.0)
+        self.assertEqual(shown, 24.9996)
+
+    def test_mag_narrow_boundary_exact_storage(self):
+        # round-11: raw M4.99996 rounds to 5.0 even at FOUR decimals
+        ev = self.pws_evidence(_payload([_frame(
+            1.0, 5.0, 4, 30.0,
+            pws={"rule": False, "obs_ok": True, "gate": True,
+                 "mag": 4.99996, "obs": 30.0})]))
+        self.assertEqual(ev["blockers"],
+                         ["magnitude_intensity_rule_never_met"])
+        self.assertFalse(self.pws_alert(
+            ev["max_mag"], ev["max_predicted_county_intensity"]))
+        self.assertEqual(ev["max_mag"], 4.99996)
 
 
 def _frame(t, mag, i, obs, gate_ok=True, pws=None):

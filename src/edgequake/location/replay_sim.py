@@ -335,11 +335,16 @@ def simulate(ev, truth, vp=None, dt=None, max_stations=None, bootstrap=None,
                     "rule": bool(pws_alert(mag.mag, max_i)),
                     "obs_ok": bool(obs >= GATES["pws_min_obs_gal"]),
                     "gate": bool(gate_ok),
-                    # round-10: near-raw values so evidence can DISPLAY
-                    # numbers that do not contradict the verdict (a raw
-                    # 24.96 shown as "25.0 ... below 25" is absurd)
-                    "mag": round(float(mag.mag), 4),
-                    "obs": round(obs, 3),
+                    # round-10/11: EXACT values, no rounding at all —
+                    # round(...,4) truncated M4.99996 INTO the 5.0
+                    # threshold, and no later display precision could
+                    # recover the lost digits (JSON round-trips floats
+                    # losslessly via shortest-repr). Evidence display
+                    # escalates precision and falls back to these exact
+                    # values, so shown numbers never contradict the
+                    # verdict.
+                    "mag": float(mag.mag),
+                    "obs": float(obs),
                 }
         frames.append(frame)
 
