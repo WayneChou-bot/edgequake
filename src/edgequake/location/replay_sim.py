@@ -123,17 +123,34 @@ def pws_evidence(payload: dict) -> dict:
         rows.append({"t": f["t"], "mag": f["mag"], "max_i": max_i,
                      "obs": obs, "gate": gate, "rule": rule,
                      "obs_ok": obs_ok,
+                     "mag_raw": float((pws or {}).get("mag", f["mag"])),
+                     "obs_raw": float((pws or {}).get("obs", obs)),
                      "all": rule and gate and obs_ok})
     fired_row = next((r for r in rows if r["all"]), None)
+    max_mag_raw = max(r["mag_raw"] for r in rows)
+    max_obs_raw = max(r["obs_raw"] for r in rows)
+    max_i_all = max(r["max_i"] for r in rows)
+
+    def _below(raw: float, thr: float) -> float:
+        """Round-10: contradiction-free display — pick the coarsest
+        rounding that keeps the shown value on the TRUE side of the
+        threshold (a raw 24.96 must never display as '25.0 ... below
+        25 gal')."""
+        for p in (1, 2, 3):
+            d = round(raw, p)
+            if d < thr:
+                return d
+        return raw
+
     ev = {
         "fired": fired_row is not None,
         "thresholds": {
             "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
             "quality_gates": dict(GATES),
         },
-        "max_mag": max(r["mag"] for r in rows),
-        "max_predicted_county_intensity": max(r["max_i"] for r in rows),
-        "max_observed_pga_gal": max(r["obs"] for r in rows),
+        "max_mag": round(max_mag_raw, 2),
+        "max_predicted_county_intensity": max_i_all,
+        "max_observed_pga_gal": round(max_obs_raw, 1),
     }
     if fired_row is not None:
         ev["first_fired_t_after_origin_s"] = round(
@@ -142,18 +159,35 @@ def pws_evidence(payload: dict) -> dict:
     rule_rows = [r for r in rows if r["rule"]]
     ev["n_frames_rule_met"] = len(rule_rows)
     if not rule_rows:
+        # display magnitude must not APPEAR to satisfy the rule when no
+        # frame's raw values did (raw M4.996 with I4 must not show as
+        # M5.0). If even the raw cross-frame maxima satisfy the rule
+        # (extremes in different frames), the sentence's "extremes need
+        # not be simultaneous" qualifier carries the explanation.
+        for p in (2, 3, 4):
+            mm = round(max_mag_raw, p)
+            if not pws_alert(mm, max_i_all):
+                break
+        else:
+            mm = max_mag_raw
+        ev["max_mag"] = mm
         ev["blockers"] = ["magnitude_intensity_rule_never_met"]
         return ev
-    w = {"max_observed_pga_gal": max(r["obs"] for r in rule_rows),
-         "quality_gate_ok_any": any(r["gate"] for r in rule_rows)}
-    ev["while_rule_met"] = w
     blockers = []
     # round-9: blocker determination uses the RAW obs_ok/gate booleans,
     # not the displayed maxima (a displayed 25.0 can be a raw 24.96)
-    if not any(r["obs_ok"] for r in rule_rows):
+    obs_blocked = not any(r["obs_ok"] for r in rule_rows)
+    gate_any = any(r["gate"] for r in rule_rows)
+    rule_obs_raw = max(r["obs_raw"] for r in rule_rows)
+    w = {"max_observed_pga_gal":
+         (_below(rule_obs_raw, GATES["pws_min_obs_gal"])
+          if obs_blocked else round(rule_obs_raw, 1)),
+         "quality_gate_ok_any": gate_any}
+    ev["while_rule_met"] = w
+    if obs_blocked:
         blockers.append("observed_pga_ge_%g_never_met_while_rule_met"
                         % GATES["pws_min_obs_gal"])
-    if not w["quality_gate_ok_any"]:
+    if not gate_any:
         blockers.append("quality_gate_never_met_while_rule_met")
     if not blockers:
         # every condition held at some point, never in the same frame
@@ -301,6 +335,11 @@ def simulate(ev, truth, vp=None, dt=None, max_stations=None, bootstrap=None,
                     "rule": bool(pws_alert(mag.mag, max_i)),
                     "obs_ok": bool(obs >= GATES["pws_min_obs_gal"]),
                     "gate": bool(gate_ok),
+                    # round-10: near-raw values so evidence can DISPLAY
+                    # numbers that do not contradict the verdict (a raw
+                    # 24.96 shown as "25.0 ... below 25" is absurd)
+                    "mag": round(float(mag.mag), 4),
+                    "obs": round(obs, 3),
                 }
         frames.append(frame)
 

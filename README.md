@@ -120,7 +120,8 @@ alert decisions, exposure, `pop_version`), has an LLM narrate it
 bilingually — machine-validated: comparative wording is forbidden, the
 lower-bound statement is mandatory, and numbers are checked by
 core-number + decimal-token grounding (presence, not semantic role;
-integers are not yet grounded) — and commits
+general integers are not grounded, but the bilingual local
+date/year/minute is machine-checked against origin time) — and commits
 everything back. Results are committed as computed, with no manual
 curation; the poll-based design can miss back-to-back events inside one
 15-minute window.
@@ -178,11 +179,13 @@ requires the audit record's numbers to have matched a fresh canonical
 recomputation at generation time (`audit_cross_check`, covering EVERY
 audit record in the archive — the content hash alone proves only that
 a record did not change afterwards), pins
-every public derived artifact (reports, audit indexes, dashboards, and
-every file in the audit archive — the required list is rebuilt from the
-tree at verify time, so a newly audited event that is not yet pinned
-fails verification until the summary is regenerated; the audit
-workflow regenerates and verifies before it is allowed to push), proves
+every repo-committed public audit artifact (reports, audit indexes,
+dashboards, and every tracked file in the audit archive — the required
+list is rebuilt from the tree at verify time, so a newly audited event
+that is not yet pinned fails verification until the summary is
+regenerated; the audit workflow regenerates and verifies before it is
+allowed to push. Raw waveform ZIPs stay out of the repo by design —
+their SHA-256 is recorded inside each audit record instead), proves
 the summary's
 own quote list is consistent with its recorded event values (the
 summary cannot hash itself), records the execution environment
@@ -434,7 +437,8 @@ S 波盲區，幾乎沒有可用預警時間——回放頁展示的正是這件
 差距已列入 roadmap）。結果寫入機器可讀紀錄、由 LLM 敘述成雙語報告，
 報告經機器驗證（禁用比較性措辭、必含下界聲明、核心數字與小數 token
 接地——token 精確比對且排除舊敘事欄位作為來源；驗證涵蓋數字存在性
-而非語意位置，整數尚未接地）；警報判定附**機器推導的閘門證據**
+而非語意位置；一般整數不接地，但雙語的本地日期／年份／分鐘會對發震
+時刻機器核對）；警報判定附**機器推導的閘門證據**
 （`pws_evidence`），報告中的 PWS 敘述由證據逐字組句——「原因」是算
 出來的，不是 LLM 寫出來的。全部 commit 回 repo——結果照算照登、
 無人工篩選；輪詢制在極端連發情境可能漏收同窗口內的較早事件。

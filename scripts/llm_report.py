@@ -115,12 +115,14 @@ def pws_sentences(rec: dict) -> list[str]:
         return [
             f"PWS 國家級警報未觸發：規模與預估震度組合從未達到發布"
             f"條件（M≥5.0 且縣市預估震度≥4 級，或 M≥6.5 且≥3 級）；"
-            f"重播期間規模估計最高 M{mm}、預估縣市震度最高 {mi} 級。",
+            f"重播期間規模估計最高 M{mm}、預估縣市震度最高 {mi} 級"
+            f"（兩極值未必同時出現）。",
             f"The PWS public alert did not trigger: the magnitude/"
             f"intensity rule ((M>=5.0 & county intensity>=4) or "
-            f"(M>=6.5 & >=3)) was never met — the magnitude estimate "
-            f"peaked at M{mm} and the highest predicted county "
-            f"intensity was {mi}.",
+            f"(M>=6.5 & >=3)) was never met in any single instant — "
+            f"the magnitude estimate peaked at M{mm} and the highest "
+            f"predicted county intensity was {mi} (these extremes need "
+            f"not be simultaneous).",
         ]
     w = evd.get("while_rule_met") or {}
     wo = w.get("max_observed_pga_gal")
@@ -244,11 +246,27 @@ def validate(text: str, rec: dict) -> list[str]:
     return problems
 
 
+MONTH_EN = [None, "January", "February", "March", "April", "May",
+            "June", "July", "August", "September", "October",
+            "November", "December"]
+
+
 def date_problems(text: str, rec: dict) -> list[str]:
-    """Taiwan-local date grounding (round-9 review: a validator-clean
-    report stated the UTC date 7月30日 in Chinese while the English half
-    correctly said July 31 — dates are integers, which the numeric
-    grounding does not cover, so they get their own machine check)."""
+    """Bilingual Taiwan-local datetime grounding.
+
+    Round-9 review: a validator-clean report stated the UTC date
+    7月30日 in Chinese while the English half correctly said July 31 —
+    dates are integers, which the numeric grounding does not cover.
+    Round-10 review widened the check: the first version only matched
+    the Chinese month/day anywhere in the report, so a wrong YEAR, a
+    wrong minute, or a wrong ENGLISH date all passed. Now the report is
+    split at '---' and each half is checked in its own language: the
+    Chinese half must carry the local year, month/day and minute (and
+    not the UTC month/day when they differ); the English half must
+    carry the local month-name date (and not the UTC one). Semantic
+    placement is still not verified, and a similar-event date equal to
+    the UTC month/day inside the same half could false-positive — both
+    documented limits."""
     import datetime as _dt
     raw = rec.get("origin_utc")
     if not raw:
@@ -259,21 +277,43 @@ def date_problems(text: str, rec: dict) -> list[str]:
     except ValueError:
         return []
     local = utc + _dt.timedelta(hours=8)
+    zh, _, en = text.partition("---")
     out = []
 
     # tolerate spacing variants: 7月31日 / 7 月 31 日 / 7月 31日 ...
-    def pat(month: int, day: int) -> str:
+    def zh_pat(month: int, day: int) -> str:
         return rf"{month}\s*月\s*{day}\s*日"
 
+    def en_pat(month: int, day: int) -> str:
+        name = MONTH_EN[month]
+        return rf"(?:{name}\s+{day}\b|\b{day}(?:st|nd|rd|th)?\s+{name})"
+
     want = f"{local.month}月{local.day}日"
-    if not re.search(pat(local.month, local.day), text):
+    if not re.search(zh_pat(local.month, local.day), zh):
         out.append(f"Chinese version must contain the Taiwan-local "
                    f"date {want!r} (origin_utc {raw} + 8h)")
+    if not re.search(rf"{local.year}\s*年", zh):
+        out.append(f"Chinese version must contain the local year "
+                   f"{local.year}年")
+    if local.minute and not (
+            re.search(rf"{local.minute}\s*分", zh)
+            or f"{local.hour:02d}:{local.minute:02d}" in zh):
+        out.append(f"Chinese version must contain the local minute "
+                   f"({local.minute}分 or "
+                   f"{local.hour:02d}:{local.minute:02d})")
     if (utc.month, utc.day) != (local.month, local.day):
-        if re.search(pat(utc.month, utc.day), text):
+        if re.search(zh_pat(utc.month, utc.day), zh):
             out.append(f"UTC date {utc.month}月{utc.day}日 presented "
                        f"as if local — the Taiwan-local date is "
                        f"{want!r}")
+        if en and re.search(en_pat(utc.month, utc.day), en):
+            out.append(f"UTC date {MONTH_EN[utc.month]} {utc.day} "
+                       f"presented as if local in the English version "
+                       f"— the local date is {MONTH_EN[local.month]} "
+                       f"{local.day}")
+    if en and not re.search(en_pat(local.month, local.day), en):
+        out.append(f"English version must contain the Taiwan-local "
+                   f"date {MONTH_EN[local.month]} {local.day}")
     return out
 
 

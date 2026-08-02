@@ -137,39 +137,101 @@ class DecimalGrounding(unittest.TestCase):
 
 
 class LocalDateGrounding(unittest.TestCase):
-    """round 9: a validator-clean report stated the UTC date 7月30日 in
-    Chinese while English correctly said July 31 — dates are integers,
-    outside the decimal grounding, so they get a dedicated check."""
+    """rounds 9-10: a validator-clean report stated the UTC date
+    7月30日 in Chinese while English correctly said July 31. Round 10
+    widened the check to year, minute and the English half (both
+    reviewer counterexamples below are kept verbatim)."""
 
     REC = {"origin_utc": "2026-07-30T16:58:36.000000Z"}
+    GOOD = ("台灣時間 2026 年 7 月 31 日凌晨 0 時 58 分發生地震。"
+            "---"
+            "An earthquake occurred on July 31, 2026, 00:58 local.")
+
+    def test_good_bilingual_accepted(self):
+        self.assertEqual(lr.date_problems(self.GOOD, self.REC), [])
 
     def test_utc_date_rejected(self):
         problems = lr.date_problems(
-            "2026 年 7 月30日深夜 12 時 58 分發生地震", self.REC)
+            "2026 年 7 月30日深夜 12 時 58 分發生地震---July 31, 2026",
+            self.REC)
         self.assertTrue(any("7月31日" in p for p in problems), problems)
-
-    def test_local_date_accepted(self):
-        self.assertEqual(
-            lr.date_problems("台灣時間 7月31日凌晨 0 時 58 分", self.REC),
-            [])
-
-    def test_spaced_local_date_accepted(self):
-        # round-9 field bug: Gemini writes "7 月 31 日" with spaces —
-        # three correct drafts were rejected by an exact-string match
-        self.assertEqual(
-            lr.date_problems("2026 年 7 月 31 日凌晨 0 時 58 分",
-                             self.REC), [])
 
     def test_spaced_utc_date_still_rejected(self):
         problems = lr.date_problems(
-            "2026 年 7 月 30 日深夜，另於 7 月 31 日回顧", self.REC)
+            "2026 年 7 月 30 日深夜 58 分，另於 7 月 31 日回顧"
+            "---July 31, 2026", self.REC)
         self.assertTrue(any("presented" in p for p in problems),
                         problems)
+
+    def test_reviewer_wrong_year_rejected(self):
+        # round-10 counterexample 1: correct month/day, wrong year
+        problems = lr.date_problems(
+            "台灣時間 2025 年 7 月 31 日凌晨 0 時 58 分"
+            "---July 31, 2026", self.REC)
+        self.assertTrue(any("2026" in p for p in problems), problems)
+
+    def test_reviewer_wrong_english_date_rejected(self):
+        # round-10 counterexample 2: Chinese correct, English says the
+        # UTC date July 30
+        problems = lr.date_problems(
+            "台灣時間 2026 年 7 月 31 日凌晨 0 時 58 分"
+            "---On July 30, 2026, at 16:58 UTC an earthquake occurred.",
+            self.REC)
+        self.assertTrue(any("English" in p for p in problems), problems)
+
+    def test_wrong_minute_rejected(self):
+        problems = lr.date_problems(
+            "台灣時間 2026 年 7 月 31 日凌晨 0 時 12 分"
+            "---July 31, 2026", self.REC)
+        self.assertTrue(any("minute" in p for p in problems), problems)
 
     def test_same_day_no_false_positive(self):
         rec = {"origin_utc": "2026-07-30T02:00:00Z"}   # local 30th too
         self.assertEqual(
-            lr.date_problems("台灣時間 7月30日上午 10 時", rec), [])
+            lr.date_problems("台灣時間 2026 年 7 月 30 日上午 10 時 0 分"
+                             "---July 30, 2026", rec), [])
+
+
+class ContradictionFreeDisplay(unittest.TestCase):
+    """round 10: the verdict follows raw values, but the DISPLAYED
+    numbers must not contradict it ('25.0 gal, below the 25 gal
+    threshold' is absurd)."""
+
+    @classmethod
+    def setUpClass(cls):
+        sys.path.insert(0, str(ROOT / "src"))
+        from edgequake.location.replay_sim import pws_alert, pws_evidence
+        cls.pws_evidence = staticmethod(pws_evidence)
+        cls.pws_alert = staticmethod(pws_alert)
+
+    def test_pga_display_stays_below_threshold(self):
+        # raw 24.96 displays as 25.0 at 1 decimal — evidence must show
+        # a value actually below 25
+        ev = self.pws_evidence(_payload([_frame(
+            1.0, 5.5, 4, 25.0,
+            pws={"rule": True, "obs_ok": False, "gate": True,
+                 "mag": 5.5, "obs": 24.96})]))
+        self.assertFalse(ev["fired"])
+        shown = ev["while_rule_met"]["max_observed_pga_gal"]
+        self.assertLess(shown, 25.0)
+        s = lr.pws_sentences({"pws_evidence": ev})
+        self.assertNotIn("25.0 gal", s[1])
+        self.assertIn("24.96", s[1])
+
+    def test_mag_display_does_not_satisfy_rule(self):
+        # raw M4.996 displays as 5.0 — with intensity 4 that LOOKS like
+        # the rule held; the displayed magnitude must stay on the raw
+        # side of the threshold
+        ev = self.pws_evidence(_payload([_frame(
+            1.0, 5.0, 4, 30.0,
+            pws={"rule": False, "obs_ok": True, "gate": True,
+                 "mag": 4.996, "obs": 30.0})]))
+        self.assertEqual(ev["blockers"],
+                         ["magnitude_intensity_rule_never_met"])
+        self.assertFalse(self.pws_alert(
+            ev["max_mag"], ev["max_predicted_county_intensity"]))
+        s = lr.pws_sentences({"pws_evidence": ev})
+        self.assertIn("4.996", s[0])
 
 
 def _frame(t, mag, i, obs, gate_ok=True, pws=None):
@@ -402,7 +464,7 @@ class ManifestRequiredKeys(unittest.TestCase):
             sorted(brs.CROSS_CHECK_FIELDS),
             sorted(("t_first_loc_s", "first_mag", "final_mag",
                     "final_err_km", "t_eew_s", "eew_fired",
-                    "alert_fired")))
+                    "alert_fired", "pws_evidence")))
 
     def test_loader_is_a_tracked_source(self):
         self.assertIn("scripts/demo_convergence.py", brs.SOURCE_FILES)

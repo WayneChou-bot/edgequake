@@ -195,7 +195,8 @@ def required_file_hashes() -> list[str]:
     # (its sha256 is preserved as provenance INSIDE the audit record
     # instead). Filter through git check-ignore; without git, fall back
     # to the known ignored pattern.
-    dyn = [p for p in dyn if p not in _git_ignored(dyn)]
+    ignored = _git_ignored(dyn)   # ONE subprocess for the whole list
+    dyn = [p for p in dyn if p not in ignored]
     return list(dict.fromkeys([*STATIC_FILE_HASHES, *dyn]))
 
 
@@ -249,9 +250,11 @@ def quotes_from(s: dict) -> list[str]:
     ]
 
 # audit-record fields that must equal this run's CANONICAL recomputation
+# (round 10: pws_evidence included — the machine-derived alert reason is
+# part of the wrong-but-frozen defense, not just the scalar numbers)
 CROSS_CHECK_FIELDS = ("t_first_loc_s", "first_mag", "final_mag",
                       "final_err_km", "t_eew_s", "eew_fired",
-                      "alert_fired")
+                      "alert_fired", "pws_evidence")
 
 
 def verify() -> None:
@@ -537,6 +540,7 @@ def main() -> None:
         af_al = next((f for f in ap["frames"]
                       if any(c.get("alert") for c in f.get("cty", []))),
                      None)
+        from edgequake.location.replay_sim import pws_evidence
         recomputed = {
             "t_first_loc_s": round(afloc["t"] - orel_a, 1),
             "first_mag": afr[0]["mag"],
@@ -546,6 +550,10 @@ def main() -> None:
                         if af_eew else None),
             "eew_fired": af_eew is not None,
             "alert_fired": af_al is not None,
+            # round-10: the full machine-derived alert-reason block is
+            # cross-checked too (nested dict equality) — a wrong or
+            # stale-format pws_evidence must not freeze as "match"
+            "pws_evidence": pws_evidence(ap),
         }
         assert sorted(recomputed) == sorted(CROSS_CHECK_FIELDS)
         mismatch = {k: {"audit_record": arec.get(k), "recomputed": v}
