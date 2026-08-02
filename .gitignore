@@ -49,9 +49,13 @@ mlruns/
 #   assets/, docs/, vercel/, scripts/, src/, web/
 kaggle/
 extras/
+NOTES.md
 outputs/*.png
 outputs/*.gif
 outputs/blind_magnet_*.json
 outputs/convergence_*.json
 outputs/magnet_cwa.pt
 outputs/event_catalog.csv
+# ...but the README needs these two figures — keep them tracked
+!outputs/convergence_0403.gif
+!outputs/eval_cwa_2020_2021_seisbench-phasenet-ft-phasenet_cwa_ft.png
