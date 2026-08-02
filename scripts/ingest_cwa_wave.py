@@ -104,9 +104,12 @@ def load_event(files: dict[str, bytes]) -> dict:
 
 
 def fetch_latest(key: str, out_dir: Path) -> tuple[Path, str]:
-    api = ("https://opendata.cwa.gov.tw/api/v1/rest/datastore/E-A0015-004?"
-           + urllib.parse.urlencode(dict(Authorization=key, format="JSON")))
-    with urllib.request.urlopen(api, timeout=15) as r:
+    # NOTE: E-A0015-004 is a FILE-type dataset — it lives on the fileapi
+    # endpoint (302 -> S3 JSON), NOT /api/v1/rest/datastore (that 404s)
+    api = ("https://opendata.cwa.gov.tw/fileapi/v1/opendataapi/E-A0015-004?"
+           + urllib.parse.urlencode(dict(Authorization=key,
+                                         downloadType="WEB", format="JSON")))
+    with urllib.request.urlopen(api, timeout=20) as r:
         rec = json.load(r)
     node = rec["cwaopendata"]
     ident = node["identifier"]
