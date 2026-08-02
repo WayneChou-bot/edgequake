@@ -99,32 +99,55 @@ def pws_sentences(rec: dict) -> list[str]:
     if not evd:
         return []
     if evd.get("fired"):
-        t = evd.get("first_fired_t")
+        t = evd.get("first_fired_t_after_origin_s")
         return [
-            f"重播時間軸上，PWS 國家級警報條件於第 {t} 秒達成。",
+            f"重播時間軸上，PWS 國家級警報條件於發震後 {t} 秒達成"
+            "（理論下界，未含系統延遲）。",
             f"On the replayed timeline the PWS criteria were met at "
-            f"{t} s.",
+            f"origin+{t} s (a lower bound; system latency excluded).",
         ]
     mm = evd.get("max_mag")
-    blockers = evd.get("blockers_while_mag_ge_5") or []
-    if "magnitude_ge_5_never_met" in blockers:
+    mi = evd.get("max_predicted_county_intensity")
+    blockers = evd.get("blockers") or []
+    if "magnitude_intensity_rule_never_met" in blockers:
         return [
-            f"PWS 國家級警報未觸發：重播期間規模估計最高為 M{mm}，"
-            "未達 M5.0 發布門檻。",
-            f"The PWS public alert did not trigger: the magnitude "
-            f"estimate peaked at M{mm}, below the M5.0 threshold.",
+            f"PWS 國家級警報未觸發：規模與預估震度組合從未達到發布"
+            f"條件（M≥5.0 且縣市預估震度≥4 級，或 M≥6.5 且≥3 級）；"
+            f"重播期間規模估計最高 M{mm}、預估縣市震度最高 {mi} 級。",
+            f"The PWS public alert did not trigger: the magnitude/"
+            f"intensity rule ((M>=5.0 & county intensity>=4) or "
+            f"(M>=6.5 & >=3)) was never met — the magnitude estimate "
+            f"peaked at M{mm} and the highest predicted county "
+            f"intensity was {mi}.",
         ]
-    w = evd.get("while_mag_ge_5") or {}
-    wi = w.get("max_predicted_county_intensity")
+    w = evd.get("while_rule_met") or {}
     wo = w.get("max_observed_pga_gal")
+    if "all_conditions_held_but_never_in_same_frame" in blockers:
+        return [
+            f"PWS 國家級警報未觸發：各項發布條件雖曾個別達成，但從未"
+            f"在同一時刻同時成立（重播期間規模最高 M{mm}、預估縣市"
+            f"震度最高 {mi} 級）。",
+            f"The PWS public alert did not trigger: each criterion was "
+            f"met at some point but never simultaneously (magnitude "
+            f"peaked at M{mm}; highest predicted county intensity "
+            f"{mi}).",
+        ]
+    zh_parts, en_parts = [], []
+    if any(b.startswith("observed_pga_ge_") for b in blockers):
+        zh_parts.append(f"該時段內實測 PGA 最高 {wo} gal，未達 25 gal "
+                        "門檻")
+        en_parts.append(f"the highest observed PGA in those frames was "
+                        f"{wo} gal, below the 25 gal threshold")
+    if "quality_gate_never_met_while_rule_met" in blockers:
+        zh_parts.append("解的品質閘門（站數／誤差橢圓）未同時通過")
+        en_parts.append("the solution-quality gate (station count / "
+                        "error ellipse) was not met in those frames")
     return [
-        f"PWS 國家級警報未觸發：重播期間規模估計最高達 M{mm}，"
-        f"但在規模達 M5.0 以上的時段內，預估縣市震度最高為 {wi} 級"
-        f"（發布門檻 4 級）、實測 PGA 最高 {wo} gal。",
-        f"The PWS public alert did not trigger: the magnitude estimate "
-        f"peaked at M{mm}, but while it was at or above M5.0 the "
-        f"highest predicted county intensity was {wi} (threshold: 4) "
-        f"and the highest observed PGA was {wo} gal.",
+        f"PWS 國家級警報未觸發：規模與預估震度條件曾於重播中達成"
+        f"（規模最高 M{mm}），但" + "、且".join(zh_parts) + "。",
+        f"The PWS public alert did not trigger: the magnitude/"
+        f"intensity rule was met during the replay (magnitude peaked "
+        f"at M{mm}), but " + " and ".join(en_parts) + ".",
     ]
 
 

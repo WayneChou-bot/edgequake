@@ -19,7 +19,12 @@ manifest still reported "in sync"). The verify mode now checks:
   * (round 6) that the audit record's numbers matched a fresh CANONICAL
     recomputation at generation time (audit_cross_check; generation
     aborts on mismatch) — the content hash alone only proves the record
-    did not change afterwards, not that it was right.
+    did not change afterwards, not that it was right;
+  * (round 8) the required-hash list and the cross-check coverage are
+    DYNAMIC — rebuilt from the current tree at verify time — so a newly
+    audited event that is not yet pinned/cross-checked fails
+    verification until the summary is regenerated. The audit workflow
+    runs generation + --verify and only pushes if both pass.
 
 All numeric results are recomputed here from committed inputs at
 CANONICAL parameters — including the Taitung raw run (previously a
@@ -147,30 +152,51 @@ DERIVED_PATHS = ("outputs/results_summary.json",
                  "vercel/audit.json", "docs/index.html",
                  "vercel/index.html", "outputs/replay_eq")
 
-# round-6: the manifest's REQUIRED key sets are module constants shared
-# by generation AND verification — an accidentally missing entry is a
-# verification failure, not a silently smaller checklist
-REQUIRED_FILE_HASHES = (
+# round-6: the manifest's REQUIRED key sets are shared by generation AND
+# verification — an accidentally missing entry is a verification
+# failure, not a silently smaller checklist.
+# round-7: every public derived artifact that the two-phase protocol
+# exempts from the ancestor-diff check is pinned by hash instead.
+# (Consequence: regenerating the LLM report or the dashboards requires
+# regenerating the summary afterwards — the summary is always the LAST
+# derived artifact.)
+STATIC_FILE_HASHES = (
     "outputs/v3_verify_x83.pt",
     "outputs/phasenet_cwa_ft.pt",
     "outputs/site_terms.json",
     "outputs/reproduction_report.json",
-    "outputs/audit_archive/audit_202607310058-EQ2026053-Waveform.txt",
-    # round-7: EVERY public derived artifact that the two-phase protocol
-    # exempts from the ancestor-diff check is pinned here instead — a
-    # "derived-only" commit that tampers with any of them breaks the
-    # manifest. (Consequence: regenerating the LLM report or the
-    # dashboards requires regenerating the summary afterwards — the
-    # summary is always the LAST derived artifact.) Newly audited events
-    # enter this protection when the summary is next regenerated.
-    "outputs/audit_archive/audit_eq2026053.json",
-    "outputs/audit_archive/report_eq2026053.md",
     "docs/audit.json",
     "vercel/audit.json",
     "docs/index.html",
     "vercel/index.html",
     *REPLAYS.values(),
 )
+
+
+def required_file_hashes() -> list[str]:
+    """round-8: the required list is DYNAMIC, not a static constant —
+    the previous version listed only the Taitung files, so the NEXT
+    automatically audited event would have entered the exempted derived
+    paths completely unpinned. Now every file currently under
+    outputs/audit_archive/ (records, reports, raw logs, done-markers)
+    and every CWA replay artifact is required: generation pins whatever
+    exists, and verify rebuilds this list from the CURRENT tree — a new
+    event file the manifest does not pin FAILS verification until the
+    summary is regenerated (the audit workflow regenerates + verifies
+    before it is allowed to push)."""
+    dyn = sorted(p.relative_to(ROOT).as_posix()
+                 for p in (ROOT / "outputs" / "audit_archive").glob("*")
+                 if p.is_file())
+    dyn += sorted(p.relative_to(ROOT).as_posix()
+                  for p in (ROOT / "outputs").glob("replay_eq*.json"))
+    return list(dict.fromkeys([*STATIC_FILE_HASHES, *dyn]))
+
+
+def audit_ids() -> list[str]:
+    """Event ids of every audit record currently in the archive."""
+    return sorted(p.stem[len("audit_"):]
+                  for p in (ROOT / "outputs" / "audit_archive")
+                  .glob("audit_eq*.json"))
 
 # environment keys the manifest must record (round 7: same commit + same
 # hashes on a different NumPy/SciPy can still change results subtly)
@@ -264,22 +290,38 @@ def verify() -> None:
         elif got != want:
             fails.append(f"hash drift: {path}\n    manifest {want}\n"
                          f"    actual   {got}")
-    want = s.get("audit_content_sha256")
-    got = audit_content_sha256(ROOT / AUDIT)
-    if want != got:
-        fails.append(f"audit numeric content drifted: {AUDIT}")
+    # audit numeric-content hashes, per record (round 8: dict keyed by
+    # event id; ids must cover exactly the records in the archive NOW)
+    want_ac = s.get("audit_content_sha256")
+    if not isinstance(want_ac, dict):
+        fails.append("audit_content_sha256 is not per-event (stale "
+                     "manifest format) — regenerate the summary")
+    else:
+        cur_ids = audit_ids()
+        if sorted(want_ac) != cur_ids:
+            fails.append(f"audit_content_sha256 covers {sorted(want_ac)}"
+                         f" but the archive now has {cur_ids} — "
+                         "regenerate the summary")
+        for aid, want in want_ac.items():
+            got = audit_content_sha256(
+                ROOT / "outputs" / "audit_archive" / f"audit_{aid}.json")
+            if want != got:
+                fails.append(f"audit numeric content drifted: {aid}")
 
-    # round-6: required key sets — a manifest that silently LISTS less
-    # must fail, not shrink the checklist
+    # round-6/8: required key set — recomputed from the CURRENT tree, so
+    # a new event file that is not pinned yet is a FAILURE (regenerate),
+    # and a manifest that silently lists less also fails
+    req = required_file_hashes()
     have = set(s.get("file_sha256", {}))
-    missing_req = [p for p in REQUIRED_FILE_HASHES if p not in have]
+    missing_req = [p for p in req if p not in have]
     if missing_req:
-        fails.append("manifest file_sha256 is missing required entries: "
+        fails.append("manifest file_sha256 does not pin these files "
+                     "present in the tree (regenerate the summary): "
                      + ", ".join(missing_req))
-    extra = sorted(have - set(REQUIRED_FILE_HASHES))
+    extra = sorted(have - set(req))
     if extra:
-        fails.append("manifest file_sha256 has unexpected entries "
-                     "(update REQUIRED_FILE_HASHES): " + ", ".join(extra))
+        fails.append("manifest file_sha256 pins files that no longer "
+                     "exist in the tree: " + ", ".join(extra))
     if sorted(s.get("source_file_sha256", {})) != sorted(SOURCE_FILES):
         fails.append("manifest source_file_sha256 keys != SOURCE_FILES")
     if not s.get("readme_quotes"):
@@ -291,6 +333,27 @@ def verify() -> None:
     if missing_env:
         fails.append("manifest environment block missing keys: "
                      + ", ".join(missing_env))
+    # round-8 positioning (review wording): environment provenance is
+    # RECORDED and reported, not enforced by --verify — the checks here
+    # are hash/consistency checks and are environment-independent, and
+    # numeric sensitivity to the environment is caught where
+    # recomputation actually happens (generation-time cross-checks, the
+    # reproduction harness). A drift note is printed so nobody mistakes
+    # "verify OK" for "same environment".
+    else:
+        try:
+            cur = _environment()
+        except Exception:
+            cur = None
+        if cur:
+            drift = {k: (env.get(k), cur.get(k)) for k in ENV_KEYS
+                     if k != "platform" and env.get(k) != cur.get(k)}
+            if drift:
+                print("[summary] NOTE: current environment differs "
+                      "from the recorded one (recorded provenance, not "
+                      "enforced; regenerate to re-prove numerics here):")
+                for k, (a, b) in sorted(drift.items()):
+                    print(f"    {k}: recorded {a} / current {b}")
     # round-7: the summary cannot hash itself — instead prove it is
     # internally consistent: its quote list must equal what its OWN
     # event values produce
@@ -307,10 +370,20 @@ def verify() -> None:
         fails.append("audit_cross_check missing or status != 'match' — "
                      "regenerate the summary (generation re-derives the "
                      "audit numbers and aborts on mismatch)")
-    elif sorted(acc.get("checked_fields", {})) != \
-            sorted(CROSS_CHECK_FIELDS):
-        fails.append("audit_cross_check did not cover the required "
-                     f"fields {sorted(CROSS_CHECK_FIELDS)}")
+    else:
+        acc_ev = acc.get("events")
+        if not isinstance(acc_ev, dict):
+            fails.append("audit_cross_check has no per-event coverage "
+                         "(stale format) — regenerate the summary")
+        else:
+            if sorted(acc_ev) != audit_ids():
+                fails.append(f"audit_cross_check covers {sorted(acc_ev)}"
+                             f" but the archive now has {audit_ids()} — "
+                             "regenerate the summary")
+            for aid, fields in acc_ev.items():
+                if sorted(fields) != sorted(CROSS_CHECK_FIELDS):
+                    fails.append(f"audit_cross_check for {aid} did not "
+                                 "cover the required fields")
 
     # semantic checks on the reproduction report (round 4: verifying the
     # file's hash proves it did not change, not that its content holds)
@@ -412,46 +485,67 @@ def main() -> None:
     audit_p = ROOT / AUDIT
     audit = json.loads(audit_p.read_text(encoding="utf-8"))
 
-    # round-6 cross-check: the content hash below only proves the audit
-    # record did not change AFTER this summary — here we prove its
-    # numbers equal this run's CANONICAL recomputation, and abort
-    # generation on any disagreement (a wrong-but-frozen record must
-    # never verify as OK)
-    sc = events["eq2026053"]["site_corrected"]
-    orel_t = p_taitung["origin_rel"] or 0.0
-    f_eew = next((f for f in p_taitung["frames"] if f.get("eew")), None)
-    f_alert = next((f for f in p_taitung["frames"]
-                    if any(c.get("alert") for c in f.get("cty", []))),
-                   None)
-    recomputed = {
-        "t_first_loc_s": sc["first_loc_s"],
-        "first_mag": sc["first_mag"],
-        "final_mag": sc["final_mag"],
-        "final_err_km": sc["final_err_km"],
-        "t_eew_s": (round(f_eew["t"] - orel_t, 1) if f_eew else None),
-        "eew_fired": f_eew is not None,
-        "alert_fired": f_alert is not None,
-    }
-    assert sorted(recomputed) == sorted(CROSS_CHECK_FIELDS)
-    mismatch = {k: {"audit_record": audit.get(k), "recomputed": v}
-                for k, v in recomputed.items() if audit.get(k) != v}
-    if mismatch:
-        print("[summary] FATAL: audit record disagrees with the "
-              "CANONICAL recomputation — refusing to write a summary "
-              "over inconsistent evidence:")
-        for k, v in mismatch.items():
-            print(f"  - {k}: audit={v['audit_record']!r} "
-                  f"recomputed={v['recomputed']!r}")
-        sys.exit(1)
+    # round-6 cross-check, generalized in round 8 to EVERY audit record
+    # in the archive (the next automatically audited event is covered
+    # the moment the workflow regenerates this summary): the content
+    # hash only proves a record did not change AFTER this summary —
+    # here we prove its numbers equal this run's CANONICAL
+    # recomputation, and abort generation on any disagreement (a
+    # wrong-but-frozen record must never verify as OK)
+    cross_events = {}
+    for aid in audit_ids():
+        a_path = ROOT / "outputs" / "audit_archive" / f"audit_{aid}.json"
+        r_path = ROOT / "outputs" / f"replay_{aid}.json"
+        if not r_path.exists():
+            print(f"[summary] FATAL: audit record {aid} has no replay "
+                  f"artifact {r_path.name} to cross-check against")
+            sys.exit(1)
+        arec = json.loads(a_path.read_text(encoding="utf-8"))
+        if aid == "eq2026053":
+            ap = p_taitung   # already simulated above, same params
+        else:
+            aev, atr = load_replay_json(r_path)
+            ap = simulate(aev, atr, site_terms=site_terms)
+        orel_a = ap["origin_rel"] or 0.0
+        afr = [f for f in ap["frames"] if f.get("mag") is not None]
+        afloc = next(f for f in ap["frames"] if "lat" in f)
+        af_eew = next((f for f in ap["frames"] if f.get("eew")), None)
+        af_al = next((f for f in ap["frames"]
+                      if any(c.get("alert") for c in f.get("cty", []))),
+                     None)
+        recomputed = {
+            "t_first_loc_s": round(afloc["t"] - orel_a, 1),
+            "first_mag": afr[0]["mag"],
+            "final_mag": afr[-1]["mag"],
+            "final_err_km": afr[-1]["err"],
+            "t_eew_s": (round(af_eew["t"] - orel_a, 1)
+                        if af_eew else None),
+            "eew_fired": af_eew is not None,
+            "alert_fired": af_al is not None,
+        }
+        assert sorted(recomputed) == sorted(CROSS_CHECK_FIELDS)
+        mismatch = {k: {"audit_record": arec.get(k), "recomputed": v}
+                    for k, v in recomputed.items()
+                    if arec.get(k) != v}
+        if mismatch:
+            print(f"[summary] FATAL: audit record {aid} disagrees with "
+                  "the CANONICAL recomputation — refusing to write a "
+                  "summary over inconsistent evidence:")
+            for k, v in mismatch.items():
+                print(f"  - {k}: audit={v['audit_record']!r} "
+                      f"recomputed={v['recomputed']!r}")
+            sys.exit(1)
+        cross_events[aid] = recomputed
     audit_cross_check = {
         "status": "match",
-        "checked_fields": recomputed,
-        "note": "each field re-derived from outputs/replay_eq2026053."
-                "json via simulate() at CANONICAL parameters during "
-                "THIS generation and compared to the audit record; "
-                "generation aborts on mismatch. Together with "
-                "audit_content_sha256 this proves the record was "
-                "consistent when frozen, not merely unchanged since.",
+        "events": cross_events,
+        "note": "for EVERY audit record in the archive, each field is "
+                "re-derived from its replay artifact via simulate() at "
+                "CANONICAL parameters during THIS generation and "
+                "compared to the record; generation aborts on mismatch. "
+                "Together with the content hashes this proves records "
+                "were consistent when frozen, not merely unchanged "
+                "since.",
     }
 
     events["eq2026053"]["audit_record"] = {
@@ -467,11 +561,10 @@ def main() -> None:
     mean_site = round(sum(events[k]["site_corrected"]["abs_dmag"]
                           for k in ks) / len(ks), 2)
 
-    # round-6: built from the shared REQUIRED constant, so generation and
-    # verification cannot disagree about WHAT must be hashed (the
-    # original live-run log is pinned here as historical evidence — its
-    # relationship to the record is in the audit provenance block)
-    file_hashes = {p: sha256(ROOT / p) for p in REQUIRED_FILE_HASHES}
+    # round-6/8: built from the shared required list (now dynamic), so
+    # generation and verification cannot disagree about WHAT must be
+    # hashed — and new event files are pinned automatically
+    file_hashes = {p: sha256(ROOT / p) for p in required_file_hashes()}
 
     commit = git_commit()
     dirty = git_dirty()
@@ -531,7 +624,10 @@ def main() -> None:
                 "reproducible",
         },
         "file_sha256": file_hashes,
-        "audit_content_sha256": audit_content_sha256(audit_p),
+        "audit_content_sha256": {
+            aid: audit_content_sha256(
+                ROOT / "outputs" / "audit_archive" / f"audit_{aid}.json")
+            for aid in audit_ids()},
         "audit_content_note": "audit record hashed excluding "
             f"{list(NARRATIVE_FIELDS)} — since round 7 the FULL record "
             "file is also pinned in file_sha256, so this narrower hash "

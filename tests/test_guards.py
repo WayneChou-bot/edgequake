@@ -136,15 +136,19 @@ class DecimalGrounding(unittest.TestCase):
         self.assertTrue(any("優於" in p for p in problems), problems)
 
 
-def _frame(t, mag, i, obs, gate_ok=True, alert=False):
+def _frame(t, mag, i, obs, gate_ok=True):
     return {"t": t, "mag": mag, "obs": obs, "gate_ok": gate_ok,
-            "cty": [{"i": i, "alert": alert}]}
+            "cty": [{"i": i}]}
+
+
+def _payload(frames, origin_rel=0.0):
+    return {"frames": frames, "origin_rel": origin_rel}
 
 
 class PwsEvidence(unittest.TestCase):
-    """round 7: the PWS 'reason' must be computed, not narrated (the
-    report had claimed 'magnitude stayed below M5.0' beside a quoted
-    first magnitude of 5.88)."""
+    """rounds 7-8: the PWS 'reason' must be computed, not narrated, and
+    the computation must be PER-FRAME equivalent to the actual rule.
+    The two round-8 reviewer counterexamples are kept verbatim."""
 
     @classmethod
     def setUpClass(cls):
@@ -152,32 +156,56 @@ class PwsEvidence(unittest.TestCase):
         from edgequake.location.replay_sim import pws_evidence
         cls.pws_evidence = staticmethod(pws_evidence)
 
-    def test_intensity_blocker_detected(self):
-        # magnitude crossed 5.0, shaking observed, gates fine — the ONLY
-        # blocker is county intensity < 4 (the real Taitung situation)
-        ev = self.pws_evidence({"frames": [
-            _frame(1.0, 5.88, 3, 30.0), _frame(2.0, 4.81, 3, 37.3)]})
+    def test_taitung_shape_rule_never_met(self):
+        # M crossed 5.0 but intensity stayed at 3 — neither rule branch
+        # ever held
+        ev = self.pws_evidence(_payload([
+            _frame(1.0, 5.88, 3, 30.0), _frame(2.0, 4.81, 3, 37.3)]))
         self.assertFalse(ev["fired"])
-        self.assertEqual(ev["blockers_while_mag_ge_5"],
-                         ["county_intensity_ge_4_never_met"])
+        self.assertEqual(ev["blockers"],
+                         ["magnitude_intensity_rule_never_met"])
 
-    def test_magnitude_never_reached(self):
-        ev = self.pws_evidence({"frames": [_frame(1.0, 4.2, 2, 5.0)]})
-        self.assertEqual(ev["blockers_while_mag_ge_5"],
-                         ["magnitude_ge_5_never_met"])
-
-    def test_fired_records_time(self):
-        ev = self.pws_evidence({"frames": [
-            _frame(3.0, 6.1, 4, 40.0, alert=True)]})
-        self.assertTrue(ev["fired"])
-        self.assertEqual(ev["first_fired_t"], 3.0)
-
-    def test_obs_blocker_detected(self):
-        ev = self.pws_evidence({"frames": [_frame(1.0, 5.5, 3, 8.0)]})
-        self.assertIn("county_intensity_ge_4_never_met",
-                      ev["blockers_while_mag_ge_5"])
+    def test_reviewer_counterexample_m65_branch(self):
+        # round-8 counterexample 1: M6.6 / I3 / 10 gal — the SECOND rule
+        # branch (M>=6.5 & I>=3) already holds; the true blocker is PGA,
+        # and the old code wrongly blamed intensity
+        ev = self.pws_evidence(_payload([_frame(1.0, 6.6, 3, 10.0)]))
+        self.assertFalse(ev["fired"])
+        self.assertEqual(ev["n_frames_rule_met"], 1)
         self.assertTrue(any(b.startswith("observed_pga_ge_")
-                            for b in ev["blockers_while_mag_ge_5"]))
+                            for b in ev["blockers"]), ev["blockers"])
+        self.assertNotIn("magnitude_intensity_rule_never_met",
+                         ev["blockers"])
+
+    def test_reviewer_counterexample_cross_frame(self):
+        # round-8 counterexample 2: one frame I4/0 gal, another I3/30
+        # gal — nothing holds simultaneously; the old code produced an
+        # EMPTY blocker list
+        ev = self.pws_evidence(_payload([
+            _frame(1.0, 5.5, 4, 0.0), _frame(2.0, 5.5, 3, 30.0)]))
+        self.assertFalse(ev["fired"])
+        self.assertTrue(ev["blockers"], "blockers must not be empty")
+        self.assertTrue(any(b.startswith("observed_pga_ge_")
+                            for b in ev["blockers"]), ev["blockers"])
+
+    def test_conditions_never_simultaneous(self):
+        # within rule-met frames: one has shaking but no gate, the
+        # other has gate but weak shaking — only the same-frame check
+        # catches this
+        ev = self.pws_evidence(_payload([
+            _frame(1.0, 5.5, 4, 30.0, gate_ok=False),
+            _frame(2.0, 5.5, 4, 10.0, gate_ok=True)]))
+        self.assertFalse(ev["fired"])
+        self.assertEqual(ev["blockers"],
+                         ["all_conditions_held_but_never_in_same_frame"])
+
+    def test_fired_time_is_origin_relative(self):
+        # round-8 P2: frame t counts from the first P pick; the fired
+        # time must be reported origin-relative
+        ev = self.pws_evidence(_payload(
+            [_frame(3.0, 6.1, 4, 40.0)], origin_rel=-1.18))
+        self.assertTrue(ev["fired"])
+        self.assertEqual(ev["first_fired_t_after_origin_s"], 4.2)
 
 
 class PwsMandatorySentences(unittest.TestCase):
@@ -185,10 +213,10 @@ class PwsMandatorySentences(unittest.TestCase):
 
     REC = {"pws_evidence": {
         "fired": False, "max_mag": 5.94,
-        "while_mag_ge_5": {"max_predicted_county_intensity": 3,
-                           "max_observed_pga_gal": 37.3,
-                           "gate_ok_any": True},
-        "blockers_while_mag_ge_5": ["county_intensity_ge_4_never_met"],
+        "max_predicted_county_intensity": 3,
+        "max_observed_pga_gal": 37.3,
+        "n_frames_rule_met": 0,
+        "blockers": ["magnitude_intensity_rule_never_met"],
     }}
 
     def test_sentences_state_computed_reason(self):
@@ -197,6 +225,19 @@ class PwsMandatorySentences(unittest.TestCase):
         self.assertIn("M5.94", s[0])
         self.assertIn("3 級", s[0])
         self.assertNotIn("未達 M5.0", s[0])  # the invented wrong reason
+
+    def test_sentences_for_pga_blocker(self):
+        rec = {"pws_evidence": {
+            "fired": False, "max_mag": 6.6,
+            "max_predicted_county_intensity": 3,
+            "max_observed_pga_gal": 10.0, "n_frames_rule_met": 1,
+            "while_rule_met": {"max_observed_pga_gal": 10.0,
+                               "quality_gate_ok_any": True},
+            "blockers": ["observed_pga_ge_25_never_met_while_rule_met"],
+        }}
+        s = lr.pws_sentences(rec)
+        self.assertIn("10.0 gal", s[0])
+        self.assertNotIn("4 級）未達", s[0])
 
     def test_sentences_are_mandatory(self):
         s = lr.pws_sentences(self.REC)
@@ -235,23 +276,39 @@ class ManifestRequiredKeys(unittest.TestCase):
     """The required-key constants must stay coherent (round 6)."""
 
     def test_replays_covered_by_required_hashes(self):
+        req = brs.required_file_hashes()
         for rel in brs.REPLAYS.values():
-            self.assertIn(rel, brs.REQUIRED_FILE_HASHES)
-
-    def test_original_log_pinned(self):
-        self.assertIn(
-            "outputs/audit_archive/"
-            "audit_202607310058-EQ2026053-Waveform.txt",
-            brs.REQUIRED_FILE_HASHES)
+            self.assertIn(rel, req)
 
     def test_public_derived_artifacts_pinned(self):
         # round 7: every ancestor-diff-exempt public artifact must be
         # pinned by hash instead
-        for p in ("outputs/audit_archive/audit_eq2026053.json",
-                  "outputs/audit_archive/report_eq2026053.md",
-                  "docs/audit.json", "vercel/audit.json",
+        req = brs.required_file_hashes()
+        for p in ("docs/audit.json", "vercel/audit.json",
                   "docs/index.html", "vercel/index.html"):
-            self.assertIn(p, brs.REQUIRED_FILE_HASHES)
+            self.assertIn(p, req)
+
+    def test_required_hashes_are_dynamic(self):
+        # round 8: EVERY file currently in the audit archive must be
+        # required — new event files are pinned automatically, and
+        # verify fails until a regenerated summary pins them
+        req = set(brs.required_file_hashes())
+        arch = brs.ROOT / "outputs" / "audit_archive"
+        files = [p for p in arch.glob("*") if p.is_file()]
+        self.assertTrue(files, "archive unexpectedly empty")
+        for p in files:
+            self.assertIn(p.relative_to(brs.ROOT).as_posix(), req)
+
+    def test_new_archive_file_becomes_required(self):
+        arch = brs.ROOT / "outputs" / "audit_archive"
+        tmp = arch / "audit_eq_test_dynamic.json"
+        tmp.write_text("{}", encoding="utf-8")
+        try:
+            self.assertIn(
+                tmp.relative_to(brs.ROOT).as_posix(),
+                brs.required_file_hashes())
+        finally:
+            tmp.unlink()
 
     def test_environment_keys_defined(self):
         self.assertEqual(sorted(brs.ENV_KEYS),

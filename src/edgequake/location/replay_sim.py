@@ -73,60 +73,72 @@ def pws_alert(mag: float, intensity: float) -> bool:
 def pws_evidence(payload: dict) -> dict:
     """Machine-derived record of WHY the PWS tier did or did not fire.
 
-    Round-7 review: the Taitung report narrated 'PWS did not fire
-    because the magnitude stayed below M5.0' while the same report
-    quoted a first magnitude of 5.88 — the LLM had invented a causal
-    claim no data supported. The reason must be computed, not narrated:
-    this walks the replay frames and reports, for the frames where the
-    magnitude DID reach each threshold, which other criteria were never
-    simultaneously met. The report generator turns this into mandatory
-    verbatim sentences.
+    Round-7 review: the Taitung report narrated an invented cause; the
+    reason must be computed. Round-8 review then showed the first
+    implementation was NOT equivalent to the actual rule: it analyzed
+    only the M>=5 & I>=4 branch, and it took per-quantity maxima across
+    DIFFERENT frames (two counterexamples: an M6.6/I3/10-gal case was
+    blamed on intensity when the M>=6.5 branch already held and PGA was
+    the real blocker; and an I4/0-gal + I3/30-gal frame pair produced an
+    EMPTY blocker list although no frame satisfied everything at once).
+
+    This version evaluates, PER FRAME, exactly the same predicate the
+    alert code uses — pws_alert(mag, county I) [both branches, via the
+    frame's max county intensity: pws_alert is monotone in I] AND the
+    quality gate AND observed PGA — and derives blockers only from
+    frames where the magnitude/intensity rule actually held.
+
+    Round-8 P2: fired time is reported ORIGIN-relative (frame t minus
+    origin_rel), matching every other reported time.
     """
     frames = [f for f in payload.get("frames", [])
               if f.get("mag") is not None]
     if not frames:
         return {"fired": False, "note": "no magnitude frames"}
-    fired_f = next((f for f in frames
-                    if any(c.get("alert") for c in f.get("cty", []))),
-                   None)
-    max_i_of = (lambda f: max((c.get("i", 0) for c in f.get("cty", [])),
-                              default=0))
+    orel = payload.get("origin_rel") or 0.0
+    rows = []
+    for f in frames:
+        max_i = max((c.get("i", 0) for c in f.get("cty", [])), default=0)
+        obs = float(f.get("obs", 0.0))
+        gate = bool(f.get("gate_ok", False))
+        rule = pws_alert(f["mag"], max_i)
+        rows.append({"t": f["t"], "mag": f["mag"], "max_i": max_i,
+                     "obs": obs, "gate": gate, "rule": rule,
+                     "all": rule and gate
+                     and obs >= GATES["pws_min_obs_gal"]})
+    fired_row = next((r for r in rows if r["all"]), None)
     ev = {
-        "fired": fired_f is not None,
+        "fired": fired_row is not None,
         "thresholds": {
             "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
             "quality_gates": dict(GATES),
         },
-        "max_mag": max(f["mag"] for f in frames),
-        "max_predicted_county_intensity":
-            max(max_i_of(f) for f in frames),
-        "max_observed_pga_gal":
-            max(f.get("obs", 0.0) for f in frames),
+        "max_mag": max(r["mag"] for r in rows),
+        "max_predicted_county_intensity": max(r["max_i"] for r in rows),
+        "max_observed_pga_gal": max(r["obs"] for r in rows),
     }
-    if fired_f is not None:
-        ev["first_fired_t"] = fired_f["t"]
+    if fired_row is not None:
+        ev["first_fired_t_after_origin_s"] = round(
+            fired_row["t"] - orel, 1)
         return ev
-    m5 = [f for f in frames if f["mag"] >= 5.0]
-    ev["n_frames_mag_ge_5"] = len(m5)
-    if m5:
-        w = {
-            "max_predicted_county_intensity":
-                max(max_i_of(f) for f in m5),
-            "max_observed_pga_gal": max(f.get("obs", 0.0) for f in m5),
-            "gate_ok_any": any(f.get("gate_ok") for f in m5),
-        }
-        ev["while_mag_ge_5"] = w
-        blockers = []
-        if w["max_predicted_county_intensity"] < 4:
-            blockers.append("county_intensity_ge_4_never_met")
-        if w["max_observed_pga_gal"] < GATES["pws_min_obs_gal"]:
-            blockers.append("observed_pga_ge_%g_never_met"
-                            % GATES["pws_min_obs_gal"])
-        if not w["gate_ok_any"]:
-            blockers.append("solution_quality_gate_never_met")
-        ev["blockers_while_mag_ge_5"] = blockers
-    else:
-        ev["blockers_while_mag_ge_5"] = ["magnitude_ge_5_never_met"]
+    rule_rows = [r for r in rows if r["rule"]]
+    ev["n_frames_rule_met"] = len(rule_rows)
+    if not rule_rows:
+        ev["blockers"] = ["magnitude_intensity_rule_never_met"]
+        return ev
+    w = {"max_observed_pga_gal": max(r["obs"] for r in rule_rows),
+         "quality_gate_ok_any": any(r["gate"] for r in rule_rows)}
+    ev["while_rule_met"] = w
+    blockers = []
+    if w["max_observed_pga_gal"] < GATES["pws_min_obs_gal"]:
+        blockers.append("observed_pga_ge_%g_never_met_while_rule_met"
+                        % GATES["pws_min_obs_gal"])
+    if not w["quality_gate_ok_any"]:
+        blockers.append("quality_gate_never_met_while_rule_met")
+    if not blockers:
+        # every condition held at some point, never in the same frame
+        blockers.append("all_conditions_held_but_never_in_same_frame")
+    ev["blockers"] = blockers
     return ev
 
 

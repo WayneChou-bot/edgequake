@@ -175,13 +175,21 @@ reproduction report (verdict, full event coverage, checkpoint identity,
 artifact hashes), requires the manifest to list exactly the required
 hash/source key sets (a manifest that silently lists less fails),
 requires the audit record's numbers to have matched a fresh canonical
-recomputation at generation time (`audit_cross_check` — the content
-hash alone proves only that the record did not change afterwards), pins
-every public derived artifact (reports, audit indexes, dashboards) so a
-"derived-only" commit cannot silently alter them, proves the summary's
+recomputation at generation time (`audit_cross_check`, covering EVERY
+audit record in the archive — the content hash alone proves only that
+a record did not change afterwards), pins
+every public derived artifact (reports, audit indexes, dashboards, and
+every file in the audit archive — the required list is rebuilt from the
+tree at verify time, so a newly audited event that is not yet pinned
+fails verification until the summary is regenerated; the audit
+workflow regenerates and verifies before it is allowed to push), proves
+the summary's
 own quote list is consistent with its recorded event values (the
 summary cannot hash itself), records the execution environment
-(Python/NumPy/SciPy/pandas/ObsPy versions; pin with
+(Python/NumPy/SciPy/pandas/ObsPy versions — recorded provenance,
+reported on drift but not enforced by `--verify`, whose checks are
+environment-independent; numeric sensitivity is caught by the
+generation-time cross-checks and the reproduction harness; pin with
 `requirements-lock.txt`), and
 checks each quoted figure is present in this README while known-stale
 figures are absent — any drift fails loudly. Alert decisions in audit

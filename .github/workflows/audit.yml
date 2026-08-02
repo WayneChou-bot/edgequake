@@ -1,7 +1,8 @@
 # Shadow-mode audit: every 15 min, check CWA E-A0015-004 for a new
 # significant-earthquake waveform package; if new, download it, run a
-# post-hoc arrival-time replay (times are lower bounds), and commit the audit record back to the
-# repo — a public, self-accumulating verification log.
+# post-hoc arrival-time replay (times are lower bounds), regenerate the
+# results manifest, VERIFY it, and only then commit — the workflow can
+# never push a repo state that fails its own integrity checks.
 #
 # Setup (one-time):
 #   1. repo Settings -> Secrets and variables -> Actions ->
@@ -58,11 +59,13 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Install dependencies (CPU)
+      - name: Install dependencies (pinned, CPU)
         if: steps.check.outputs.new == 'true'
         run: |
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install numpy scipy pandas obspy seisbench
+          # torch pin comes from the lockfile but installs from the CPU index
+          pip install "$(grep '^torch==' requirements-lock.txt)" \
+            --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements-lock.txt
 
       - name: Run engine audit
         if: steps.check.outputs.new == 'true'
@@ -70,6 +73,13 @@ jobs:
           CWA_API_KEY: ${{ secrets.CWA_API_KEY }}
         run: |
           python scripts/ingest_cwa_wave.py --fetch --audit 2>&1 | tee audit_log.txt
+
+      - name: Archive raw log + done marker
+        if: steps.check.outputs.new == 'true'
+        run: |
+          mkdir -p outputs/audit_archive
+          touch "outputs/audit_archive/done_${{ steps.check.outputs.id }}"
+          cp audit_log.txt "outputs/audit_archive/audit_${{ steps.check.outputs.id }}.txt"
 
       - name: LLM event report
         if: steps.check.outputs.new == 'true'
@@ -81,15 +91,21 @@ jobs:
         if: steps.check.outputs.new == 'true'
         run: python scripts/build_audit_index.py
 
+      - name: Rebuild results manifest (pins + cross-checks new artifacts)
+        if: steps.check.outputs.new == 'true'
+        run: python scripts/build_results_summary.py
+
+      - name: Verify manifest before publishing
+        if: steps.check.outputs.new == 'true'
+        run: python scripts/build_results_summary.py --verify
+
       - name: Commit audit record
         if: steps.check.outputs.new == 'true'
         run: |
-          mkdir -p outputs/audit_archive
-          touch "outputs/audit_archive/done_${{ steps.check.outputs.id }}"
-          cp audit_log.txt "outputs/audit_archive/audit_${{ steps.check.outputs.id }}.txt"
           git config user.name  "edgequake-audit-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add outputs/replay_eq*.json outputs/audit_archive/ docs/audit.json vercel/audit.json
+          git add outputs/replay_eq*.json outputs/audit_archive/ \
+            docs/audit.json vercel/audit.json outputs/results_summary.json
           git commit -m "shadow audit: ${{ steps.check.outputs.id }}" || exit 0
           git pull --rebase origin main
           git push

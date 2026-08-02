@@ -86,8 +86,7 @@ def main() -> None:
           f"{evd.get('max_predicted_county_intensity')}, max obs="
           f"{evd.get('max_observed_pga_gal')} gal")
     if not evd["fired"]:
-        print(f"[evidence]   blockers: "
-              f"{evd.get('blockers_while_mag_ge_5')}")
+        print(f"[evidence]   blockers: {evd.get('blockers')}")
 
 
 if __name__ == "__main__":
