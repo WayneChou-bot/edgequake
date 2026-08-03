@@ -240,6 +240,62 @@ class LocalDateGrounding(unittest.TestCase):
         self.assertTrue(any("mixed time style" in p for p in problems),
                         problems)
 
+    def test_zh_period_word_semantics(self):
+        # round-12 counterexample: true 13:10, written 上午 1 時 10 分
+        rec = {"origin_utc": "2026-07-31T05:10:00Z"}   # local 13:10
+        bad = ("台灣時間 2026 年 7 月 31 日上午 1 時 10 分"
+               "---July 31, 2026, at 13:10 local time.")
+        problems = lr.date_problems(bad, rec)
+        self.assertTrue(any("matches no time" in p for p in problems),
+                        problems)
+        good = ("台灣時間 2026 年 7 月 31 日下午 1 時 10 分"
+                "---July 31, 2026, at 13:10 local time.")
+        self.assertEqual(lr.date_problems(good, rec), [])
+
+    def test_zh_pm_word_for_am_time_rejected(self):
+        # true 10:00 written 下午 10 時 0 分 (= 22:00)
+        rec = {"origin_utc": "2026-07-30T02:00:00Z"}   # local 10:00
+        problems = lr.date_problems(
+            "台灣時間 2026 年 7 月 30 日下午 10 時 0 分"
+            "---July 30, 2026, at 10:00 local time.", rec)
+        self.assertTrue(any("matches no time" in p for p in problems),
+                        problems)
+
+    def test_en_pm_twelve_hour_inversion_rejected(self):
+        # round-12 counterexample: true 10:00, English "10:00 PM"
+        rec = {"origin_utc": "2026-07-30T02:00:00Z"}   # local 10:00
+        problems = lr.date_problems(
+            "台灣時間 2026 年 7 月 30 日上午 10 時 0 分"
+            "---July 30, 2026, at 10:00 local time, also 10:00 PM.",
+            rec)
+        self.assertTrue(any("English clock time" in p
+                            for p in problems), problems)
+
+    def test_en_midnight_am_for_noon_rejected(self):
+        # true noon 12:00, English "12:00 AM" (= midnight)
+        rec = {"origin_utc": "2026-07-30T04:00:00Z"}   # local 12:00
+        problems = lr.date_problems(
+            "台灣時間 2026 年 7 月 30 日中午 12 時 0 分"
+            "---July 30, 2026, at 12:00 AM.", rec)
+        self.assertTrue(any("English clock time" in p
+                            for p in problems), problems)
+
+    def test_en_extra_ungrounded_time_rejected(self):
+        # round-12 counterexample: a stray 12:34 nowhere in the record
+        problems = lr.date_problems(
+            "台灣時間 2026 年 7 月 31 日凌晨 0 時 58 分"
+            "---July 31, 2026, at 00:58 local time; "
+            "another notice at 12:34.", self.REC)
+        self.assertTrue(any("12:34" in p for p in problems), problems)
+
+    def test_en_valid_twelve_hour_accepted(self):
+        # a correct, honest 12-hour rendering must still pass
+        rec = {"origin_utc": "2026-07-30T02:00:00Z"}   # local 10:00
+        self.assertEqual(lr.date_problems(
+            "台灣時間 2026 年 7 月 30 日上午 10 時 0 分"
+            "---July 30, 2026, at 10:00 local time (10:00 AM).", rec),
+            [])
+
 
 class ContradictionFreeDisplay(unittest.TestCase):
     """round 10: the verdict follows raw values, but the DISPLAYED

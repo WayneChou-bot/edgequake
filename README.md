@@ -121,9 +121,10 @@ bilingually — machine-validated: comparative wording is forbidden, the
 lower-bound statement is mandatory, and numbers are checked by
 core-number + decimal-token grounding (presence, not semantic role;
 general integers are not grounded, but bilingual local date, year and
-clock time are machine-checked — every clock time stated in the
-Chinese half must match a time in the record, and the English half
-must carry the 24-hour local time) — and commits
+clock time are machine-checked — every clock time stated in EITHER
+half, read with its 上午/下午 period word or AM/PM semantics, must
+match a time in the record, and the English half must carry the
+24-hour local time) — and commits
 everything back. Results are committed as computed, with no manual
 curation; the poll-based design can miss back-to-back events inside one
 15-minute window.
@@ -442,8 +443,9 @@ S 波盲區，幾乎沒有可用預警時間——回放頁展示的正是這件
 報告經機器驗證（禁用比較性措辭、必含下界聲明、核心數字與小數 token
 接地——token 精確比對且排除舊敘事欄位作為來源；驗證涵蓋數字存在性
 而非語意位置；一般整數不接地，但雙語的本地日期、年份與時刻會機器
-核對——中文段落中出現的任何時刻都必須對得上紀錄內的時間，英文段落
-必須含 24 時制本地時刻）；警報判定附**機器推導的閘門證據**
+核對——兩個語言段落中出現的任何時刻，連同其上午／下午時段詞或
+AM/PM 語意換算後，都必須對得上紀錄內的時間；英文段落並須含 24 時制
+本地時刻）；警報判定附**機器推導的閘門證據**
 （`pws_evidence`），報告中的 PWS 敘述由證據逐字組句——「原因」是算
 出來的，不是 LLM 寫出來的。全部 commit 回 repo——結果照算照登、
 無人工篩選；輪詢制在極端連發情境可能漏收同窗口內的較早事件。

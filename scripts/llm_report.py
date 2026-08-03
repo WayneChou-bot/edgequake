@@ -76,8 +76,9 @@ Taiwan local time (UTC+8; e.g. origin_utc 07-30T16:58 is 台灣時間 7月31日
 date 7月30日), matching how CWA reports it. English times use the
 24-hour clock, e.g. "at 00:58 local time" — never attach AM/PM to a
 24-hour time. A validator checks the local date, year and clock time
-in BOTH languages and rejects the report on any mismatch (including
-any stated clock time that matches no time in the record).
+in BOTH languages and rejects the report on any mismatch (every stated
+clock time — with its 上午/下午 period word or AM/PM read semantically
+— must match a time in the record).
 
 Hard rules: use ONLY numbers present in the record — never invent data.
 Every decimal number you write must appear VERBATIM in the record (a
@@ -297,20 +298,24 @@ def date_problems(text: str, rec: dict) -> list[str]:
     if not re.search(rf"{local.year}\s*年", zh):
         out.append(f"Chinese version must contain the local year "
                    f"{local.year}年")
-    # round-11: every clock time STATED in the Chinese half must match
-    # a time actually in the record (origin local time, 12-hour variant
-    # for non-midnight hours, or report_sent) — this covers wrong hours
-    # AND the minute==0 case the old `if local.minute` guard skipped
+    # round-11/12: every clock time STATED in the Chinese half must
+    # match a time actually in the record — including the 上午/下午
+    # PERIOD WORD (round-12 review: 「上午1時10分」 passed for a true
+    # 13:10 because only the digit tuple was compared)
     allowed = _allowed_times(rec, local)
-    stated = [(int(m.group(1)), int(m.group(2)), m.group(0))
-              for m in re.finditer(
-                  r"(\d{1,2})\s*[時时]\s*(\d{1,2})\s*分", zh)]
-    stated += [(int(m.group(1)), int(m.group(2)), m.group(0))
-               for m in re.finditer(r"\b(\d{1,2}):(\d{2})\b", zh)]
-    for h, m, shown in stated:
-        if (h, m) not in allowed:
-            out.append(f"Chinese clock time {shown!r} matches no time "
-                       f"in the record (local origin is "
+    for m in re.finditer(
+            r"(凌晨|清晨|早上|上午|中午|下午|傍晚|晚上|晚間|深夜|午夜|"
+            r"半夜)?\s*(\d{1,2})\s*[時时]\s*(\d{1,2})\s*分", zh):
+        cand = _zh_hour_candidates(m.group(1), int(m.group(2)))
+        mi = int(m.group(3))
+        if not any((c, mi) in allowed for c in cand):
+            out.append(f"Chinese clock time {m.group(0)!r} matches no "
+                       f"time in the record (local origin is "
+                       f"{local.hour:02d}:{local.minute:02d})")
+    for m in re.finditer(r"\b(\d{1,2}):(\d{2})\b", zh):
+        if (int(m.group(1)), int(m.group(2))) not in allowed:
+            out.append(f"Chinese clock time {m.group(0)!r} matches no "
+                       f"time in the record (local origin is "
                        f"{local.hour:02d}:{local.minute:02d})")
     hour_ok = (re.search(rf"{local.hour}\s*[時时]", zh)
                or f"{local.hour:02d}:{local.minute:02d}" in zh
@@ -349,30 +354,65 @@ def date_problems(text: str, rec: dict) -> list[str]:
             out.append(f"English version must state the local time "
                        f"{local.hour:02d}:{local.minute:02d} "
                        f"(24-hour)")
-        if re.search(r"\b(?:0\d|1[3-9]|2[0-3]):\d{2}\s*(?:AM|PM|a\.m\.|"
-                     r"p\.m\.)", en, re.I):
-            out.append("mixed time style in English version: a "
-                       "24-hour clock time must not carry AM/PM")
+        # round-12: scan EVERY English clock time, like the Chinese
+        # half — the old check only banned SOME hour+AM/PM combos
+        # (10/11/12 slipped through: a true 10:00 written '10:00 PM'
+        # is off by twelve hours) and extra ungrounded times passed
+        for m in re.finditer(
+                r"\b(\d{1,2}):(\d{2})(?:\s*([AaPp])\.?[Mm]\.?)?", en):
+            h, mi, suf = int(m.group(1)), int(m.group(2)), m.group(3)
+            if suf:
+                if h == 0 or h > 12:
+                    out.append(f"mixed time style in English version: "
+                               f"{m.group(0)!r} combines a 24-hour "
+                               f"clock value with AM/PM")
+                    continue
+                if suf.lower() == "a":
+                    h24 = 0 if h == 12 else h
+                else:
+                    h24 = 12 if h == 12 else h + 12
+            else:
+                h24 = h
+            if (h24, mi) not in allowed:
+                out.append(f"English clock time {m.group(0)!r} matches "
+                           f"no time in the record (local origin is "
+                           f"{local.hour:02d}:{local.minute:02d})")
     return out
 
 
+ZH_AM = ("凌晨", "清晨", "早上", "上午")
+ZH_PM = ("中午", "下午", "傍晚", "晚上", "晚間")
+ZH_AMBIGUOUS = ("深夜", "午夜", "半夜")   # colloquially span midnight
+
+
+def _zh_hour_candidates(period: str | None, h: int) -> set[int]:
+    """24-hour readings a Chinese clock phrase can legitimately mean."""
+    if period in ZH_AM:
+        return {0 if h == 12 else h}
+    if period in ZH_PM:
+        return {12 if h == 12 else (h + 12 if h < 12 else h)}
+    if period in ZH_AMBIGUOUS:
+        return {0 if h == 12 else h, (h + 12) % 24}
+    # no period word: could be a 24-hour value or a bare 12-hour one
+    return {h % 24, (h + 12) % 24}
+
+
 def _allowed_times(rec: dict, local) -> set:
-    """(hour, minute) pairs a report may legitimately state: the local
-    origin time (plus its 12-hour rendering for non-midnight hours) and
-    the report_sent time — so quoting the CWA report time is not a
-    false positive."""
+    """24-HOUR (hour, minute) pairs a report may legitimately state:
+    the local origin time and the report_sent time — so quoting the CWA
+    report time is not a false positive. Round-12: 12-hour renderings
+    are no longer pre-expanded here; the scanners convert each stated
+    phrase (period word / AM/PM) to 24-hour form and compare against
+    these canonical pairs, so 「上午1時」 can no longer pass for
+    13:10."""
     import datetime as _dt
     allowed = {(local.hour, local.minute)}
-    if local.hour != 0:
-        allowed.add((local.hour % 12 or 12, local.minute))
     sent = rec.get("report_sent")
     if sent:
         try:
             s = re.sub(r"([+-])(\d):", r"\g<1>0\g<2>:", str(sent))
             t = _dt.datetime.fromisoformat(s)
             allowed.add((t.hour, t.minute))
-            if t.hour != 0:
-                allowed.add((t.hour % 12 or 12, t.minute))
         except ValueError:
             pass
     return allowed
