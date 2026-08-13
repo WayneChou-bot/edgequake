@@ -1,10 +1,10 @@
 {
- "generated_at": "2026-08-12 20:25:46 UTC",
- "git_commit": "0366c553b87935ffd406d70d6ecb278810ea6ad8",
+ "generated_at": "2026-08-13 03:47:41 UTC",
+ "git_commit": "f0602f6dc360f6f567ab4d8d8551cddbc33df992",
  "working_tree_dirty": false,
  "environment": {
   "python": "3.11.15",
-  "platform": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+  "platform": "Windows-10-10.0.26200-SP0",
   "numpy": "2.4.6",
   "scipy": "1.17.1",
   "pandas": "3.0.5",
@@ -48,21 +48,20 @@
  "file_sha256": {
   "outputs/v3_verify_x83.pt": "26da59c137c878890f631f7f76e8e37388f5e1247e1f7366e8ddbafc3b1e7669",
   "outputs/phasenet_cwa_ft.pt": "26da59c137c878890f631f7f76e8e37388f5e1247e1f7366e8ddbafc3b1e7669",
-  "outputs/site_terms.json": "6c6b25a74b84101996922a9eed4cba57acb344d548f1b11634ee3eb036652091",
-  "outputs/reproduction_report.json": "b9d405eb3047edc8d7368c567dc1e377b9c0e5b52f3f6404f628ae12bca58c74",
-  "docs/audit.json": "165fce83b30d40d6469251c174ad672735bea1daa174a94eb481319c344b8ac2",
-  "vercel/audit.json": "165fce83b30d40d6469251c174ad672735bea1daa174a94eb481319c344b8ac2",
-  "docs/index.html": "5a11880134d7e10ab3c7780953011f103e725c382e3d6d4c3720b877b2088d52",
-  "vercel/index.html": "5a11880134d7e10ab3c7780953011f103e725c382e3d6d4c3720b877b2088d52",
+  "outputs/site_terms.json": "8574ae88124a44894af9d4e569bd4efab558d9508c309769575365933ac1f2aa",
+  "outputs/reproduction_report.json": "1210f7bf9022e846d014535af7ed09818972a373e43b4af73b8bf27d7ee2ba78",
+  "docs/audit.json": "ec899c2b5bd15ddcf133dfbca6c065b5b23f566af049c6e1770e19aec7b29337",
+  "vercel/audit.json": "ec899c2b5bd15ddcf133dfbca6c065b5b23f566af049c6e1770e19aec7b29337",
+  "docs/index.html": "392f3a0b1ba8759262b2106f5981effba7db6fcbb63f0def64fb8fde0a8761bf",
+  "vercel/index.html": "392f3a0b1ba8759262b2106f5981effba7db6fcbb63f0def64fb8fde0a8761bf",
   "outputs/replay_0403.json": "513dc26599b4a759095d8c656ac98c6eda89823767daa7f7f2e79aa195dd34f1",
   "outputs/replay_dapu.json": "15c6aa797b70bc5252caf2e839a37afb41d19393f70c7159e1a5ccf20787a907",
-  "outputs/replay_eq2026053.json": "e591b1f46d34428dd009044975c707b34fe751ba1f666b1fff0abafd9c8347b6",
-  "outputs/audit_archive/audit_202607310058-EQ2026053-Waveform.txt": "cb94bb83e38962ecc71549ceffe27f20ccd15effc51a12ab428a36cd861f3c63",
-  "outputs/audit_archive/audit_202608130354-EQ2026054-Waveform.txt": "e688508b2311e690032e3253e4783ea87227fa5f9e7f161551d9dfbd6e74caa9",
-  "outputs/audit_archive/audit_eq2026053.json": "ef61aa70dfcf0ef100400a727cc83398feb4adbeaa057437f70b817dda344527",
+  "outputs/replay_eq2026053.json": "e42208abadf6fa140ef4d7ace77e280d2f9ac54cf79af878cf728988126328cb",
+  "outputs/audit_archive/audit_202607310058-EQ2026053-Waveform.txt": "0c70635cb6befecd0c07d31a14152735f5f3331352072cac09d6977fbecaffa4",
+  "outputs/audit_archive/audit_202608130354-EQ2026054-Waveform.txt": "f33f11a954ae19f9f493df0987ee134f9b629b8b02455821636faebe9313088b",
+  "outputs/audit_archive/audit_eq2026053.json": "83a48e61a47bd86c3d86b7ab05296de680298bd32cecba84a10c8b8e495d14e8",
   "outputs/audit_archive/done_202607310058-EQ2026053-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "outputs/audit_archive/done_202608130354-EQ2026054-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "outputs/audit_archive/report_eq2026053.md": "83881c5e4ad2a45083ef58efe88914373da7fce34b1650271a0887ce5a31fbf9"
+  "outputs/audit_archive/report_eq2026053.md": "c7887dbf8a03261fd819596c355db947eb0dc4f0d7f8aefe70d9f35c32a8d713"
  },
  "audit_content_sha256": {
   "eq2026053": "169db588aedd020c2069217f70eae6ba3234469a15551f4aa38a449bf53a7d82"
