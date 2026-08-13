@@ -1,7 +1,13 @@
-Traceback (most recent call last):
-  File "/home/runner/work/edgequake/edgequake/scripts/ingest_cwa_wave.py", line 366, in <module>
-    main()
-  File "/home/runner/work/edgequake/edgequake/scripts/ingest_cwa_wave.py", line 147, in main
-    args.threshold = CANONICAL["pick_threshold"]
-                     ^^^^^^^^^
-UnboundLocalError: cannot access local variable 'CANONICAL' where it is not associated with a value
+[cwawave] downloading 202608130354-EQ2026054-Waveform ...
+[cwawave] 10 stations | origin 2026-08-12T19:54:22.000000Z UTC | CWA M4.4 @ 21.88/120.71 depth 40.2 km
+[cwawave] P picks 10/10
+[cwawave] wrote /home/runner/work/edgequake/edgequake/outputs/replay_eq2026054.json
+[audit] site terms: 737 stations
+[audit] ---- post-hoc arrival-time replay (lower bounds; latency not modeled) ----
+[audit] first location : origin+7.5s
+[audit] first magnitude: origin+14.3s  M8.2 (CWA M4.4) err 340 km
+[audit] final estimate : M5.37 err 72 km @ 10 stations
+[audit] EEW criteria   : origin+15.5s  (CWA issuance rule: M>=4.5 & predicted I>=3; not comparable with official issuance times)
+[audit] PWS criteria   : never
+[audit] CWA report sent: 2026-08-13T04:05:09+8:00 (waveform publication delay varies; CWA marks this dataset's cadence as irregular)
+[audit] wrote audit_eq2026054.json

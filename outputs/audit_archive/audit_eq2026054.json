@@ -1,0 +1,88 @@
+{
+ "id": "eq2026054",
+ "origin_utc": "2026-08-12T19:54:22.000000Z",
+ "cwa": {
+  "mag": 4.4,
+  "lat": 21.88,
+  "lon": 120.71,
+  "depth_km": 40.2
+ },
+ "n_stations": 10,
+ "n_picks": 10,
+ "t_first_loc_s": 7.5,
+ "t_first_mag_s": 14.3,
+ "first_mag": 8.19,
+ "final_mag": 5.37,
+ "final_err_km": 71.9,
+ "t_eew_s": 15.5,
+ "exposure": {
+  "i3": 519431,
+  "i4": 12126,
+  "i5": 0
+ },
+ "pop_version": "WorldPop 2026 R2025A",
+ "similar": [
+  {
+   "t": "2007-08-09T00:55",
+   "mag": 5.3,
+   "depth": 21.0,
+   "d_km": 21.9,
+   "place": "68 km E of Donggang, Taiwan",
+   "zh": null,
+   "score": 0.77
+  },
+  {
+   "t": "1998-11-17T22:27",
+   "mag": 5.3,
+   "depth": 33.0,
+   "d_km": 20.2,
+   "place": "57 km ENE of Donggang, Taiwan",
+   "zh": null,
+   "score": 1.12
+  },
+  {
+   "t": "1983-02-26T02:05",
+   "mag": 5.1,
+   "depth": 27.4,
+   "d_km": 18.5,
+   "place": "52 km NE of Hengchun, Taiwan",
+   "zh": null,
+   "score": 1.35
+  }
+ ],
+ "eew_fired": true,
+ "alert_fired": false,
+ "pws_evidence": {
+  "fired": false,
+  "thresholds": {
+   "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+   "quality_gates": {
+    "min_stations": 6,
+    "max_ellipse_km": 80.0,
+    "eew_min_obs_gal": 10.0,
+    "pws_min_obs_gal": 25.0
+   }
+  },
+  "max_mag": 8.19,
+  "max_predicted_county_intensity": 7,
+  "max_observed_pga_gal": 18.1,
+  "n_frames_rule_met": 67,
+  "while_rule_met": {
+   "max_observed_pga_gal": 18.1,
+   "quality_gate_ok_any": true
+  },
+  "blockers": [
+   "observed_pga_ge_25_never_met_while_rule_met"
+  ]
+ },
+ "gate_note": "eew/alert use the live engine's numeric quality gates (GATES), but replayed observed-PGA timing is approximate: a station's record-peak counts once its S-window has passed — not the causally-observed running PGA the live engine uses",
+ "report_sent": "2026-08-13T04:05:09+8:00",
+ "source_zip": {
+  "file": "cwawave_202608130354-EQ2026054-Waveform.zip",
+  "sha256": "891be2bec965f13cda51d9c78f1921fb0cc68172199fb782d0103f9c25db61b7"
+ },
+ "audited_at": "2026-08-13 03:49:56 UTC",
+ "generated_by_commit": "3549e9070f25ff081c6e05c21b8931afe33e7681",
+ "report_md": "台灣時間 2026年8月13日 凌晨3時54分，台灣南部海域（北緯 21.88 度，東經 120.71 度）發生一起深 40.2 公里的地震，中央氣象署測得規模為 4.4。在 EdgeQuake 離線重播中，系統於發震後 7.5 秒產出首次定位，並於發震後 14.3 秒估算首次規模為 8.19，隨後演進至最終規模 5.37，最終震央定位誤差為 71.9 公里。依據 WorldPop 2026 R2025A 人口資料與點源及平均地表場址放大假設，預估約 519431 人可能感受到震度3以上搖晃。\n\n系統於發震後 15.5 秒達到強震即時警報發布標準。15.5 秒為未納入系統延遲的理論下界，不可與官方發布時間直接比較。PWS 國家級警報未觸發：規模與預估震度條件曾於重播中達成（規模最高 M8.19），但該時段內實測 PGA 最高 18.1 gal，未達 25 gal 門檻。歷史上最相似的事件為 1983-02-26T02:05 發生於 52 km NE of Hengchun, Taiwan 的 5.1 級地震。本報告為學術研究原型系統之自動化重播結果，並非官方發布之地震資訊。\n\n---\n\nAt 03:54 local time on August 13, 2026, a magnitude 4.4 earthquake occurred in the southern offshore region of Taiwan (21.88 N, 120.71 E) at a depth of 40.2 km. In the EdgeQuake post-hoc replay, the engine produced its first location at origin+7.5 s and its first magnitude of 8.19 at origin+14.3 s, which evolved to a final magnitude of 5.37, with a final epicenter error of 71.9 km. Based on WorldPop 2026 R2025A and a point-source/average-site assumption, an estimated ~519431 people may have felt intensity-3+ shaking.\n\nThe EEW issuance criteria were met at origin+15.5 s. The 15.5 s figure is a theoretical lower bound that excludes system latency and must not be compared directly with official issuance times. The PWS public alert did not trigger: the magnitude/intensity rule was met during the replay (magnitude peaked at M8.19), but the highest observed PGA in those frames was 18.1 gal, below the 25 gal threshold. The most similar historical event was the 1983-02-26T02:05 earthquake of magnitude 5.1 located 52 km NE of Hengchun, Taiwan. This is an automated report from a research-prototype system, not official information.",
+ "report_model": "gemini-3.5-flash"
+}
