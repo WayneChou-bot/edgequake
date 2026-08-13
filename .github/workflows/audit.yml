@@ -72,6 +72,7 @@ jobs:
         env:
           CWA_API_KEY: ${{ secrets.CWA_API_KEY }}
         run: |
+          set -o pipefail
           python scripts/ingest_cwa_wave.py --fetch --audit 2>&1 | tee audit_log.txt
 
       - name: Archive raw log + done marker

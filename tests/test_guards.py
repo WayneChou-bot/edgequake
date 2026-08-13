@@ -95,6 +95,24 @@ class ReproductionRunGuards(unittest.TestCase):
         self.assertIn("unknown event", r.stdout + r.stderr)
 
 
+class IngestCliSmoke(unittest.TestCase):
+    """The first live event after the CANONICAL refactor (2026-08-13
+    Pingtung M4.4) crashed ingest_cwa_wave with UnboundLocalError —
+    a path no test had ever executed. This smoke test drives the real
+    CLI far enough to cross the threshold-resolution line."""
+
+    def test_no_args_reaches_input_check(self):
+        r = subprocess.run(
+            [sys.executable,
+             str(ROOT / "scripts" / "ingest_cwa_wave.py")],
+            capture_output=True, text=True, timeout=180)
+        out = r.stdout + r.stderr
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("need --zip, --dat-dir or --fetch", out)
+        self.assertNotIn("UnboundLocalError", out)
+        self.assertNotIn("Traceback", out)
+
+
 class DecimalGrounding(unittest.TestCase):
     """llm_report.validate numeric grounding (rounds 4-6)."""
 

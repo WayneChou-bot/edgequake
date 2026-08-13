@@ -38,6 +38,15 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts"))
 
+# imported at MODULE level on purpose. The first live event after the
+# CANONICAL refactor (2026-08-13 Pingtung M4.4) crashed with
+# UnboundLocalError: a later `from ... import CANONICAL` inside main()'s
+# audit branch made the name function-local EVERYWHERE in main(), so the
+# threshold default at the top of main() referenced it before binding.
+# Nothing had exercised this path since the refactor — the reproduction
+# harness drives ingest_gdms.py, not this script.
+from edgequake.location.replay_sim import CANONICAL  # noqa: E402
+
 FS = 100.0
 TZ_OFF = 8 * 3600.0   # headers are GMT+8
 
@@ -240,7 +249,6 @@ def main() -> None:
             print(f"[audit] site terms: {len(site_terms)} stations")
         from edgequake.impact import get_model
         from edgequake.similar import get_similar
-        from edgequake.location.replay_sim import CANONICAL
         from edgequake.location.replay_sim import pws_evidence as \
             _pws_evidence
         impact = get_model()
