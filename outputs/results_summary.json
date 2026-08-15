@@ -1,10 +1,10 @@
 {
- "generated_at": "2026-08-13 03:52:16 UTC",
- "git_commit": "3549e9070f25ff081c6e05c21b8931afe33e7681",
+ "generated_at": "2026-08-15 11:53:02 UTC",
+ "git_commit": "e564d83a18235783f42ab0b0c4127c27baa52db3",
  "working_tree_dirty": false,
  "environment": {
   "python": "3.11.15",
-  "platform": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+  "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
   "numpy": "2.4.6",
   "scipy": "1.17.1",
   "pandas": "3.0.5",
@@ -50,8 +50,8 @@
   "outputs/phasenet_cwa_ft.pt": "26da59c137c878890f631f7f76e8e37388f5e1247e1f7366e8ddbafc3b1e7669",
   "outputs/site_terms.json": "6c6b25a74b84101996922a9eed4cba57acb344d548f1b11634ee3eb036652091",
   "outputs/reproduction_report.json": "b9d405eb3047edc8d7368c567dc1e377b9c0e5b52f3f6404f628ae12bca58c74",
-  "docs/audit.json": "d9238e728195c79ddd2f67f59e40f8641f59296278bc97bf37f8a6e00debd068",
-  "vercel/audit.json": "d9238e728195c79ddd2f67f59e40f8641f59296278bc97bf37f8a6e00debd068",
+  "docs/audit.json": "ec2b4ada0d6b0bbd2f7ac17fba4103c3d70c2aa03411156f5f95ab9280714ed0",
+  "vercel/audit.json": "ec2b4ada0d6b0bbd2f7ac17fba4103c3d70c2aa03411156f5f95ab9280714ed0",
   "docs/index.html": "5a11880134d7e10ab3c7780953011f103e725c382e3d6d4c3720b877b2088d52",
   "vercel/index.html": "5a11880134d7e10ab3c7780953011f103e725c382e3d6d4c3720b877b2088d52",
   "outputs/replay_0403.json": "513dc26599b4a759095d8c656ac98c6eda89823767daa7f7f2e79aa195dd34f1",
@@ -59,17 +59,23 @@
   "outputs/replay_eq2026053.json": "e591b1f46d34428dd009044975c707b34fe751ba1f666b1fff0abafd9c8347b6",
   "outputs/audit_archive/audit_202607310058-EQ2026053-Waveform.txt": "cb94bb83e38962ecc71549ceffe27f20ccd15effc51a12ab428a36cd861f3c63",
   "outputs/audit_archive/audit_202608130354-EQ2026054-Waveform.txt": "ef6fe4e1d193e92e10a0c9724e45c7c863d3b060e25b0885eaaae2828ec5cd95",
+  "outputs/audit_archive/audit_202608151930-EQ2026055-Waveform.txt": "774dfbb1b46f9087888f2d1f90648306590149fb7400213ca225276f0a6dab14",
   "outputs/audit_archive/audit_eq2026053.json": "ef61aa70dfcf0ef100400a727cc83398feb4adbeaa057437f70b817dda344527",
   "outputs/audit_archive/audit_eq2026054.json": "58dcb3f9ae68bad30d7499d967c9ea84011efc31f00a8d37658d48006715c4f5",
+  "outputs/audit_archive/audit_eq2026055.json": "aea86751c102deff3b7ad1beb2d987931ceadae993538d8b5c8aaa2566da17cd",
   "outputs/audit_archive/done_202607310058-EQ2026053-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/done_202608130354-EQ2026054-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "outputs/audit_archive/done_202608151930-EQ2026055-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/report_eq2026053.md": "83881c5e4ad2a45083ef58efe88914373da7fce34b1650271a0887ce5a31fbf9",
   "outputs/audit_archive/report_eq2026054.md": "0075a184addcd702dcfcacfde23957f7c4f306685921755d084910de9ddf0a96",
-  "outputs/replay_eq2026054.json": "ec39c86b7d103e83e825b102e01c8beba7377521c5aa047bfec01fb2ecec2768"
+  "outputs/audit_archive/report_eq2026055.md": "4118fe6c5283394b2044104c431504165395e83812862f5d6c89c4f891ce0131",
+  "outputs/replay_eq2026054.json": "ec39c86b7d103e83e825b102e01c8beba7377521c5aa047bfec01fb2ecec2768",
+  "outputs/replay_eq2026055.json": "18dd55ad735ea7696877be0ef92d5aaad33bf743b90bd9f2c498a93d403e5411"
  },
  "audit_content_sha256": {
   "eq2026053": "169db588aedd020c2069217f70eae6ba3234469a15551f4aa38a449bf53a7d82",
-  "eq2026054": "cbdbb19a52c961aa8a2cc771e10a277d9513f4837ae0fb2c289ecf1e4371f90e"
+  "eq2026054": "cbdbb19a52c961aa8a2cc771e10a277d9513f4837ae0fb2c289ecf1e4371f90e",
+  "eq2026055": "527ead4b6be342b7e67979f9f84b0ac3130aff6c27f44b117e8940c66ec35d1e"
  },
  "audit_content_note": "audit record hashed excluding ['report_md', 'report_model'] — since round 7 the FULL record file is also pinned in file_sha256, so this narrower hash is a diagnostic that distinguishes numeric drift from narrative-only change (any change now requires regenerating the summary; summary is the last derived artifact)",
  "audit_cross_check": {
@@ -132,6 +138,34 @@
      },
      "blockers": [
       "observed_pga_ge_25_never_met_while_rule_met"
+     ]
+    }
+   },
+   "eq2026055": {
+    "t_first_loc_s": 12.3,
+    "first_mag": 5.8,
+    "final_mag": 5.27,
+    "final_err_km": 40.3,
+    "t_eew_s": null,
+    "eew_fired": false,
+    "alert_fired": false,
+    "pws_evidence": {
+     "fired": false,
+     "thresholds": {
+      "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+      "quality_gates": {
+       "min_stations": 6,
+       "max_ellipse_km": 80.0,
+       "eew_min_obs_gal": 10.0,
+       "pws_min_obs_gal": 25.0
+      }
+     },
+     "max_mag": 5.8,
+     "max_predicted_county_intensity": 2,
+     "max_observed_pga_gal": 11.9,
+     "n_frames_rule_met": 0,
+     "blockers": [
+      "magnitude_intensity_rule_never_met"
      ]
     }
    }
