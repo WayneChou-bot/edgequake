@@ -1,15 +1,96 @@
 {
  "summary": {
-  "n_events": 4,
-  "mean_abs_dmag": 0.3,
-  "mean_err_km": 45.8,
-  "mean_t_first_loc_s": 7.8,
-  "mean_t_eew_s": 12.7,
-  "n_eew_fired": 3,
-  "n_alert_fired": 0,
-  "n_report_sent": 4
+  "n_events": 5,
+  "mean_abs_dmag": 0.36,
+  "mean_err_km": 50.6,
+  "mean_t_first_loc_s": 7.1,
+  "mean_t_eew_s": 11.8,
+  "n_eew_fired": 4,
+  "n_alert_fired": 1,
+  "n_report_sent": 5
  },
  "events": [
+  {
+   "id": "eq2026057",
+   "origin_utc": "2026-08-25T07:00:11.000000Z",
+   "cwa": {
+    "mag": 5.8,
+    "lat": 22.63,
+    "lon": 121.6,
+    "depth_km": 13.1
+   },
+   "n_stations": 113,
+   "n_picks": 112,
+   "t_first_loc_s": 4.1,
+   "t_first_mag_s": 9.1,
+   "first_mag": 7.62,
+   "final_mag": 6.39,
+   "final_err_km": 69.7,
+   "t_eew_s": 9.1,
+   "exposure": {
+    "i3": 289862,
+    "i4": 0,
+    "i5": 0
+   },
+   "pop_version": "WorldPop 2026 R2025A",
+   "similar": [
+    {
+     "t": "1999-11-01T17:53",
+     "mag": 6.3,
+     "depth": 33.0,
+     "d_km": 26.8,
+     "place": "66 km S of Hualien City, Taiwan",
+     "zh": null,
+     "score": 2.77
+    },
+    {
+     "t": "1999-09-20T21:46",
+     "mag": 6.4,
+     "depth": 33.0,
+     "d_km": 43.0,
+     "place": "44 km SSE of Lugu, Taiwan",
+     "zh": null,
+     "score": 2.98
+    },
+    {
+     "t": "1994-10-05T01:13",
+     "mag": 5.5,
+     "depth": 69.7,
+     "d_km": 18.9,
+     "place": "97 km S of Hualien City, Taiwan",
+     "zh": null,
+     "score": 3.11
+    }
+   ],
+   "eew_fired": true,
+   "alert_fired": true,
+   "pws_evidence": {
+    "fired": true,
+    "thresholds": {
+     "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+     "quality_gates": {
+      "min_stations": 6,
+      "max_ellipse_km": 80.0,
+      "eew_min_obs_gal": 10.0,
+      "pws_min_obs_gal": 25.0
+     }
+    },
+    "max_mag": 8.07,
+    "max_predicted_county_intensity": 6.5,
+    "max_observed_pga_gal": 149.1,
+    "first_fired_t_after_origin_s": 9.1
+   },
+   "gate_note": "eew/alert use the live engine's numeric quality gates (GATES), but replayed observed-PGA timing is approximate: a station's record-peak counts once its S-window has passed — not the causally-observed running PGA the live engine uses",
+   "report_sent": "2026-08-25T15:13:13+8:00",
+   "source_zip": {
+    "file": "cwawave_202608251500-EQ2026057-Waveform.zip",
+    "sha256": "f8f73c3d2ba053867a9fefd14f3c2a4d56c9ccec194434faeca454b85df8577e"
+   },
+   "audited_at": "2026-08-25 07:59:54 UTC",
+   "generated_by_commit": "f228b34f455d4818fcff7022bf63ac7096333088",
+   "report_md": "台灣時間 2026年8月25日 下午3時00分，台灣東南部海域發生芮氏規模 5.8 地震，震源深度 13.1 公里。在 EdgeQuake 的後置重播測試中，系統於發震後 4.1 秒完成首次定位，並於發震後 9.1 秒估算首次規模為 7.62。隨著測站資料移入，最終規模收斂至 6.39，震央定位誤差為 69.7 公里。相較於中央氣象署的觀測值，此重播過程展現了估算值的演進。\n\n重播時間軸上，PWS 國家級警報條件於發震後 9.1 秒達成（理論下界，未含系統延遲）。9.1 秒為未納入系統延遲的理論下界，不可與官方發布時間直接比較。基於 WorldPop 2026 R2025A 人口資料與單點源及平均地物假設，預估約 289862 人可能感受到震度3以上搖晃。此事件與 1999年9月20日 於 Lugu 南南方 44 公里處發生的規模 6.4 地震最為相似。本報告為學術研究原型系統之自動化測試紀錄，不具備官方防救災效力。\n\n---\n\nAt 15:00 local time on August 25, 2026, a magnitude 5.8 earthquake occurred in the southeastern offshore region of Taiwan at a depth of 13.1 km. In the post-hoc replay, the engine resolved the first location at origin+4.1 s and estimated the first magnitude as 7.62 at origin+9.1 s. The estimated magnitude eventually evolved to a final value of 6.39, with a final epicenter error of 69.7 km compared to the CWA catalog.\n\nOn the replayed timeline the PWS criteria were met at origin+9.1 s (a lower bound; system latency excluded). The 9.1 s figure is a theoretical lower bound that excludes system latency and must not be compared directly with official issuance times. Based on the WorldPop 2026 R2025A dataset and a point-source, average-site assumption, an estimated ~289862 people may have felt intensity-3+ shaking. This event is seismically most similar to the magnitude 6.4 earthquake of September 20, 1999, located 44 km SSE of Lugu. This is an automated report from a research prototype and does not constitute official earthquake early warning information.",
+   "report_model": "gemini-3.5-flash"
+  },
   {
    "id": "eq2026056",
    "origin_utc": "2026-08-22T03:40:15.000000Z",
