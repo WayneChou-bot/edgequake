@@ -1,15 +1,99 @@
 {
  "summary": {
-  "n_events": 5,
-  "mean_abs_dmag": 0.36,
-  "mean_err_km": 50.6,
+  "n_events": 6,
+  "mean_abs_dmag": 0.32,
+  "mean_err_km": 43.1,
   "mean_t_first_loc_s": 7.1,
-  "mean_t_eew_s": 11.8,
-  "n_eew_fired": 4,
+  "mean_t_eew_s": 12.4,
+  "n_eew_fired": 5,
   "n_alert_fired": 1,
-  "n_report_sent": 5
+  "n_report_sent": 6
  },
  "events": [
+  {
+   "id": "eq2026058",
+   "origin_utc": "2026-08-26T21:47:20.000000Z",
+   "cwa": {
+    "mag": 5.2,
+    "lat": 22.82,
+    "lon": 121.35,
+    "depth_km": 35.0
+   },
+   "n_stations": 77,
+   "n_picks": 77,
+   "t_first_loc_s": 7.1,
+   "t_first_mag_s": 14.4,
+   "first_mag": 5.8,
+   "final_mag": 5.36,
+   "final_err_km": 5.7,
+   "t_eew_s": 14.9,
+   "exposure": {
+    "i3": 147710,
+    "i4": 0,
+    "i5": 0
+   },
+   "pop_version": "WorldPop 2026 R2025A",
+   "similar": [
+    {
+     "t": "1973-06-30T17:43",
+     "mag": 5.2,
+     "depth": 33.0,
+     "d_km": 8.8,
+     "place": "98 km ESE of Yujing, Taiwan",
+     "zh": null,
+     "score": 0.93
+    },
+    {
+     "t": "2001-06-19T05:16",
+     "mag": 5.4,
+     "depth": 33.0,
+     "d_km": 29.7,
+     "place": "67 km E of Yujing, Taiwan",
+     "zh": null,
+     "score": 1.15
+    },
+    {
+     "t": "1998-01-18T19:56",
+     "mag": 5.2,
+     "depth": 33.0,
+     "d_km": 19.2,
+     "place": "78 km ENE of Donggang, Taiwan",
+     "zh": null,
+     "score": 1.19
+    }
+   ],
+   "eew_fired": true,
+   "alert_fired": false,
+   "pws_evidence": {
+    "fired": false,
+    "thresholds": {
+     "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+     "quality_gates": {
+      "min_stations": 6,
+      "max_ellipse_km": 80.0,
+      "eew_min_obs_gal": 10.0,
+      "pws_min_obs_gal": 25.0
+     }
+    },
+    "max_mag": 5.82,
+    "max_predicted_county_intensity": 3,
+    "max_observed_pga_gal": 27.1,
+    "n_frames_rule_met": 0,
+    "blockers": [
+     "magnitude_intensity_rule_never_met"
+    ]
+   },
+   "gate_note": "eew/alert use the live engine's numeric quality gates (GATES), but replayed observed-PGA timing is approximate: a station's record-peak counts once its S-window has passed — not the causally-observed running PGA the live engine uses",
+   "report_sent": "2026-08-27T05:58:00+8:00",
+   "source_zip": {
+    "file": "cwawave_202608270547-EQ2026058-Waveform.zip",
+    "sha256": "d4e3815813bb3c13dbbe4ea9430e40f80ee4ac986546de66ce65fb66d3335b09"
+   },
+   "audited_at": "2026-08-26 23:37:44 UTC",
+   "generated_by_commit": "7f5c4e379323ab98d25b7a901778ad4116636e28",
+   "report_md": "台灣時間 2026年8月27日 清晨5時47分，台灣東部海域（座標 22.82, 121.35）發生一起芮氏規模 5.2 的地震，震源深度為 35.0 公里。EdgeQuake 系統在事後重播中，於發震後 7.1 秒完成首次定位，並於發震後 14.4 秒估算出首次規模 5.8。隨著測站資料移入，規模估計值最終收斂至 5.36，與中央氣象署（CWA）編目值 5.2 相比，最終震央誤差為 5.7 公里。\n\n本事件在發震後 14.9 秒達到強震即時警報發布標準。14.9 秒為未納入系統延遲的理論下界，不可與官方發布時間直接比較。PWS 國家級警報未觸發：規模與預估震度組合從未達到發布條件（M≥5.0 且縣市預估震度≥4 級，或 M≥6.5 且≥3 級）；重播期間規模估計最高 M5.82、預估縣市震度最高 3 級（兩極值未必同時出現）。基於 WorldPop 2026 R2025A 人口資料與點源及平均地物假設，預估約 147710 人可能感受到震度3以上搖晃。歷史上最相似的事件為 1973-06-30T17:43 發生於 98 km ESE of Yujing, Taiwan 的地震。本報告為學術研究原型系統之自動化重播結果，非官方發布資訊。\n\n---\n\nAt 05:47 local time on August 27, 2026, a magnitude 5.2 earthquake occurred in the eastern offshore region of Taiwan (22.82, 121.35) at a depth of 35.0 km. In the post-hoc replay, the engine resolved the first location at 7.1 s after the origin time, and estimated the first magnitude as 5.8 at 14.4 s. The magnitude estimate eventually evolved to a final value of 5.36, compared to the CWA catalog value of 5.2, with a final epicenter error of 5.7 km.\n\nThe EEW issuance criteria were met at 14.9 s after the origin time. The 14.9 s figure is a theoretical lower bound that excludes system latency and must not be compared directly with official issuance times. The PWS public alert did not trigger: the magnitude/intensity rule ((M>=5.0 & county intensity>=4) or (M>=6.5 & >=3)) was never met in any single instant — the magnitude estimate peaked at M5.82 and the highest predicted county intensity was 3 (these extremes need not be simultaneous). Based on WorldPop 2026 R2025A and the point-source/average-site assumption, an estimated ~147710 people may have felt intensity-3+ shaking. The most similar historical event is the earthquake on 1973-06-30T17:43 at 98 km ESE of Yujing, Taiwan. This is an automated research-prototype report, not official information.",
+   "report_model": "gemini-3.5-flash"
+  },
   {
    "id": "eq2026057",
    "origin_utc": "2026-08-25T07:00:11.000000Z",
