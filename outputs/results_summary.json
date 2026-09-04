@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-26 23:40:23 UTC",
- "git_commit": "7f5c4e379323ab98d25b7a901778ad4116636e28",
+ "generated_at": "2026-09-04 11:11:12 UTC",
+ "git_commit": "30a3a8b1c39494fd275f562f729caf4b5b091c52",
  "working_tree_dirty": false,
  "environment": {
   "python": "3.11.16",
@@ -50,8 +50,8 @@
   "outputs/phasenet_cwa_ft.pt": "26da59c137c878890f631f7f76e8e37388f5e1247e1f7366e8ddbafc3b1e7669",
   "outputs/site_terms.json": "6c6b25a74b84101996922a9eed4cba57acb344d548f1b11634ee3eb036652091",
   "outputs/reproduction_report.json": "b9d405eb3047edc8d7368c567dc1e377b9c0e5b52f3f6404f628ae12bca58c74",
-  "docs/audit.json": "b726c090878cf448e9e5dd334f86fcf6f5fdb9bbfa0e958c345aa98e88b07ea1",
-  "vercel/audit.json": "b726c090878cf448e9e5dd334f86fcf6f5fdb9bbfa0e958c345aa98e88b07ea1",
+  "docs/audit.json": "279d8017c6c6de79b13909acb955b5348aa84c03f517692f9160c61e39b11569",
+  "vercel/audit.json": "279d8017c6c6de79b13909acb955b5348aa84c03f517692f9160c61e39b11569",
   "docs/index.html": "5a11880134d7e10ab3c7780953011f103e725c382e3d6d4c3720b877b2088d52",
   "vercel/index.html": "5a11880134d7e10ab3c7780953011f103e725c382e3d6d4c3720b877b2088d52",
   "outputs/replay_0403.json": "513dc26599b4a759095d8c656ac98c6eda89823767daa7f7f2e79aa195dd34f1",
@@ -63,29 +63,34 @@
   "outputs/audit_archive/audit_202608221140-EQ2026056-Waveform.txt": "e4954bd592b4c79fad27a3bc4b0bb807a1be8138140a31a8b9d9d8159e9071a5",
   "outputs/audit_archive/audit_202608251500-EQ2026057-Waveform.txt": "690f2789f90b15d656d8cce3ce2f6b942b287a223e9510e063c7d700cc3d0f6d",
   "outputs/audit_archive/audit_202608270547-EQ2026058-Waveform.txt": "36909fac83786ff3986d236f24956f5a5b00bc2d6c8fa86d99dae9a226d30792",
+  "outputs/audit_archive/audit_202609041711-EQ2026059-Waveform.txt": "b64415f3a6a1692c0e5c809d74d267a440e5e9d7822ce8e98e4f10d4972e125b",
   "outputs/audit_archive/audit_eq2026053.json": "ef61aa70dfcf0ef100400a727cc83398feb4adbeaa057437f70b817dda344527",
   "outputs/audit_archive/audit_eq2026054.json": "58dcb3f9ae68bad30d7499d967c9ea84011efc31f00a8d37658d48006715c4f5",
   "outputs/audit_archive/audit_eq2026055.json": "aea86751c102deff3b7ad1beb2d987931ceadae993538d8b5c8aaa2566da17cd",
   "outputs/audit_archive/audit_eq2026056.json": "0c0a479654e5f00049e8b2355094cdd032cd394a7df95f3050a22ac6b7cf8e58",
   "outputs/audit_archive/audit_eq2026057.json": "532ba9a3219a8364d8d4456406e87194d4963e3208368ef623cc2e5decb3a552",
   "outputs/audit_archive/audit_eq2026058.json": "8928b28bad89a5831c1c1d5895e0377c4f0eeb6165d2fa6d625b9a8f23cea1ca",
+  "outputs/audit_archive/audit_eq2026059.json": "3de5616a33d5f5f1d14fe912e1b8490af7c3e27a7b69269405ef99d3dec564f7",
   "outputs/audit_archive/done_202607310058-EQ2026053-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/done_202608130354-EQ2026054-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/done_202608151930-EQ2026055-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/done_202608221140-EQ2026056-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/done_202608251500-EQ2026057-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/done_202608270547-EQ2026058-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "outputs/audit_archive/done_202609041711-EQ2026059-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/report_eq2026053.md": "83881c5e4ad2a45083ef58efe88914373da7fce34b1650271a0887ce5a31fbf9",
   "outputs/audit_archive/report_eq2026054.md": "0075a184addcd702dcfcacfde23957f7c4f306685921755d084910de9ddf0a96",
   "outputs/audit_archive/report_eq2026055.md": "4118fe6c5283394b2044104c431504165395e83812862f5d6c89c4f891ce0131",
   "outputs/audit_archive/report_eq2026056.md": "a8ca3788f59c8f978b0f9235515a23fed677e297cc5ae3b3dc43d75cc784f088",
   "outputs/audit_archive/report_eq2026057.md": "d4e38ea81d4a3fd75d12fe6bbefbeb347e98c3aedda7d9c8e96d4ae9e5403f65",
   "outputs/audit_archive/report_eq2026058.md": "45484da5ddd7770f4ee3755df7846c12c84047b6cb367f7a74cb1887bceb330e",
+  "outputs/audit_archive/report_eq2026059.md": "975d88c2c6df5f47d078938d2e076d50f316cd28ae7cf88eba1483b9ed568f09",
   "outputs/replay_eq2026054.json": "ec39c86b7d103e83e825b102e01c8beba7377521c5aa047bfec01fb2ecec2768",
   "outputs/replay_eq2026055.json": "18dd55ad735ea7696877be0ef92d5aaad33bf743b90bd9f2c498a93d403e5411",
   "outputs/replay_eq2026056.json": "028a2fc1940e73ad3b0adcd46ab96a833b8c1b23c15d9f2edcbd277fd2a57b42",
   "outputs/replay_eq2026057.json": "95463e723a7895b73a3ee47ffe8c0c3ff813c5ce255601503885818485e2fff8",
-  "outputs/replay_eq2026058.json": "8ff3e8f21d8e4a60dc8b524ddf084c5e514689d83930a0a3989a239df9e51f4e"
+  "outputs/replay_eq2026058.json": "8ff3e8f21d8e4a60dc8b524ddf084c5e514689d83930a0a3989a239df9e51f4e",
+  "outputs/replay_eq2026059.json": "c296521e23b4b9847097c0adb6c33e0f88b967c11832a48fc41c503afaf385d8"
  },
  "audit_content_sha256": {
   "eq2026053": "169db588aedd020c2069217f70eae6ba3234469a15551f4aa38a449bf53a7d82",
@@ -93,7 +98,8 @@
   "eq2026055": "527ead4b6be342b7e67979f9f84b0ac3130aff6c27f44b117e8940c66ec35d1e",
   "eq2026056": "27c6948c4743e329e3903c8787fc0dd7bfc13fddc5c7a93f4860a904a50f06cc",
   "eq2026057": "cc14f1fb40923a71041867d43b10d8e64973dc6d5915a9f3d4ec1de13fe15f1c",
-  "eq2026058": "b0a1fa827c52d0d8f69846a9f50028f87e4dcd6bf8690458a25615fde55aa111"
+  "eq2026058": "b0a1fa827c52d0d8f69846a9f50028f87e4dcd6bf8690458a25615fde55aa111",
+  "eq2026059": "54d3efa4f0c2c821f422c46209323350fb209609b233aecd5a3968c21a3f0491"
  },
  "audit_content_note": "audit record hashed excluding ['report_md', 'report_model'] — since round 7 the FULL record file is also pinned in file_sha256, so this narrower hash is a diagnostic that distinguishes numeric drift from narrative-only change (any change now requires regenerating the summary; summary is the last derived artifact)",
  "audit_cross_check": {
@@ -266,6 +272,34 @@
      "max_mag": 5.82,
      "max_predicted_county_intensity": 3,
      "max_observed_pga_gal": 27.1,
+     "n_frames_rule_met": 0,
+     "blockers": [
+      "magnitude_intensity_rule_never_met"
+     ]
+    }
+   },
+   "eq2026059": {
+    "t_first_loc_s": 8.9,
+    "first_mag": 4.8,
+    "final_mag": 4.88,
+    "final_err_km": 7.3,
+    "t_eew_s": null,
+    "eew_fired": false,
+    "alert_fired": false,
+    "pws_evidence": {
+     "fired": false,
+     "thresholds": {
+      "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+      "quality_gates": {
+       "min_stations": 6,
+       "max_ellipse_km": 80.0,
+       "eew_min_obs_gal": 10.0,
+       "pws_min_obs_gal": 25.0
+      }
+     },
+     "max_mag": 4.88,
+     "max_predicted_county_intensity": 2,
+     "max_observed_pga_gal": 30.3,
      "n_frames_rule_met": 0,
      "blockers": [
       "magnitude_intensity_rule_never_met"
