@@ -1,0 +1,84 @@
+{
+ "id": "eq2026061",
+ "origin_utc": "2026-09-11T11:24:56.000000Z",
+ "cwa": {
+  "mag": 4.5,
+  "lat": 23.38,
+  "lon": 121.64,
+  "depth_km": 24.6
+ },
+ "n_stations": 24,
+ "n_picks": 24,
+ "t_first_loc_s": 8.0,
+ "t_first_mag_s": 12.0,
+ "first_mag": 6.09,
+ "final_mag": 4.63,
+ "final_err_km": 23.5,
+ "t_eew_s": 12.0,
+ "exposure": {
+  "i3": 0,
+  "i4": 0,
+  "i5": 0
+ },
+ "pop_version": "WorldPop 2026 R2025A",
+ "similar": [
+  {
+   "t": "1989-06-08T13:46",
+   "mag": 5.0,
+   "depth": 27.4,
+   "d_km": 10.3,
+   "place": "54 km SSW of Hualien City, Taiwan",
+   "zh": null,
+   "score": 1.33
+  },
+  {
+   "t": "2011-07-12T11:17",
+   "mag": 5.0,
+   "depth": 34.9,
+   "d_km": 10.4,
+   "place": "61 km S of Hualien City, Taiwan",
+   "zh": null,
+   "score": 1.34
+  },
+  {
+   "t": "1988-04-11T22:35",
+   "mag": 5.0,
+   "depth": 25.3,
+   "d_km": 13.3,
+   "place": "75 km SSW of Hualien City, Taiwan",
+   "zh": null,
+   "score": 1.49
+  }
+ ],
+ "eew_fired": true,
+ "alert_fired": false,
+ "pws_evidence": {
+  "fired": false,
+  "thresholds": {
+   "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+   "quality_gates": {
+    "min_stations": 6,
+    "max_ellipse_km": 80.0,
+    "eew_min_obs_gal": 10.0,
+    "pws_min_obs_gal": 25.0
+   }
+  },
+  "max_mag": 6.09,
+  "max_predicted_county_intensity": 3,
+  "max_observed_pga_gal": 71.1,
+  "n_frames_rule_met": 0,
+  "blockers": [
+   "magnitude_intensity_rule_never_met"
+  ]
+ },
+ "gate_note": "eew/alert use the live engine's numeric quality gates (GATES), but replayed observed-PGA timing is approximate: a station's record-peak counts once its S-window has passed — not the causally-observed running PGA the live engine uses",
+ "report_sent": "2026-09-11T19:35:25+8:00",
+ "source_zip": {
+  "file": "cwawave_202609111924-EQ2026061-Waveform.zip",
+  "sha256": "cb0df5c065c6a76156af69237d9b1cac1ecb73085ad9bbf6dba2b2208b60af80"
+ },
+ "audited_at": "2026-09-11 12:58:10 UTC",
+ "generated_by_commit": "bdbdb410d46e53f743b2905c8dc619b086cef7ac",
+ "report_md": "台灣時間 2026 年 9 月 11 日下午 7 時 24 分，台灣東部海域（北緯 23.38 度，東經 121.64 度）發生深 24.6 公里、芮氏規模 4.5 的地震。EdgeQuake 系統在事後重播中，於發震後 8.0 秒完成首次定位，並於發震後 12.0 秒估出首次規模 6.09。隨後規模估計值收斂至最終的 4.63，與官方目錄值相比，震央定位誤差為 23.5 公里。\n\n系統於發震後 12.0 秒達到強震即時警報（EEW）發布標準。12.0 秒為未納入系統延遲的理論下界，不可與官方發布時間直接比較。PWS 國家級警報未觸發：規模與預估震度組合從未達到發布條件（M≥5.0 且縣市預估震度≥4 級，或 M≥6.5 且≥3 級）；重播期間規模估計最高 M6.09、預估縣市震度最高 3 級（兩極值未必同時出現）。依據 WorldPop 2026 R2025A 人口資料與單點震源及平均地物假設，預估約 0 人可能感受到震度3以上搖晃。本事件與 1989 年 6 月 8 日於花蓮市西南南方約 54 公里處發生的規模 5.0 地震最為相似。本報告為學術研究原型系統自動產生的重播分析，非官方發布資訊。\n\n---\n\nAt 19:24 local time on September 11, 2026, a magnitude 4.5 earthquake occurred off the coast of eastern Taiwan at 23.38 N, 121.64 E, with a depth of 24.6 km. In the post-hoc replay, the EdgeQuake engine determined the first location at 8.0 s after the origin time, and the first magnitude estimate of 6.09 at 12.0 s. The magnitude estimate eventually evolved to a final value of 4.63, with a final epicenter error of 23.5 km compared to the CWA catalog.\n\nThe system met the EEW issuance criteria at 12.0 s after the origin time. The 12.0 s figure is a theoretical lower bound that excludes system latency and must not be compared directly with official issuance times. The PWS public alert did not trigger: the magnitude/intensity rule ((M>=5.0 & county intensity>=4) or (M>=6.5 & >=3)) was never met in any single instant — the magnitude estimate peaked at M6.09 and the highest predicted county intensity was 3 (these extremes need not be simultaneous). Based on the WorldPop 2026 R2025A dataset and a point-source/average-site assumption, an estimated ~0 people may have felt intensity-3+ shaking. This event is seismically most similar to the June 8, 1989 earthquake of magnitude 5.0, located 54 km SSW of Hualien City. This is an automated report from a research-prototype system, not official information.",
+ "report_model": "gemini-3.5-flash"
+}

@@ -1,0 +1,9 @@
+台灣時間 2026 年 9 月 11 日下午 7 時 24 分，台灣東部海域（北緯 23.38 度，東經 121.64 度）發生深 24.6 公里、芮氏規模 4.5 的地震。EdgeQuake 系統在事後重播中，於發震後 8.0 秒完成首次定位，並於發震後 12.0 秒估出首次規模 6.09。隨後規模估計值收斂至最終的 4.63，與官方目錄值相比，震央定位誤差為 23.5 公里。
+
+系統於發震後 12.0 秒達到強震即時警報（EEW）發布標準。12.0 秒為未納入系統延遲的理論下界，不可與官方發布時間直接比較。PWS 國家級警報未觸發：規模與預估震度組合從未達到發布條件（M≥5.0 且縣市預估震度≥4 級，或 M≥6.5 且≥3 級）；重播期間規模估計最高 M6.09、預估縣市震度最高 3 級（兩極值未必同時出現）。依據 WorldPop 2026 R2025A 人口資料與單點震源及平均地物假設，預估約 0 人可能感受到震度3以上搖晃。本事件與 1989 年 6 月 8 日於花蓮市西南南方約 54 公里處發生的規模 5.0 地震最為相似。本報告為學術研究原型系統自動產生的重播分析，非官方發布資訊。
+
+---
+
+At 19:24 local time on September 11, 2026, a magnitude 4.5 earthquake occurred off the coast of eastern Taiwan at 23.38 N, 121.64 E, with a depth of 24.6 km. In the post-hoc replay, the EdgeQuake engine determined the first location at 8.0 s after the origin time, and the first magnitude estimate of 6.09 at 12.0 s. The magnitude estimate eventually evolved to a final value of 4.63, with a final epicenter error of 23.5 km compared to the CWA catalog.
+
+The system met the EEW issuance criteria at 12.0 s after the origin time. The 12.0 s figure is a theoretical lower bound that excludes system latency and must not be compared directly with official issuance times. The PWS public alert did not trigger: the magnitude/intensity rule ((M>=5.0 & county intensity>=4) or (M>=6.5 & >=3)) was never met in any single instant — the magnitude estimate peaked at M6.09 and the highest predicted county intensity was 3 (these extremes need not be simultaneous). Based on the WorldPop 2026 R2025A dataset and a point-source/average-site assumption, an estimated ~0 people may have felt intensity-3+ shaking. This event is seismically most similar to the June 8, 1989 earthquake of magnitude 5.0, located 54 km SSW of Hualien City. This is an automated report from a research-prototype system, not official information.
