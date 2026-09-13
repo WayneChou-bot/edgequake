@@ -1,15 +1,99 @@
 {
  "summary": {
-  "n_events": 9,
-  "mean_abs_dmag": 0.32,
-  "mean_err_km": 33.7,
-  "mean_t_first_loc_s": 7.5,
-  "mean_t_eew_s": 12.3,
-  "n_eew_fired": 7,
+  "n_events": 10,
+  "mean_abs_dmag": 0.29,
+  "mean_err_km": 30.5,
+  "mean_t_first_loc_s": 7.3,
+  "mean_t_eew_s": 11.8,
+  "n_eew_fired": 8,
   "n_alert_fired": 2,
-  "n_report_sent": 9
+  "n_report_sent": 10
  },
  "events": [
+  {
+   "id": "eq2026062",
+   "origin_utc": "2026-09-13T19:21:35.000000Z",
+   "cwa": {
+    "mag": 4.7,
+    "lat": 23.56,
+    "lon": 121.35,
+    "depth_km": 17.6
+   },
+   "n_stations": 43,
+   "n_picks": 43,
+   "t_first_loc_s": 5.5,
+   "t_first_mag_s": 8.2,
+   "first_mag": 5.72,
+   "final_mag": 4.78,
+   "final_err_km": 2.2,
+   "t_eew_s": 8.2,
+   "exposure": {
+    "i3": 46556,
+    "i4": 10253,
+    "i5": 0
+   },
+   "pop_version": "WorldPop 2026 R2025A",
+   "similar": [
+    {
+     "t": "2024-01-28T18:11",
+     "mag": 5.1,
+     "depth": 7.2,
+     "d_km": 5.1,
+     "place": "48 km SW of Hualien City, Taiwan",
+     "zh": null,
+     "score": 1.31
+    },
+    {
+     "t": "1989-06-08T13:46",
+     "mag": 5.0,
+     "depth": 27.4,
+     "d_km": 17.8,
+     "place": "54 km SSW of Hualien City, Taiwan",
+     "zh": null,
+     "score": 1.41
+    },
+    {
+     "t": "2024-04-22T11:25",
+     "mag": 5.0,
+     "depth": 10.0,
+     "d_km": 23.6,
+     "place": "35 km S of Hualien City, Taiwan",
+     "zh": null,
+     "score": 1.42
+    }
+   ],
+   "eew_fired": true,
+   "alert_fired": false,
+   "pws_evidence": {
+    "fired": false,
+    "thresholds": {
+     "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+     "quality_gates": {
+      "min_stations": 6,
+      "max_ellipse_km": 80.0,
+      "eew_min_obs_gal": 10.0,
+      "pws_min_obs_gal": 25.0
+     }
+    },
+    "max_mag": 5.79,
+    "max_predicted_county_intensity": 3,
+    "max_observed_pga_gal": 183.5,
+    "n_frames_rule_met": 0,
+    "blockers": [
+     "magnitude_intensity_rule_never_met"
+    ]
+   },
+   "gate_note": "eew/alert use the live engine's numeric quality gates (GATES), but replayed observed-PGA timing is approximate: a station's record-peak counts once its S-window has passed — not the causally-observed running PGA the live engine uses",
+   "report_sent": "2026-09-14T03:32:59+8:00",
+   "source_zip": {
+    "file": "cwawave_202609140321-EQ2026062-Waveform.zip",
+    "sha256": "4ccfe6d7961c1521788ccf739cb64de2d8ee5c585ef3db936755bd3cd12e719d"
+   },
+   "audited_at": "2026-09-13 19:51:36 UTC",
+   "generated_by_commit": "6eeffcbb5e33f5013eaba1829696fd0fddd5bbc2",
+   "report_md": "台灣時間 2026 年 9 月 14 日凌晨 3 時 21 分，花蓮縣萬榮鄉附近（北緯 23.56 度、東經 121.35 度）發生芮氏規模 4.7 的地震，震源深度 17.6 公里。EdgeQuake 系統在事後重播中，於發震後 5.5 秒完成首次定位，並於發震後 8.2 秒估算出首次規模 5.72。隨著測站資料增加，規模估計值收斂至最終的 4.78，與官方編號目錄值相比，震央位置誤差為 2.2 公里。本事件在發震後 8.2 秒達到強震即時警報發布標準。\n\n8.2 秒為未納入系統延遲的理論下界，不可與官方發布時間直接比較。PWS 國家級警報未觸發：規模與預估震度組合從未達到發布條件（M≥5.0 且縣市預估震度≥4 級，或 M≥6.5 且≥3 級）；重播期間規模估計最高 M5.79、預估縣市震度最高 3 級（兩極值未必同時出現）。基於 WorldPop 2026 R2025A 人口資料與點源及平均地物假設，預估約 46556 人可能感受到震度3以上搖晃。本事件與 2024 年 1 月 28 日於花蓮市西南方 48 公里處發生的規模 5.1 地震特徵最為相似。本報告為學術研究原型系統之自動化重播結果，並非官方發布資訊。\n\n---\n\nAt 03:21 local time on September 14, 2026, a magnitude 4.7 earthquake occurred in the Wanrong Township region (23.56 N, 121.35 E) at a depth of 17.6 km. In the post-hoc replay, the EdgeQuake engine determined the first location at origin+5.5 s and estimated the first magnitude at 5.72 at origin+8.2 s. The magnitude estimate evolved to a final value of 4.78, and the final epicenter error was 2.2 km compared to the CWA catalog. The earthquake early warning issuance criteria were met at origin+8.2 s.\n\nThe 8.2 s figure is a theoretical lower bound that excludes system latency and must not be compared directly with official issuance times. The PWS public alert did not trigger: the magnitude/intensity rule ((M>=5.0 & county intensity>=4) or (M>=6.5 & >=3)) was never met in any single instant — the magnitude estimate peaked at M5.79 and the highest predicted county intensity was 3 (these extremes need not be simultaneous). Based on WorldPop 2026 R2025A and a point-source/average-site assumption, an estimated ~46556 people may have felt intensity-3+ shaking. This event is seismically most similar to the January 28, 2024 earthquake of magnitude 5.1 located 48 km SW of Hualien City. This is an automated research-prototype report, not official information.",
+   "report_model": "gemini-3.5-flash"
+  },
   {
    "id": "eq2026061",
    "origin_utc": "2026-09-11T11:24:56.000000Z",

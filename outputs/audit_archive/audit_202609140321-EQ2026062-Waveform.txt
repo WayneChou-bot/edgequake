@@ -1,0 +1,13 @@
+[cwawave] downloading 202609140321-EQ2026062-Waveform ...
+[cwawave] 43 stations | origin 2026-09-13T19:21:35.000000Z UTC | CWA M4.7 @ 23.56/121.35 depth 17.6 km
+[cwawave] P picks 43/43
+[cwawave] wrote /home/runner/work/edgequake/edgequake/outputs/replay_eq2026062.json
+[audit] site terms: 737 stations
+[audit] ---- post-hoc arrival-time replay (lower bounds; latency not modeled) ----
+[audit] first location : origin+5.5s
+[audit] first magnitude: origin+8.2s  M5.7 (CWA M4.7) err 11 km
+[audit] final estimate : M4.78 err 2 km @ 43 stations
+[audit] EEW criteria   : origin+8.2s  (CWA issuance rule: M>=4.5 & predicted I>=3; not comparable with official issuance times)
+[audit] PWS criteria   : never
+[audit] CWA report sent: 2026-09-14T03:32:59+8:00 (waveform publication delay varies; CWA marks this dataset's cadence as irregular)
+[audit] wrote audit_eq2026062.json
