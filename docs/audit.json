@@ -1,15 +1,99 @@
 {
  "summary": {
-  "n_events": 11,
-  "mean_abs_dmag": 0.27,
-  "mean_err_km": 33.2,
-  "mean_t_first_loc_s": 7.0,
+  "n_events": 12,
+  "mean_abs_dmag": 0.29,
+  "mean_err_km": 30.8,
+  "mean_t_first_loc_s": 6.7,
   "mean_t_eew_s": 11.8,
   "n_eew_fired": 8,
   "n_alert_fired": 2,
-  "n_report_sent": 11
+  "n_report_sent": 12
  },
  "events": [
+  {
+   "id": "eq2026064",
+   "origin_utc": "2026-09-21T21:16:13.000000Z",
+   "cwa": {
+    "mag": 4.2,
+    "lat": 23.21,
+    "lon": 120.54,
+    "depth_km": 7.5
+   },
+   "n_stations": 24,
+   "n_picks": 24,
+   "t_first_loc_s": 3.5,
+   "t_first_mag_s": 5.8,
+   "first_mag": 3.11,
+   "final_mag": 3.7,
+   "final_err_km": 4.5,
+   "t_eew_s": null,
+   "exposure": {
+    "i3": 12978,
+    "i4": 1030,
+    "i5": 0
+   },
+   "pop_version": "WorldPop 2026 R2025A",
+   "similar": [
+    {
+     "t": "2025-01-30T07:16",
+     "mag": 5.0,
+     "depth": 10.0,
+     "d_km": 8.2,
+     "place": "12 km ENE of Yujing, Taiwan",
+     "zh": null,
+     "score": 3.61
+    },
+    {
+     "t": "2001-09-17T22:44",
+     "mag": 5.0,
+     "depth": 5.0,
+     "d_km": 19.5,
+     "place": "31 km ENE of Yujing, Taiwan",
+     "zh": null,
+     "score": 3.78
+    },
+    {
+     "t": "2025-01-30T02:11",
+     "mag": 5.1,
+     "depth": 10.0,
+     "d_km": 8.1,
+     "place": "12 km ENE of Yujing, Taiwan",
+     "zh": null,
+     "score": 3.86
+    }
+   ],
+   "eew_fired": false,
+   "alert_fired": false,
+   "pws_evidence": {
+    "fired": false,
+    "thresholds": {
+     "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+     "quality_gates": {
+      "min_stations": 6,
+      "max_ellipse_km": 80.0,
+      "eew_min_obs_gal": 10.0,
+      "pws_min_obs_gal": 25.0
+     }
+    },
+    "max_mag": 3.75,
+    "max_predicted_county_intensity": 1,
+    "max_observed_pga_gal": 94.0,
+    "n_frames_rule_met": 0,
+    "blockers": [
+     "magnitude_intensity_rule_never_met"
+    ]
+   },
+   "gate_note": "eew/alert use the live engine's numeric quality gates (GATES), but replayed observed-PGA timing is approximate: a station's record-peak counts once its S-window has passed — not the causally-observed running PGA the live engine uses",
+   "report_sent": "2026-09-22T05:25:41+8:00",
+   "source_zip": {
+    "file": "cwawave_202609220516-EQ2026064-Waveform.zip",
+    "sha256": "adf786b069d95f1d398c533e04dda2e5eda42f637f17ea4dbafc81f9f7df16f1"
+   },
+   "audited_at": "2026-09-21 22:30:01 UTC",
+   "generated_by_commit": "e313f516ec471858fb3f86d91c22265067c0c9fb",
+   "report_md": "台灣時間 2026 年 9月22日 清晨 5時16分，台灣南部地區發生一起芮氏規模 4.2 的地震，震央位於北緯 23.21 度、東經 120.54 度，震源深度為 7.5 公里。在 EdgeQuake 系統的後設重播測試中，系統於發震後 3.5 秒完成首次定位，並於發震後 5.8 秒估算出首次規模為 3.11。隨著測站資料移入，估算規模最終收斂至 3.7，與中央氣象署（CWA）編目值相比，最終定位誤差為 4.5 公里。\n\n基於 WorldPop 2026 R2025A 人口資料與單點源及平均地物假設，系統預估約 12978 人可能感受到震度3以上搖晃。PWS 國家級警報未觸發：規模與預估震度組合從未達到發布條件（M≥5.0 且縣市預估震度≥4 級，或 M≥6.5 且≥3 級）；重播期間規模估計最高 M3.75、預估縣市震度最高 1 級（兩極值未必同時出現）。本次重播中，強震即時警報（EEW）發布門檻在理論下界時間軸上未曾觸發。歷史上最相似的事件為 2025-01-30T02:11 發生於玉井東北東方約 8.1 公里處的 5.1 級地震。本報告為學術研究原型系統之自動化產出，非官方正式地震預警資訊。\n\n---\n\nAt 05:16 local time on September 22, 2026, a magnitude 4.2 earthquake occurred in southern Taiwan (23.21 N, 120.54 E) at a depth of 7.5 km. In the post-hoc replay, the engine achieved its first location at 3.5 s after origin, with an initial magnitude of 3.11 estimated at 5.8 s. The magnitude estimate evolved to a final value of 3.7, yielding an epicenter error of 4.5 km compared to the CWA catalog. \n\nBased on the WorldPop 2026 R2025A dataset and a point-source, average-site assumption, an estimated ~12978 people may have felt intensity-3+ shaking. The PWS public alert did not trigger: the magnitude/intensity rule ((M>=5.0 & county intensity>=4) or (M>=6.5 & >=3)) was never met in any single instant — the magnitude estimate peaked at M3.75 and the highest predicted county intensity was 1 (these extremes need not be simultaneous). The EEW issuance criteria were never met under the lower-bound timeline. The most similar historical event was the magnitude 5.1 earthquake on 2025-01-30T02:11 located 8.1 km ENE of Yujing. This is an automated research-prototype report, not official information.",
+   "report_model": "gemini-3.5-flash"
+  },
   {
    "id": "eq2026063",
    "origin_utc": "2026-09-13T22:44:41.000000Z",
