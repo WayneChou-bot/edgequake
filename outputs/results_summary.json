@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-09-30 08:27:28 UTC",
- "git_commit": "667c685e7405dced3c53293967ff2d2c45ca5790",
+ "generated_at": "2026-10-06 09:06:16 UTC",
+ "git_commit": "bc883fc1caf84ebbc273277241d5c6450f07aa57",
  "working_tree_dirty": false,
  "environment": {
   "python": "3.11.16",
@@ -50,8 +50,8 @@
   "outputs/phasenet_cwa_ft.pt": "26da59c137c878890f631f7f76e8e37388f5e1247e1f7366e8ddbafc3b1e7669",
   "outputs/site_terms.json": "6c6b25a74b84101996922a9eed4cba57acb344d548f1b11634ee3eb036652091",
   "outputs/reproduction_report.json": "b9d405eb3047edc8d7368c567dc1e377b9c0e5b52f3f6404f628ae12bca58c74",
-  "docs/audit.json": "cd072fcdb2103f6ef75469d14819775fb5961f5752f1e0b2e2d9128262a35c5e",
-  "vercel/audit.json": "cd072fcdb2103f6ef75469d14819775fb5961f5752f1e0b2e2d9128262a35c5e",
+  "docs/audit.json": "4f440957d5e259289e5252d62c25db2ccd7758ebbaefcdd6e5229768b870d264",
+  "vercel/audit.json": "4f440957d5e259289e5252d62c25db2ccd7758ebbaefcdd6e5229768b870d264",
   "docs/index.html": "5a11880134d7e10ab3c7780953011f103e725c382e3d6d4c3720b877b2088d52",
   "vercel/index.html": "5a11880134d7e10ab3c7780953011f103e725c382e3d6d4c3720b877b2088d52",
   "outputs/replay_0403.json": "513dc26599b4a759095d8c656ac98c6eda89823767daa7f7f2e79aa195dd34f1",
@@ -72,6 +72,7 @@
   "outputs/audit_archive/audit_202609271533-EQ2026065-Waveform.txt": "83a759c0f2a94d86c8f74732728639f15377602e989dd5a6e5621da3e7b08845",
   "outputs/audit_archive/audit_202609290220-EQ2026066-Waveform.txt": "8e291b31625c9cccba62f14bcf4ebfe4455ff21eaad57607c4305c96bfe46361",
   "outputs/audit_archive/audit_202609301300-EQ2026067-Waveform.txt": "c6accf6a4eff28deb6747a52cc4518d5de52837b06e73cd03ad1d447143e7130",
+  "outputs/audit_archive/audit_202610061641-EQ2026068-Waveform.txt": "0b0e3090c8e6c99d46667fe71ee11478f2dcd88030fc2ac36fa8e98b7d640ac4",
   "outputs/audit_archive/audit_eq2026053.json": "ef61aa70dfcf0ef100400a727cc83398feb4adbeaa057437f70b817dda344527",
   "outputs/audit_archive/audit_eq2026054.json": "58dcb3f9ae68bad30d7499d967c9ea84011efc31f00a8d37658d48006715c4f5",
   "outputs/audit_archive/audit_eq2026055.json": "aea86751c102deff3b7ad1beb2d987931ceadae993538d8b5c8aaa2566da17cd",
@@ -87,6 +88,7 @@
   "outputs/audit_archive/audit_eq2026065.json": "6ad826f05c3b65245ff7beaf4cfb23a7b6583d43f88859f8f6a2cd146e8858fb",
   "outputs/audit_archive/audit_eq2026066.json": "7e8e9a97d09e3b56ac2a561d1ffc5b208eee3cc9f5ef51fc7180bc44ca18c067",
   "outputs/audit_archive/audit_eq2026067.json": "cfc769b90ab84a7f99723f59b266de41cc7c0b88c5aeeda3644e0184c99ba366",
+  "outputs/audit_archive/audit_eq2026068.json": "483d31e26d826c569392015a48b6da6eb49e2869b1168415b07bb4626910eb2e",
   "outputs/audit_archive/done_202607310058-EQ2026053-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/done_202608130354-EQ2026054-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/done_202608151930-EQ2026055-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -102,6 +104,7 @@
   "outputs/audit_archive/done_202609271533-EQ2026065-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/done_202609290220-EQ2026066-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/done_202609301300-EQ2026067-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "outputs/audit_archive/done_202610061641-EQ2026068-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/report_eq2026053.md": "83881c5e4ad2a45083ef58efe88914373da7fce34b1650271a0887ce5a31fbf9",
   "outputs/audit_archive/report_eq2026054.md": "0075a184addcd702dcfcacfde23957f7c4f306685921755d084910de9ddf0a96",
   "outputs/audit_archive/report_eq2026055.md": "4118fe6c5283394b2044104c431504165395e83812862f5d6c89c4f891ce0131",
@@ -117,6 +120,7 @@
   "outputs/audit_archive/report_eq2026065.md": "6558180bd98e92fe53ea84cc874b195b600b56d568994efcaa0e8424fd880958",
   "outputs/audit_archive/report_eq2026066.md": "1d82e325225602930f40971aff645a88b1d904f293b11e894fdca096946076e4",
   "outputs/audit_archive/report_eq2026067.md": "98f7add41184fcbcc28a3f3791bc10e88fa33dbbdbad880766769e2b55d4d6fc",
+  "outputs/audit_archive/report_eq2026068.md": "de96f8f10ddb408ab6757dc5f07826cd8e00a0dcf9f03e0a6c354d2676ccc9e3",
   "outputs/replay_eq2026054.json": "ec39c86b7d103e83e825b102e01c8beba7377521c5aa047bfec01fb2ecec2768",
   "outputs/replay_eq2026055.json": "18dd55ad735ea7696877be0ef92d5aaad33bf743b90bd9f2c498a93d403e5411",
   "outputs/replay_eq2026056.json": "028a2fc1940e73ad3b0adcd46ab96a833b8c1b23c15d9f2edcbd277fd2a57b42",
@@ -130,7 +134,8 @@
   "outputs/replay_eq2026064.json": "6fb5291fb82f517af0809da2a179777fa7394e4c0757bc97a2f3a4773ba1295c",
   "outputs/replay_eq2026065.json": "2e1eed154b16e349a97da7c3a10b30be4201cdebdae176eeb6c49232db61ccc3",
   "outputs/replay_eq2026066.json": "6feb281083c75f0893ac35db734d2cae548c039d3591f0d8bd1cd791782cb4ef",
-  "outputs/replay_eq2026067.json": "ea04c405710c5cb48f30e867140c52d54cbf7b660d56468dea356eed8b49eaab"
+  "outputs/replay_eq2026067.json": "ea04c405710c5cb48f30e867140c52d54cbf7b660d56468dea356eed8b49eaab",
+  "outputs/replay_eq2026068.json": "e6553796ca425847aa716b48b202baba8462e2b095fefc4e7d2829775c0fbb38"
  },
  "audit_content_sha256": {
   "eq2026053": "169db588aedd020c2069217f70eae6ba3234469a15551f4aa38a449bf53a7d82",
@@ -147,7 +152,8 @@
   "eq2026064": "5bc075bf15b9c7aa8153970ca5080a4cc3910595fe24f6a25bc25f1e68e0fd46",
   "eq2026065": "672954ac9cbee87f66a9c2c3b9a7abb4b7c21d7ed15f0dc9516877e013fd6d90",
   "eq2026066": "e7048680f2e7b1a3326249efa2a03d834795c938326f4f0d087f6a577e1a5a23",
-  "eq2026067": "511df782ba9045388e70cc9de5cb0a8f46781f8bb66144b82b12d6d794cda2aa"
+  "eq2026067": "511df782ba9045388e70cc9de5cb0a8f46781f8bb66144b82b12d6d794cda2aa",
+  "eq2026068": "bc5e2487d35a4bd83085e2ab6ed1c65c4d24ee31307f8f1de9528ec30f3885ea"
  },
  "audit_content_note": "audit record hashed excluding ['report_md', 'report_model'] — since round 7 the FULL record file is also pinned in file_sha256, so this narrower hash is a diagnostic that distinguishes numeric drift from narrative-only change (any change now requires regenerating the summary; summary is the last derived artifact)",
  "audit_cross_check": {
@@ -574,6 +580,38 @@
      "n_frames_rule_met": 19,
      "while_rule_met": {
       "max_observed_pga_gal": 3.8,
+      "quality_gate_ok_any": true
+     },
+     "blockers": [
+      "observed_pga_ge_25_never_met_while_rule_met"
+     ]
+    }
+   },
+   "eq2026068": {
+    "t_first_loc_s": 8.2,
+    "first_mag": 6.36,
+    "final_mag": 5.1,
+    "final_err_km": 92.5,
+    "t_eew_s": null,
+    "eew_fired": false,
+    "alert_fired": false,
+    "pws_evidence": {
+     "fired": false,
+     "thresholds": {
+      "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+      "quality_gates": {
+       "min_stations": 6,
+       "max_ellipse_km": 80.0,
+       "eew_min_obs_gal": 10.0,
+       "pws_min_obs_gal": 25.0
+      }
+     },
+     "max_mag": 6.36,
+     "max_predicted_county_intensity": 5,
+     "max_observed_pga_gal": 9.1,
+     "n_frames_rule_met": 18,
+     "while_rule_met": {
+      "max_observed_pga_gal": 9.1,
       "quality_gate_ok_any": true
      },
      "blockers": [
