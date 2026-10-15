@@ -1,15 +1,99 @@
 {
  "summary": {
-  "n_events": 16,
+  "n_events": 17,
   "mean_abs_dmag": 0.3,
-  "mean_err_km": 47.2,
+  "mean_err_km": 44.6,
   "mean_t_first_loc_s": 6.4,
   "mean_t_eew_s": 11.9,
   "n_eew_fired": 9,
   "n_alert_fired": 3,
-  "n_report_sent": 16
+  "n_report_sent": 17
  },
  "events": [
+  {
+   "id": "eq2026069",
+   "origin_utc": "2026-10-13T09:30:10.000000Z",
+   "cwa": {
+    "mag": 4.3,
+    "lat": 23.56,
+    "lon": 121.45,
+    "depth_km": 33.8
+   },
+   "n_stations": 31,
+   "n_picks": 31,
+   "t_first_loc_s": 5.9,
+   "t_first_mag_s": 11.2,
+   "first_mag": 5.07,
+   "final_mag": 4.67,
+   "final_err_km": 4.2,
+   "t_eew_s": null,
+   "exposure": {
+    "i3": 5927,
+    "i4": 0,
+    "i5": 0
+   },
+   "pop_version": "WorldPop 2026 R2025A",
+   "similar": [
+    {
+     "t": "1989-06-08T13:46",
+     "mag": 5.0,
+     "depth": 27.4,
+     "d_km": 12.2,
+     "place": "54 km SSW of Hualien City, Taiwan",
+     "zh": null,
+     "score": 1.19
+    },
+    {
+     "t": "1999-06-10T07:17",
+     "mag": 5.0,
+     "depth": 33.0,
+     "d_km": 20.2,
+     "place": "34 km S of Hualien City, Taiwan",
+     "zh": null,
+     "score": 1.5
+    },
+    {
+     "t": "2024-11-06T17:19",
+     "mag": 5.0,
+     "depth": 25.8,
+     "d_km": 23.8,
+     "place": "52 km S of Hualien City, Taiwan",
+     "zh": null,
+     "score": 1.54
+    }
+   ],
+   "eew_fired": false,
+   "alert_fired": false,
+   "pws_evidence": {
+    "fired": false,
+    "thresholds": {
+     "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+     "quality_gates": {
+      "min_stations": 6,
+      "max_ellipse_km": 80.0,
+      "eew_min_obs_gal": 10.0,
+      "pws_min_obs_gal": 25.0
+     }
+    },
+    "max_mag": 5.07,
+    "max_predicted_county_intensity": 2,
+    "max_observed_pga_gal": 14.2,
+    "n_frames_rule_met": 0,
+    "blockers": [
+     "magnitude_intensity_rule_never_met"
+    ]
+   },
+   "gate_note": "eew/alert use the live engine's numeric quality gates (GATES), but replayed observed-PGA timing is approximate: a station's record-peak counts once its S-window has passed — not the causally-observed running PGA the live engine uses",
+   "report_sent": "2026-10-13T17:40:24+8:00",
+   "source_zip": {
+    "file": "cwawave_202610131730-EQ2026069-Waveform.zip",
+    "sha256": "68f78777fb6cf934062f4887212aa8e0fb72ebf3a4a03910a7a322f99afda502"
+   },
+   "audited_at": "2026-10-15 10:12:48 UTC",
+   "generated_by_commit": "742bbfcceecc162d3bf5abbc89e3c8eaccbb658a",
+   "report_md": "台灣時間 2026 年 10 月 13 日下午 5 時 30 分，花蓮縣鳳林鎮附近（北緯 23.56 度、東經 121.45 度）發生芮氏規模 4.3 地震，震源深度 33.8 公里。EdgeQuake 系統在離線重播中，於發震後 5.9 秒完成初次定位，震央誤差為 4.2 公里。發震後 11.2 秒產出首次規模估計為 5.07，隨著後續測站資料納入，最終規模收斂至 4.67。\n\n強震即時警報未達發布標準。PWS 國家級警報未觸發：規模與預估震度組合從未達到發布條件（M≥5.0 且縣市預估震度≥4 級，或 M≥6.5 且≥3 級）；重播期間規模估計最高 M5.07、預估縣市震度最高 2 級（兩極值未必同時出現）。基於點源及平均地盤假設，並參照 WorldPop 2026 R2025A 人口資料，預估約 5927 人可能感受到震度3以上搖晃。最相似的歷史事件為 1989-06-08T13:46 發生的地震（規模 5.0，深度 27.4 公里）。本報告為自動化研究原型系統之重播結果，測試時間均為理論下界，非官方正式警報。\n\n---\n\nOn October 13, 2026, at 17:30 local time, an earthquake occurred at 23.56 N and 121.45 E (depth 33.8 km) with a CWA catalog magnitude of 4.3. In an offline replay, EdgeQuake achieved its first location estimate at origin+5.9s, yielding a final epicenter error of 4.2 km. The first magnitude estimate was 5.07 at origin+11.2s, which evolved to a final value of 4.67.\n\nThe EEW issuance threshold was not reached. The PWS public alert did not trigger: the magnitude/intensity rule ((M>=5.0 & county intensity>=4) or (M>=6.5 & >=3)) was never met in any single instant — the magnitude estimate peaked at M5.07 and the highest predicted county intensity was 2 (these extremes need not be simultaneous). Under a point-source and average-site assumption using WorldPop 2026 R2025A data, an estimated ~5927 people may have felt intensity-3+ shaking. The most similar historical event occurred on 1989-06-08T13:46 (magnitude 5.0, depth 27.4 km). This automated report presents lower-bound estimate times from a research prototype, not official early-warning information.",
+   "report_model": "gemini-3.5-flash"
+  },
   {
    "id": "eq2026068",
    "origin_utc": "2026-10-06T08:41:08.000000Z",
