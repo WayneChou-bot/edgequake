@@ -1,0 +1,84 @@
+{
+ "id": "eq2026071",
+ "origin_utc": "2026-10-23T20:58:03.000000Z",
+ "cwa": {
+  "mag": 4.8,
+  "lat": 23.89,
+  "lon": 121.9,
+  "depth_km": 16.8
+ },
+ "n_stations": 22,
+ "n_picks": 22,
+ "t_first_loc_s": 7.9,
+ "t_first_mag_s": 12.6,
+ "first_mag": 4.54,
+ "final_mag": 4.71,
+ "final_err_km": 28.3,
+ "t_eew_s": null,
+ "exposure": {
+  "i3": 0,
+  "i4": 0,
+  "i5": 0
+ },
+ "pop_version": "WorldPop 2026 R2025A",
+ "similar": [
+  {
+   "t": "1992-12-28T05:23",
+   "mag": 5.0,
+   "depth": 34.5,
+   "d_km": 13.2,
+   "place": "14 km ESE of Hualien City, Taiwan",
+   "zh": null,
+   "score": 1.09
+  },
+  {
+   "t": "1986-05-22T21:00",
+   "mag": 5.0,
+   "depth": 31.0,
+   "d_km": 8.1,
+   "place": "12 km E of Hualien City, Taiwan",
+   "zh": null,
+   "score": 1.1
+  },
+  {
+   "t": "1983-10-05T03:29",
+   "mag": 5.0,
+   "depth": 33.0,
+   "d_km": 12.7,
+   "place": "19 km ENE of Hualien City, Taiwan",
+   "zh": null,
+   "score": 1.14
+  }
+ ],
+ "eew_fired": false,
+ "alert_fired": false,
+ "pws_evidence": {
+  "fired": false,
+  "thresholds": {
+   "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+   "quality_gates": {
+    "min_stations": 6,
+    "max_ellipse_km": 80.0,
+    "eew_min_obs_gal": 10.0,
+    "pws_min_obs_gal": 25.0
+   }
+  },
+  "max_mag": 5.15,
+  "max_predicted_county_intensity": 3,
+  "max_observed_pga_gal": 9.0,
+  "n_frames_rule_met": 0,
+  "blockers": [
+   "magnitude_intensity_rule_never_met"
+  ]
+ },
+ "gate_note": "eew/alert use the live engine's numeric quality gates (GATES), but replayed observed-PGA timing is approximate: a station's record-peak counts once its S-window has passed — not the causally-observed running PGA the live engine uses",
+ "report_sent": "2026-10-24T05:07:57+8:00",
+ "source_zip": {
+  "file": "cwawave_202610240458-EQ2026071-Waveform.zip",
+  "sha256": "d2332a52b1caadc4032d6b664891a2dbb26e9d9e9c459ed9626928c3ac1f2bb6"
+ },
+ "audited_at": "2026-10-23 23:23:18 UTC",
+ "generated_by_commit": "9723fce458c618ed18c4260d25191c247af9f27d",
+ "report_md": "台灣時間 2026 年 10 月 24 日 上午4時58分，花蓮東方海域（北緯 23.89 度，東經 121.9 度）發生地震，氣象署測得規模 4.8、深度 16.8 公里。EdgeQuake 於事後重播中，發震後 7.9 秒定位首發，發震後 12.6 秒輸出首發規模 4.54，最終規模收斂至 4.71（氣象署目錄值為 4.8），震央誤差為 28.3 公里。強震即時警報（EEW）發布條件未達。\n\nPWS 國家級警報未觸發：規模與預估震度組合從未達到發布條件（M≥5.0 且縣市預估震度≥4 級，或 M≥6.5 且≥3 級）；重播期間規模估計最高 M5.15、預估縣市震度最高 3 級（兩極值未必同時出現）。依據 WorldPop 2026 R2025A 圖層與點源及平均地盤假設，預估約 0 人可能感受到震度3以上搖晃。最相似歷史地震為 1992-12-28T05:23 位於 14 km ESE of Hualien City, Taiwan 規模 5.0、深度 34.5 公里地震（距離震央 13.2 公里，相似度分歧度 1.09）。本報告為研究原型系統之自動化事後重播結果（理論下界），非官方警報資訊。\n\n---\n\nAt 04:58 local time on October 24, 2026, an earthquake occurred off the coast of Hualien (23.89 N, 121.9 E) with CWA magnitude 4.8 and depth 16.8 km. In the post-hoc replay, EdgeQuake produced its first location at origin+7.9s and first magnitude 4.54 at origin+12.6s, eventually evolving to final magnitude 4.71 compared to CWA 4.8, with an epicenter error of 28.3 km. The standard EEW issuance criteria were not met.\n\nThe PWS public alert did not trigger: the magnitude/intensity rule ((M>=5.0 & county intensity>=4) or (M>=6.5 & >=3)) was never met in any single instant — the magnitude estimate peaked at M5.15 and the highest predicted county intensity was 3 (these extremes need not be simultaneous). Based on WorldPop 2026 R2025A data and point-source/average-site assumptions, an estimated ~0 people may have felt intensity-3+ shaking. The most similar historical event is 1992-12-28T05:23 14 km ESE of Hualien City, Taiwan (magnitude 5.0, depth 34.5 km, distance 13.2 km, score 1.09). This report is an automated research-prototype lower-bound estimate, not official information.",
+ "report_model": "gemini-3.5-flash"
+}
