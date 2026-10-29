@@ -1,10 +1,10 @@
 {
- "generated_at": "2026-10-24 01:57:19 UTC",
- "git_commit": "c0008a03d9f22c9536fd5f3d18c7962d152f5be0",
+ "generated_at": "2026-10-29 08:41:08 UTC",
+ "git_commit": "758c920f38c7cf35b2245e46c9a58ed9f28b9af9",
  "working_tree_dirty": false,
  "environment": {
   "python": "3.11.17",
-  "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
   "numpy": "2.4.6",
   "scipy": "1.17.1",
   "pandas": "3.0.5",
@@ -50,8 +50,8 @@
   "outputs/phasenet_cwa_ft.pt": "26da59c137c878890f631f7f76e8e37388f5e1247e1f7366e8ddbafc3b1e7669",
   "outputs/site_terms.json": "6c6b25a74b84101996922a9eed4cba57acb344d548f1b11634ee3eb036652091",
   "outputs/reproduction_report.json": "b9d405eb3047edc8d7368c567dc1e377b9c0e5b52f3f6404f628ae12bca58c74",
-  "docs/audit.json": "d2356cd506e57fc86d299ec318f34bb7fda9d0d4039a9abba9a3580fdce1fbd2",
-  "vercel/audit.json": "d2356cd506e57fc86d299ec318f34bb7fda9d0d4039a9abba9a3580fdce1fbd2",
+  "docs/audit.json": "a752a2d0f9864103acd8484038b8017ea0bf6cd48a78f3025b5548b318033065",
+  "vercel/audit.json": "a752a2d0f9864103acd8484038b8017ea0bf6cd48a78f3025b5548b318033065",
   "docs/index.html": "5a11880134d7e10ab3c7780953011f103e725c382e3d6d4c3720b877b2088d52",
   "vercel/index.html": "5a11880134d7e10ab3c7780953011f103e725c382e3d6d4c3720b877b2088d52",
   "outputs/replay_0403.json": "513dc26599b4a759095d8c656ac98c6eda89823767daa7f7f2e79aa195dd34f1",
@@ -76,6 +76,7 @@
   "outputs/audit_archive/audit_202610131730-EQ2026069-Waveform.txt": "426213dd912c0752421174c8b061f74a7e98a4a1b58bce6eacfe8b2df2bac0e4",
   "outputs/audit_archive/audit_202610240458-EQ2026071-Waveform.txt": "6917670b67fd74a14b70ef56bc3b24b5ab4ed6cd8dbf2a4fc31bcf719993a8cf",
   "outputs/audit_archive/audit_202610240925-EQ2026072-Waveform.txt": "33403636f694168c3b503c027bdd7709352e50eb5498559d1d488eb90adc449d",
+  "outputs/audit_archive/audit_202610291438-EQ2026073-Waveform.txt": "947b989e6acb7ea2ad7b8a5cc6f2b94ecee29bdfaf948b118616cf24138daec4",
   "outputs/audit_archive/audit_eq2026053.json": "ef61aa70dfcf0ef100400a727cc83398feb4adbeaa057437f70b817dda344527",
   "outputs/audit_archive/audit_eq2026054.json": "58dcb3f9ae68bad30d7499d967c9ea84011efc31f00a8d37658d48006715c4f5",
   "outputs/audit_archive/audit_eq2026055.json": "aea86751c102deff3b7ad1beb2d987931ceadae993538d8b5c8aaa2566da17cd",
@@ -95,6 +96,7 @@
   "outputs/audit_archive/audit_eq2026069.json": "3bf4d28521f6d45ccc63d8578ba110ee6e304925724b22406ef5b7831f53a97a",
   "outputs/audit_archive/audit_eq2026071.json": "b1bb0beb4e1d0a3ce2fa5e3844067fea53fe0657ca2bce811bf44b852fc6f634",
   "outputs/audit_archive/audit_eq2026072.json": "f58808357c97093a64b1dc6c0eb0c812344dc72159df28c4cbd009eb0dc7e5ea",
+  "outputs/audit_archive/audit_eq2026073.json": "499dff7edefe2f7668b2f61bf271a0594ae3dabe768ea2f051104412f1ce6fe4",
   "outputs/audit_archive/done_202607310058-EQ2026053-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/done_202608130354-EQ2026054-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/done_202608151930-EQ2026055-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -114,6 +116,7 @@
   "outputs/audit_archive/done_202610131730-EQ2026069-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/done_202610240458-EQ2026071-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/done_202610240925-EQ2026072-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "outputs/audit_archive/done_202610291438-EQ2026073-Waveform": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "outputs/audit_archive/report_eq2026053.md": "83881c5e4ad2a45083ef58efe88914373da7fce34b1650271a0887ce5a31fbf9",
   "outputs/audit_archive/report_eq2026054.md": "0075a184addcd702dcfcacfde23957f7c4f306685921755d084910de9ddf0a96",
   "outputs/audit_archive/report_eq2026055.md": "4118fe6c5283394b2044104c431504165395e83812862f5d6c89c4f891ce0131",
@@ -150,7 +153,8 @@
   "outputs/replay_eq2026068.json": "e6553796ca425847aa716b48b202baba8462e2b095fefc4e7d2829775c0fbb38",
   "outputs/replay_eq2026069.json": "eb39cc7cd9432dd2db918c8c0ea67633694605bed84b4f8e885e8f4d81c7bb7c",
   "outputs/replay_eq2026071.json": "76f3a4c27522e4f97091ca8a30a48dc324b49860683c6af84fb0ed1c2a3269e1",
-  "outputs/replay_eq2026072.json": "f07c2a6796a6ce985bbc059ebab1b7ccf913facf572e40b2f18999527083fcf6"
+  "outputs/replay_eq2026072.json": "f07c2a6796a6ce985bbc059ebab1b7ccf913facf572e40b2f18999527083fcf6",
+  "outputs/replay_eq2026073.json": "0f8b9489c1b01d1e83f0aa6fdbc5a6301ebe92616492220644acf27d1b4d563b"
  },
  "audit_content_sha256": {
   "eq2026053": "169db588aedd020c2069217f70eae6ba3234469a15551f4aa38a449bf53a7d82",
@@ -171,7 +175,8 @@
   "eq2026068": "bc5e2487d35a4bd83085e2ab6ed1c65c4d24ee31307f8f1de9528ec30f3885ea",
   "eq2026069": "f862f5b28a2cbd6b8d7976f41ba9abf6c9087417d3669b779e6e6a5a6130cdb9",
   "eq2026071": "c25a72c6d68dfa56dd1678b627e4d603f3522edf4a1141f7c0cb602726bc6209",
-  "eq2026072": "119cb9dcad78b4d9a71081f9d51cf84309b033c2d5f9515802fc9f637d6570b0"
+  "eq2026072": "119cb9dcad78b4d9a71081f9d51cf84309b033c2d5f9515802fc9f637d6570b0",
+  "eq2026073": "107de23ac2761e81191fa2395d58cd3b49cfec2fa49cc9dd8f2be6274c197aae"
  },
  "audit_content_note": "audit record hashed excluding ['report_md', 'report_model'] — since round 7 the FULL record file is also pinned in file_sha256, so this narrower hash is a diagnostic that distinguishes numeric drift from narrative-only change (any change now requires regenerating the summary; summary is the last derived artifact)",
  "audit_cross_check": {
@@ -715,6 +720,34 @@
      "max_mag": 3.89,
      "max_predicted_county_intensity": 1,
      "max_observed_pga_gal": 30.9,
+     "n_frames_rule_met": 0,
+     "blockers": [
+      "magnitude_intensity_rule_never_met"
+     ]
+    }
+   },
+   "eq2026073": {
+    "t_first_loc_s": 5.3,
+    "first_mag": 2.88,
+    "final_mag": 3.93,
+    "final_err_km": 0.9,
+    "t_eew_s": null,
+    "eew_fired": false,
+    "alert_fired": false,
+    "pws_evidence": {
+     "fired": false,
+     "thresholds": {
+      "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+      "quality_gates": {
+       "min_stations": 6,
+       "max_ellipse_km": 80.0,
+       "eew_min_obs_gal": 10.0,
+       "pws_min_obs_gal": 25.0
+      }
+     },
+     "max_mag": 3.93,
+     "max_predicted_county_intensity": 1,
+     "max_observed_pga_gal": 20.5,
      "n_frames_rule_met": 0,
      "blockers": [
       "magnitude_intensity_rule_never_met"
