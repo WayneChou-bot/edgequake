@@ -1,0 +1,84 @@
+{
+ "id": "eq2026076",
+ "origin_utc": "2026-11-03T15:22:05.000000Z",
+ "cwa": {
+  "mag": 4.5,
+  "lat": 24.44,
+  "lon": 121.84,
+  "depth_km": 15.2
+ },
+ "n_stations": 35,
+ "n_picks": 34,
+ "t_first_loc_s": 4.8,
+ "t_first_mag_s": 7.6,
+ "first_mag": 5.22,
+ "final_mag": 4.61,
+ "final_err_km": 3.5,
+ "t_eew_s": 7.6,
+ "exposure": {
+  "i3": 77083,
+  "i4": 5868,
+  "i5": 1615
+ },
+ "pop_version": "WorldPop 2026 R2025A",
+ "similar": [
+  {
+   "t": "1978-05-30T15:09",
+   "mag": 5.0,
+   "depth": 2.0,
+   "d_km": 13.4,
+   "place": "48 km SSE of Yilan, Taiwan",
+   "zh": null,
+   "score": 1.51
+  },
+  {
+   "t": "2018-02-25T18:28",
+   "mag": 5.1,
+   "depth": 10.0,
+   "d_km": 17.2,
+   "place": "45 km SE of Yilan, Taiwan",
+   "zh": null,
+   "score": 1.78
+  },
+  {
+   "t": "2018-02-04T13:12",
+   "mag": 5.0,
+   "depth": 10.2,
+   "d_km": 30.7,
+   "place": "25 km NNE of Hualien City, Taiwan",
+   "zh": null,
+   "score": 1.87
+  }
+ ],
+ "eew_fired": true,
+ "alert_fired": false,
+ "pws_evidence": {
+  "fired": false,
+  "thresholds": {
+   "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+   "quality_gates": {
+    "min_stations": 6,
+    "max_ellipse_km": 80.0,
+    "eew_min_obs_gal": 10.0,
+    "pws_min_obs_gal": 25.0
+   }
+  },
+  "max_mag": 5.28,
+  "max_predicted_county_intensity": 3,
+  "max_observed_pga_gal": 242.8,
+  "n_frames_rule_met": 0,
+  "blockers": [
+   "magnitude_intensity_rule_never_met"
+  ]
+ },
+ "gate_note": "eew/alert use the live engine's numeric quality gates (GATES), but replayed observed-PGA timing is approximate: a station's record-peak counts once its S-window has passed — not the causally-observed running PGA the live engine uses",
+ "report_sent": "2026-11-03T23:32:15+8:00",
+ "source_zip": {
+  "file": "cwawave_202611032322-EQ2026076-Waveform.zip",
+  "sha256": "d1786196682661cb8aa501f32e45408ce171bb17a9b3333b8dffc92f6dabe088"
+ },
+ "audited_at": "2026-11-03 17:37:06 UTC",
+ "generated_by_commit": "0ec9a38306af16f9f8614cd8d7c7dd44798c7ba0",
+ "report_md": "台灣時間 2026年11月3日 23時22分，在北緯 24.44 度、東經 121.84 度發生芮氏規模 4.5 地震，深度 15.2 公里。在 EdgeQuake 重播實驗中，系統於發震後 4.8 秒完成首次定位，發震後 7.6 秒輸出首次規模 5.22，後續收斂至最終規模 4.61，與 CWA 震央距離偏差 3.5 公里。7.6 秒為未納入系統延遲的理論下界，不可與官方發布時間直接比較。\n\n在曝光評估方面，依據 WorldPop 2026 R2025A 資料集與點源平均測站假設，預估約 77083 人可能感受到震度3以上搖晃。PWS 國家級警報未觸發：規模與預估震度組合從未達到發布條件（M≥5.0 且縣市預估震度≥4 級，或 M≥6.5 且≥3 級）；重播期間規模估計最高 M5.28、預估縣市震度最高 3 級（兩極值未必同時出現）。歷史資料顯示最相似的事件為 1978-05-30T15:09 發生於 48 km SSE of Yilan, Taiwan 規模 5.0 地震。本報告為學術研究原型系統自動運算結果，非官方發布資訊。\n\n---\n\nAt 23:22 local time on November 3, 2026, an earthquake occurred at latitude 24.44 and longitude 121.84 with magnitude 4.5 and depth 15.2 km. In the EdgeQuake post-hoc replay test, the engine obtained its first location at origin+4.8 s and first magnitude 5.22 at origin+7.6 s, evolving to a final magnitude 4.61 with a final epicenter error of 3.5 km. The 7.6 s figure is a theoretical lower bound that excludes system latency and must not be compared directly with official issuance times.\n\nBased on WorldPop 2026 R2025A and average-site point-source assumptions, an estimated ~77083 people may have felt intensity-3+ shaking. The PWS public alert did not trigger: the magnitude/intensity rule ((M>=5.0 & county intensity>=4) or (M>=6.5 & >=3)) was never met in any single instant — the magnitude estimate peaked at M5.28 and the highest predicted county intensity was 3 (these extremes need not be simultaneous). The most similar historical event is 1978-05-30T15:09 48 km SSE of Yilan, Taiwan (magnitude 5.0). This document is an automated output from a research-prototype system and not official information.",
+ "report_model": "gemini-3.5-flash"
+}
