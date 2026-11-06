@@ -1,15 +1,99 @@
 {
  "summary": {
-  "n_events": 23,
-  "mean_abs_dmag": 0.26,
-  "mean_err_km": 40.9,
+  "n_events": 24,
+  "mean_abs_dmag": 0.27,
+  "mean_err_km": 39.2,
   "mean_t_first_loc_s": 6.0,
-  "mean_t_eew_s": 12.5,
-  "n_eew_fired": 11,
+  "mean_t_eew_s": 12.4,
+  "n_eew_fired": 12,
   "n_alert_fired": 3,
-  "n_report_sent": 23
+  "n_report_sent": 24
  },
  "events": [
+  {
+   "id": "eq2026078",
+   "origin_utc": "2026-11-06T04:01:13.000000Z",
+   "cwa": {
+    "mag": 4.0,
+    "lat": 24.01,
+    "lon": 121.63,
+    "depth_km": 23.0
+   },
+   "n_stations": 14,
+   "n_picks": 14,
+   "t_first_loc_s": 5.4,
+   "t_first_mag_s": 10.4,
+   "first_mag": 4.42,
+   "final_mag": 4.66,
+   "final_err_km": 1.6,
+   "t_eew_s": 11.2,
+   "exposure": {
+    "i3": 167622,
+    "i4": 0,
+    "i5": 0
+   },
+   "pop_version": "WorldPop 2026 R2025A",
+   "similar": [
+    {
+     "t": "2024-04-03T01:17",
+     "mag": 5.0,
+     "depth": 26.9,
+     "d_km": 4.3,
+     "place": "6 km E of Hualien City, Taiwan",
+     "zh": null,
+     "score": 1.01
+    },
+    {
+     "t": "1986-05-22T21:00",
+     "mag": 5.0,
+     "depth": 31.0,
+     "d_km": 8.9,
+     "place": "12 km E of Hualien City, Taiwan",
+     "zh": null,
+     "score": 1.18
+    },
+    {
+     "t": "2012-04-19T01:58",
+     "mag": 5.0,
+     "depth": 29.1,
+     "d_km": 14.3,
+     "place": "18 km NNE of Hualien City, Taiwan",
+     "zh": null,
+     "score": 1.24
+    }
+   ],
+   "eew_fired": true,
+   "alert_fired": false,
+   "pws_evidence": {
+    "fired": false,
+    "thresholds": {
+     "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+     "quality_gates": {
+      "min_stations": 6,
+      "max_ellipse_km": 80.0,
+      "eew_min_obs_gal": 10.0,
+      "pws_min_obs_gal": 25.0
+     }
+    },
+    "max_mag": 4.69,
+    "max_predicted_county_intensity": 3,
+    "max_observed_pga_gal": 13.3,
+    "n_frames_rule_met": 0,
+    "blockers": [
+     "magnitude_intensity_rule_never_met"
+    ]
+   },
+   "gate_note": "eew/alert use the live engine's numeric quality gates (GATES), but replayed observed-PGA timing is approximate: a station's record-peak counts once its S-window has passed — not the causally-observed running PGA the live engine uses",
+   "report_sent": "2026-11-06T12:11:20+8:00",
+   "source_zip": {
+    "file": "cwawave_202611061201-EQ2026078-Waveform.zip",
+    "sha256": "6ec7b7258653544155622fe363dc2d848dd271b9543770b4fec81b28a0161433"
+   },
+   "audited_at": "2026-11-06 06:48:41 UTC",
+   "generated_by_commit": "b150ef63aa1e39edc87a6a1ad0afa1bfd769da80",
+   "report_md": "台灣時間 2026 年 11 月 6 日 中午12時01分，花蓮地區發生芮氏規模 4.0 地震，震源深度 23.0 公里，震央位於北緯 24.01 度、東經 121.63 度。EdgeQuake 系統在事後重播中，於發震後 5.4 秒完成首次定位，發震後 10.4 秒估算初始規模為 4.42，隨時間演進至最終規模 4.66，相較於 CWA 編目資料，最終震央位置誤差為 1.6 公里。依據點源與平均地動放大假設及 WorldPop 2026 R2025A 資料，預估約 167622 人可能感受到震度3以上搖晃。\n\n系統於發震後 11.2 秒達到強震即時警報發布標準。11.2 秒為未納入系統延遲的理論下界，不可與官方發布時間直接比較。PWS 國家級警報未觸發：規模與預估震度組合從未達到發布條件（M≥5.0 且縣市預估震度≥4 級，或 M≥6.5 且≥3 級）；重播期間規模估計最高 M4.69、預估縣市震度最高 3 級（兩極值未必同時出現）。歷史事件中，與本次最相似的地震為 2024-04-03T01:17 發生於 6 km E of Hualien City, Taiwan 的 M5.0 地震。本報告為研究原型系統之自動化事後重播結果，非官方警報資訊。\n\n---\n\nAt 12:01 local time on November 6, 2026, an earthquake occurred in the Hualien region (24.01 N, 121.63 E) at a depth of 23.0 km with CWA magnitude 4.0. In the post-hoc replay, EdgeQuake produced its first location at origin+5.4 s and first magnitude estimate of 4.42 at origin+10.4 s, which evolved to a final magnitude of 4.66 with a final epicenter error of 1.6 km. Based on a point-source model, average site response, and WorldPop 2026 R2025A, an estimated ~167622 people may have felt intensity-3+ shaking.\n\nThe system met the criteria for EEW issuance at origin+11.2 s. The 11.2 s figure is a theoretical lower bound that excludes system latency and must not be compared directly with official issuance times. The PWS public alert did not trigger: the magnitude/intensity rule ((M>=5.0 & county intensity>=4) or (M>=6.5 & >=3)) was never met in any single instant — the magnitude estimate peaked at M4.69 and the highest predicted county intensity was 3 (these extremes need not be simultaneous). The most similar historical earthquake in the dataset occurred on 2024-04-03T01:17 at 6 km E of Hualien City, Taiwan (M5.0). This report is an automated post-hoc evaluation from a research prototype and does not constitute official information.",
+   "report_model": "gemini-3.5-flash"
+  },
   {
    "id": "eq2026076",
    "origin_utc": "2026-11-03T15:22:05.000000Z",
