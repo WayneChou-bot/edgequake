@@ -1,15 +1,99 @@
 {
  "summary": {
-  "n_events": 24,
-  "mean_abs_dmag": 0.27,
-  "mean_err_km": 39.2,
-  "mean_t_first_loc_s": 6.0,
+  "n_events": 25,
+  "mean_abs_dmag": 0.26,
+  "mean_err_km": 37.9,
+  "mean_t_first_loc_s": 5.9,
   "mean_t_eew_s": 12.4,
   "n_eew_fired": 12,
   "n_alert_fired": 3,
-  "n_report_sent": 24
+  "n_report_sent": 25
  },
  "events": [
+  {
+   "id": "eq2026079",
+   "origin_utc": "2026-11-09T04:21:57.000000Z",
+   "cwa": {
+    "mag": 4.2,
+    "lat": 23.59,
+    "lon": 120.72,
+    "depth_km": 11.0
+   },
+   "n_stations": 34,
+   "n_picks": 34,
+   "t_first_loc_s": 4.5,
+   "t_first_mag_s": 6.3,
+   "first_mag": 2.98,
+   "final_mag": 4.22,
+   "final_err_km": 6.5,
+   "t_eew_s": null,
+   "exposure": {
+    "i3": 167872,
+    "i4": 1004,
+    "i5": 0
+   },
+   "pop_version": "WorldPop 2026 R2025A",
+   "similar": [
+    {
+     "t": "2003-01-17T13:23",
+     "mag": 5.0,
+     "depth": 19.4,
+     "d_km": 12.5,
+     "place": "26 km E of Pizitou, Taiwan",
+     "zh": null,
+     "score": 2.54
+    },
+    {
+     "t": "2017-11-22T14:20",
+     "mag": 5.1,
+     "depth": 16.5,
+     "d_km": 11.2,
+     "place": "23 km S of Lugu, Taiwan",
+     "zh": null,
+     "score": 2.64
+    },
+    {
+     "t": "2009-11-05T11:34",
+     "mag": 5.2,
+     "depth": 10.0,
+     "d_km": 19.2,
+     "place": "13 km SE of Lugu, Taiwan",
+     "zh": null,
+     "score": 3.03
+    }
+   ],
+   "eew_fired": false,
+   "alert_fired": false,
+   "pws_evidence": {
+    "fired": false,
+    "thresholds": {
+     "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+     "quality_gates": {
+      "min_stations": 6,
+      "max_ellipse_km": 80.0,
+      "eew_min_obs_gal": 10.0,
+      "pws_min_obs_gal": 25.0
+     }
+    },
+    "max_mag": 4.24,
+    "max_predicted_county_intensity": 2,
+    "max_observed_pga_gal": 26.9,
+    "n_frames_rule_met": 0,
+    "blockers": [
+     "magnitude_intensity_rule_never_met"
+    ]
+   },
+   "gate_note": "eew/alert use the live engine's numeric quality gates (GATES), but replayed observed-PGA timing is approximate: a station's record-peak counts once its S-window has passed — not the causally-observed running PGA the live engine uses",
+   "report_sent": "2026-11-09T12:32:22+8:00",
+   "source_zip": {
+    "file": "cwawave_202611091221-EQ2026079-Waveform.zip",
+    "sha256": "cd2001ec8c4086bb6833073a086ad397972951e43eb735157d733819460711c7"
+   },
+   "audited_at": "2026-11-09 10:09:46 UTC",
+   "generated_by_commit": "7a91d31aeaa72c777a46c89685ea6972e259b797",
+   "report_md": "台灣時間 2026 年 11 月 9 日中午 12 時 21 分，嘉義阿里山山區（北緯 23.59 度，東經 120.72 度）發生深度 11.0 公里、規模 4.2 之地震。EdgeQuake 系統在事後到時重播測試中，於發震後 4.5 秒完成首次定位，發震後 6.3 秒首次估算規模為 2.98。隨後數據更新，規模逐步演進至 4.22，震央位置誤差為 6.5 公里，接近氣象署編號目錄值。\n\n強震即時警報門檻未達到。PWS 國家級警報未觸發：規模與預估震度組合從未達到發布條件（M≥5.0 且縣市預估震度≥4 級，或 M≥6.5 且≥3 級）；重播期間規模估計最高 M4.24、預估縣市震度最高 2 級（兩極值未必同時出現）。基於 WorldPop 2026 R2025A 人口資料庫與單點源平均場址假設，預估約 167872 人可能感受到震度3以上搖晃。距離本次震央最近之類似歷史事件為 2017-11-22T14:20 於 23 km S of Lugu, Taiwan 規模 5.1 地震。本報告為研究原型系統之事後自動化分析，非官方警報訊息。\n\n---\n\nOn November 9, 2026, at 12:21 local time, an M4.2 earthquake occurred in the Alishan region (23.59°N, 120.72°E) at a depth of 11.0 km. In a post-hoc arrival-time replay, EdgeQuake produced its first location at origin+4.5s and its first magnitude estimate of 2.98 at origin+6.3s. As additional arrivals arrived, the magnitude evolved to 4.22, with a final epicenter position error of 6.5 km relative to the official CWA report.\n\nThe EEW criteria were not met. The PWS public alert did not trigger: the magnitude/intensity rule ((M>=5.0 & county intensity>=4) or (M>=6.5 & >=3)) was never met in any single instant — the magnitude estimate peaked at M4.24 and the highest predicted county intensity was 2 (these extremes need not be simultaneous). Based on WorldPop 2026 R2025A data and point-source average-site assumptions, an estimated ~167872 people may have felt intensity-3+ shaking. A comparable past event was the 2017-11-22T14:20 M5.1 earthquake 23 km S of Lugu, Taiwan. This report presents lower-bound estimate results from an automated research prototype and is not an official warning.",
+   "report_model": "gemini-3.5-flash"
+  },
   {
    "id": "eq2026078",
    "origin_utc": "2026-11-06T04:01:13.000000Z",
