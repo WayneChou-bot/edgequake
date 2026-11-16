@@ -1,15 +1,99 @@
 {
  "summary": {
-  "n_events": 25,
+  "n_events": 26,
   "mean_abs_dmag": 0.26,
-  "mean_err_km": 37.9,
+  "mean_err_km": 37.0,
   "mean_t_first_loc_s": 5.9,
-  "mean_t_eew_s": 12.4,
-  "n_eew_fired": 12,
+  "mean_t_eew_s": 12.1,
+  "n_eew_fired": 13,
   "n_alert_fired": 3,
-  "n_report_sent": 25
+  "n_report_sent": 26
  },
  "events": [
+  {
+   "id": "eq2026080",
+   "origin_utc": "2026-11-15T23:47:07.000000Z",
+   "cwa": {
+    "mag": 4.0,
+    "lat": 23.02,
+    "lon": 120.14,
+    "depth_km": 14.0
+   },
+   "n_stations": 14,
+   "n_picks": 13,
+   "t_first_loc_s": 4.9,
+   "t_first_mag_s": 8.7,
+   "first_mag": 4.63,
+   "final_mag": 4.12,
+   "final_err_km": 12.6,
+   "t_eew_s": 8.7,
+   "exposure": {
+    "i3": 0,
+    "i4": 0,
+    "i5": 0
+   },
+   "pop_version": "WorldPop 2026 R2025A",
+   "similar": [
+    {
+     "t": "2025-01-20T16:26",
+     "mag": 5.1,
+     "depth": 10.0,
+     "d_km": 23.0,
+     "place": "2 km WNW of Yujing, Taiwan",
+     "zh": null,
+     "score": 3.47
+    },
+    {
+     "t": "1975-07-09T21:15",
+     "mag": 5.0,
+     "depth": 6.2,
+     "d_km": 28.2,
+     "place": "23 km W of Tainan, Taiwan",
+     "zh": null,
+     "score": 3.5
+    },
+    {
+     "t": "2025-01-30T07:16",
+     "mag": 5.0,
+     "depth": 10.0,
+     "d_km": 36.2,
+     "place": "12 km ENE of Yujing, Taiwan",
+     "zh": null,
+     "score": 3.55
+    }
+   ],
+   "eew_fired": true,
+   "alert_fired": false,
+   "pws_evidence": {
+    "fired": false,
+    "thresholds": {
+     "pws_rule": "(M>=5.0 & county I>=4) or (M>=6.5 & I>=3)",
+     "quality_gates": {
+      "min_stations": 6,
+      "max_ellipse_km": 80.0,
+      "eew_min_obs_gal": 10.0,
+      "pws_min_obs_gal": 25.0
+     }
+    },
+    "max_mag": 4.79,
+    "max_predicted_county_intensity": 3,
+    "max_observed_pga_gal": 27.4,
+    "n_frames_rule_met": 0,
+    "blockers": [
+     "magnitude_intensity_rule_never_met"
+    ]
+   },
+   "gate_note": "eew/alert use the live engine's numeric quality gates (GATES), but replayed observed-PGA timing is approximate: a station's record-peak counts once its S-window has passed — not the causally-observed running PGA the live engine uses",
+   "report_sent": "2026-11-16T07:56:44+8:00",
+   "source_zip": {
+    "file": "cwawave_202611160747-EQ2026080-Waveform.zip",
+    "sha256": "b273410f2729910c18d1fd9d6111fb25dd72105d4c07e5b548b3c206a0484001"
+   },
+   "audited_at": "2026-11-16 00:19:28 UTC",
+   "generated_by_commit": "d21d6003a47f721c76621bceb245f2fa03a2468d",
+   "report_md": "台灣時間 2026 年 11 月 16 日上午 7 時 47 分，台灣西部陸上（北緯 23.02 度、東經 120.14 度）發生芮氏規模 4.0 地震，震源深度 14.0 公里。在強震即時警報重播測試中，系統於發震後 4.9 秒完成首次定位，發震後 8.7 秒估計出首次規模 4.63，隨後演進至最終規模 4.12，最終震央偏差為 12.6 公里。\n\n8.7 秒為未納入系統延遲的理論下界，不可與官方發布時間直接比較。PWS 國家級警報未觸發：規模與預估震度組合從未達到發布條件（M≥5.0 且縣市預估震度≥4 級，或 M≥6.5 且≥3 級）；重播期間規模估計最高 M4.79、預估縣市震度最高 3 級（兩極值未必同時出現）。根據 WorldPop 2026 R2025A 與點源均一地盤假設，預估約 0 人可能感受到震度3以上搖晃。與此事件特徵最相似的歷史地震為 2 km WNW of Yujing, Taiwan 事例。本報告為學術研究原型系統之自動化重播紀錄，非官方地震報告。\n\n---\n\nOn November 16, 2026, at 07:47 local time, an earthquake occurred in western Taiwan at latitude 23.02 and longitude 120.14, with a depth of 14.0 km and magnitude 4.0. In this offline replay audit, the engine determined the first location at origin+4.9 s and calculated the initial magnitude of 4.63 at origin+8.7 s. The magnitude estimate evolved to a final value of 4.12, with a final epicenter error of 12.6 km relative to the catalog.\n\nThe 8.7 s figure is a theoretical lower bound that excludes system latency and must not be compared directly with official issuance times. The PWS public alert did not trigger: the magnitude/intensity rule ((M>=5.0 & county intensity>=4) or (M>=6.5 & >=3)) was never met in any single instant — the magnitude estimate peaked at M4.79 and the highest predicted county intensity was 3 (these extremes need not be simultaneous). Based on WorldPop 2026 R2025A under a point-source and average-site assumption, an estimated ~0 people may have felt intensity-3+ shaking. The most similar historical event is 2 km WNW of Yujing, Taiwan. This report is an automated output from a research-prototype system and is not an official notification.",
+   "report_model": "gemini-3.5-flash"
+  },
   {
    "id": "eq2026079",
    "origin_utc": "2026-11-09T04:21:57.000000Z",
